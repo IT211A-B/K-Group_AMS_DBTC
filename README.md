@@ -1,1 +1,3 @@
-# K-Group_AMS_DBTC
+Project Manager: Cassandra Gayle R. Oraiz
+Backend: Carl Joshua P. Santos
+Frontend: Leila G. Bangoy
