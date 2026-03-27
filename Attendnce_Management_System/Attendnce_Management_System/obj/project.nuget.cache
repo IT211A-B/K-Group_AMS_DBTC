@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ETiTRtexpnA=",
+  "dgSpecHash": "a/vZR6RmiP8=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Lenovo\\source\\Backend\\Attendnce_Management_System\\Attendnce_Management_System\\Attendance_Management_System.csproj",
+  "projectFilePath": "C:\\Users\\Lenovo\\source\\AMS_BACKEND_SANTOS\\K-Group_AMS_DBTC\\Attendnce_Management_System\\Attendnce_Management_System\\Attendance_Management_System.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Lenovo\\.nuget\\packages\\bcrypt.net-next\\4.1.0\\bcrypt.net-next.4.1.0.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
