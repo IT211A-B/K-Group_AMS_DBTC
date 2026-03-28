@@ -1,0 +1,40 @@
+﻿using Backend.Backend;
+using Backend.Backend.Model;
+using Microsoft.EntityFrameworkCore;
+using Backend.Backend.Interface.RepositoryInterface;
+
+namespace Backend.Backend.Repository
+{
+    public class ProgramRepository(DatabaseLibrary db) : IProgramRepository
+    {
+        private readonly DatabaseLibrary _db = db;
+
+        public async Task<IEnumerable<Program_>> GetAllAsync()
+        {
+            return await _db.Programs.ToListAsync();
+        }
+
+        public async Task<Program_?> GetByIdAsync(int id)
+        {
+            return await _db.Programs.FindAsync(id);
+        }
+
+        public async Task AddAsync(Program_ program)
+        {
+            _db.Programs.Add(program);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(Program_ program)
+        {
+            _db.Entry(program).State = EntityState.Modified;
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(Program_ program)
+        {
+            _db.Programs.Remove(program);
+            await _db.SaveChangesAsync();
+        }
+    }
+}
