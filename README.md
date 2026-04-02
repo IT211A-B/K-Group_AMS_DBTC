@@ -1,7 +1,7 @@
 <h1 align="center">
 	<br>
 	<br>
-	<img width="360" src="KCORD_logo_transparent.png" alt="KCORD">
+	<img width="500" src="KCORD_logo_transparent.png" alt="KCORD">
 	<br>
 	<br>
 	<br>
