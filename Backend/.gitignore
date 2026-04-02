@@ -2,6 +2,9 @@
 *.cache
 /bin
 /obj
+/Bangoy
+/Frontend
+/Oraiz
 Backend/Migrations
 .gitignore 
 ## Ignore Visual Studio temporary files, build results, and
