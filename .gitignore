@@ -2,7 +2,12 @@
 *.cache
 /bin
 /obj
-/Migration
+/Migrations
+/Bangoy
+/Frontend
+/Oraiz
+/Backend/Migrations
+.gitignore 
 Backend/Attendnce_Management_System/Attendnce_Management_System/appsettings.json
 ﻿.vs/
 bin/
