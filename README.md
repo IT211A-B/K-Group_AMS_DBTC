@@ -17,15 +17,58 @@ The AMS enables teachers to manage attendance and student schedules efficiently,
 
 The Group Consist of 3 Members: 
 
-```
-Project Manager: Cassandra Gayle R. Oraiz
-Backend: Carl Joshua P. Santos
-Frontend: Leila G. Bangoy
-```
+- Project Manager: Cassandra Gayle R. Oraiz
+- Backend: Carl Joshua P. Santos
+- Frontend: Leila G. Bangoy
 
 ### Task View
 
 View project tasks on [ClickUp](https://sharing.clickup.com/90161521612/l/h/2kz0q8yc-596/a4e5df5c49ba3a8).
 
-### 
+### API set-up
 
+**Install PostGreSQL**
+
+Install [PostGreSQL](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) if not installed. Click [PostGreSQL](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) to download
+
+**Set-Up JSON**
+
+- Update appsettings.json by adding connection string (Base the syntax on the Dummy below, you may change the connection string's data on your accord)
+```
+{
+  "ConnectionStrings": {
+    "AttendanceDBString": "Host=localhost;Port=5433;Database=AttendanceDB;Username=postgres;Password=1234"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+```
+
+**Open Package Manager Console**
+
+- Open the Tools (*Upper Bar*) in visual studio code 2022
+- Press NuGet Package Manager
+- Open Package Manager Console
+
+**Migrate Code-First Model Into the PostGreSQL DB**
+
+- Add a migration Folder and migration and name InitialMigration for first Migration
+```
+Add-Migration InitialMigration
+```
+
+- Update the migration to the PostGreSQL DB through the Package Manager Console
+```
+Update-Database
+```
+
+**Check DB**
+
+- Open PostGreSQL by typing **pgAdmin 4**
+- Check Database Name if it exist
+- Check Table Attributes by opening Schema\Tables\Attribute
