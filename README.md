@@ -1,7 +1,7 @@
 <h1 align="center">
 	<br>
 	<br>
-	<img width="500" src="KCORD_logo_transparent.png" alt="KCORD">
+	<img width="500" height="120" src="KCORD_logo_transparent.png" alt="KCORD">
 	<br>
 	<br>
 	<br>
@@ -13,7 +13,7 @@ The **K-Cord Project** is developed by the K-Group team with a collaboration wit
 
 The AMS enables teachers to manage attendance and student schedules efficiently, while giving administrators (Department Heads and other higher-ups) a centralized platform to monitor teacher attendance and oversee both teacher and student performance.
 
-### K-Group Team:
+## K-Group Team:
 
 The Group Consist of 3 Members: 
 
@@ -21,11 +21,11 @@ The Group Consist of 3 Members:
 - Backend: Carl Joshua P. Santos
 - Frontend: Leila G. Bangoy
 
-### Task View
+## Task View
 
 View project tasks on [ClickUp](https://sharing.clickup.com/90161521612/l/h/2kz0q8yc-596/a4e5df5c49ba3a8).
 
-### API set-up
+## API set-up
 
 **Install PostGreSQL**
 
