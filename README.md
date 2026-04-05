@@ -58,8 +58,27 @@ Install [PostGreSQL](https://www.enterprisedb.com/downloads/postgres-postgresql-
 Add-Migration InitialMigration
 ```
 
-- Update the migration to the PostGreSQL DB through the Package Manager Console
+- Add (*Up in Migration*) Sequence for Student, Teacher, and User (Up, runs when applying migration)
 ```
+migrationBuilder.Sql("CREATE SEQUENCE StudentSeq START WITH 1 INCREMENT BY 1;");
+
+migrationBuilder.Sql("CREATE SEQUENCE TeacherSeq START WITH 1 INCREMENT BY 1;");
+
+migrationBuilder.Sql("CREATE SEQUENCE UserSeq START WITH 1 INCREMENT BY 1;");
+```
+
+- Add (*Down in Migration*) Sequence for Student, Teacher, and User (Down, to Roll Back)
+```
+migrationBuilder.Sql("DROP SEQUENCE StudentSeq;");
+
+migrationBuilder.Sql("DROP SEQUENCE TeacherSeq;");
+
+migrationBuilder.Sql("DROP SEQUENCE UserSeq;");
+```
+
+- Update the migration to the PostGreSQL DB through the Package Manager 
+Console 
+``` 
 Update-Database
 ```
 
