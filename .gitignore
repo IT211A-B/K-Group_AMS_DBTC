@@ -5,7 +5,7 @@
 /Migrations
 /Bangoy
 /Frontend
-/Oraiz
+#/Oraiz
 /Backend/Migrations
 .gitignore 
 Backend/Attendnce_Management_System/Attendnce_Management_System/appsettings.json
