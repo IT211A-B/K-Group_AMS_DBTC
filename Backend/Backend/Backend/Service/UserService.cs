@@ -20,7 +20,6 @@ namespace Backend.Backend.Service
             var users = await _userRepository.GetAllAsync();
             return users.Select(u => new GetUserDTO
             {
-                User_ID = u.User_ID,
                 Full_Name = u.Full_Name,
                 Email = u.Email,
                 Phone_Number = u.Phone_Number,

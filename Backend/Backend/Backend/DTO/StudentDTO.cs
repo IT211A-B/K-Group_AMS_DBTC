@@ -2,7 +2,7 @@
 {
     public class GetStudentDTO
     {
-        public Guid Student_ID { get; set; }
+        public string Student_ID { get; set; } = null!;
         public int Program_ID { get; set; }
         public int Department_ID { get; set; }
         public required int Year_Level { get; set; }
