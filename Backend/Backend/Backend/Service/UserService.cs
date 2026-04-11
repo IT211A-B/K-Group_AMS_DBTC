@@ -3,6 +3,8 @@ using Backend.Backend.DTO;
 using Backend.Backend.Interface.RepositoryInterface;
 using Backend.Backend.Interface.ServiceInterface;
 using Backend.Backend.Model;
+using Backend.Backend.Helper;
+using PosStatus = Backend.Backend.Helper.Enum.PosEnum.PosStatus;
 
 namespace Backend.Backend.Service
 {
@@ -41,7 +43,6 @@ namespace Backend.Backend.Service
 
             return new GetUserDTO
             {
-                User_ID = u.User_ID,
                 Full_Name = u.Full_Name,
                 Email = u.Email,
                 Phone_Number = u.Phone_Number,
@@ -56,14 +57,43 @@ namespace Backend.Backend.Service
             };
         }
 
-        public async Task<GetUserDTO> AddAsync(AddUserDTO userDto)
+        public async Task<UserResponse> AddAsync(AddUserDTO userDto)
         {
-
+            // This will check if the email exist
+            User? DBEmails = await _userRepository.GetByEmailOrUsernameAsync(userDto.Email);
+            if (DBEmails != null)
+            {
+                return new UserResponse
+                {
+                    Status_code = 422, //422 Unprocessable Content: Understands the request but cannot process ("Email is already used")
+                    Data = null
+                };
+            }
+            // Password Hashing shesh
             string Pass_Hash = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
+            //Add Role According To Email
+            PosStatus? role = AddRole.AddRoleAccordingToEmail(userDto.Email).role;
+            int statcode_roleCheck = AddRole.AddRoleAccordingToEmail(userDto.Email).status_code;
+            //If email does not match, return with 404 as not found and 403 as Access Denied
+            if (statcode_roleCheck == 404)
+            {
+                return new UserResponse
+                { 
+                    Status_code = 403, //403 access_denied: You are not authorized to use the specific service with that account.
+                    Data = null
+                };
+            }
+            // Get Year
+            int year = DateTime.Now.Year;
+            // Get the next student number used by sequence that we made early in migration and such
+            long id = await _userRepository.GetNextStudentNumberAsync();
+            // Add Document Series
+            string DocSer = $"{role}-{year}-{id}";
 
             var user = new User
             {
-                Full_Name = userDto.Full_Name!,
+                DocumentSeries = DocSer,
+                Full_Name = userDto.Full_Name,
                 Email = userDto.Email,
                 PassHash = Pass_Hash,
                 Phone_Number = userDto.Phone_Number,
@@ -79,20 +109,10 @@ namespace Backend.Backend.Service
 
             await _userRepository.AddAsync(user);
 
-            return new GetUserDTO
+            return new UserResponse
             {
-                User_ID = user.User_ID,
-                Full_Name = user.Full_Name,
-                Email = user.Email,
-                Phone_Number = user.Phone_Number,
-                Gender = user.Gender,
-                Birth_Date = user.Birth_Date,
-                Address = user.Address,
-                UserGroup_ID = user.UserGroup_ID,
-                CreatedAt = user.CreatedAt,
-                LastUpdatedAt = user.LastUpdatedAt,
-                CreatedBy = user.CreatedBy,
-                LastUpdatedBy = user.LastUpdatedBy
+                Status_code = 200,
+                Data = user
             };
         }
 
@@ -100,11 +120,13 @@ namespace Backend.Backend.Service
         {
             var user = await _userRepository.GetByEmailOrUsernameAsync(login.Email);
 
+            // User Validation
             if (user == null) return new LoginResult
             {
                 isSuccess = false,
                 Detail = "User Cannot Be Found"
             };
+            // Password validation
             if (!BCrypt.Net.BCrypt.Verify(login.Password, user.PassHash))
             return new LoginResult
             {
@@ -112,13 +134,13 @@ namespace Backend.Backend.Service
                 Detail = "Password Incorrect"
             };
 
-
             return new LoginResult
             {
                 isSuccess = true,
                 Detail = $"Welcome Back {user.Full_Name}"
             };
         }
+
         //public async Task<GetUserDTO?> UpdateAsync(int id, AddUserDTO userDto)
         //{
         //    var existing = await _userRepository.GetByIdAsync(id);

@@ -1,4 +1,4 @@
-﻿using Status = Backend.Backend.Helper.Enum.Status;
+﻿using AttStatus = Backend.Backend.Helper.Enum.AttendanceEnum.AttStatus;
 
 namespace Backend.Backend.DTOs
 {
@@ -7,7 +7,7 @@ namespace Backend.Backend.DTOs
         public int Attendance_ID { get; set; }
         public int Enrollment_ID { get; set; }
         public DateTime Date { get; set; }
-        public required Status Status { get; set; }
+        public required AttStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastUpdatedAt { get; set; }
         public string? CreatedBy { get; set; }
@@ -18,7 +18,7 @@ namespace Backend.Backend.DTOs
     {
         public required int Enrollment_ID { get; set; }
         public DateTime Date { get; set; }
-        public required Status Status { get; set; }
+        public required AttStatus Status { get; set; }
         public string? LastUpdatedBy { get; set; }
     }
 }

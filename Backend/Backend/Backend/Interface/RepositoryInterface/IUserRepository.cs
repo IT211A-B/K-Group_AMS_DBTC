@@ -10,5 +10,6 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task UpdateAsync(User user);
         Task DeleteAsync(User user);
         Task<User?> GetByEmailOrUsernameAsync(string emailOrUsername);
+        Task<long> GetNextStudentNumberAsync();
     }
 }

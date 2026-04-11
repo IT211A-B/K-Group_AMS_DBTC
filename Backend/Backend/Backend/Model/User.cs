@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Backend.Backend.Model
 {
@@ -16,6 +15,9 @@ namespace Backend.Backend.Model
     {
         [Key]
         public string User_ID { get; set; } = Ulid.NewUlid().ToString();
+
+        [MaxLength(16)]
+        public required string DocumentSeries { get; set; }
 
         [Required]
         [MaxLength(255)]

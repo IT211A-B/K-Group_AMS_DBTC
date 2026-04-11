@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Status = Backend.Backend.Helper.Enum.Status;
+using AttStatus = Backend.Backend.Helper.Enum.AttendanceEnum.AttStatus;
 
 namespace Backend.Backend.Model
 {
@@ -17,9 +17,9 @@ namespace Backend.Backend.Model
         public required DateTime Date { get; set; }
 
         [Required]
-        public required Status Status { get; set; } // Present, Absent, Late, Excused
+        public required AttStatus Status { get; set; } 
 
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } 
 
         public DateTime LastUpdatedAt { get; set; }
 

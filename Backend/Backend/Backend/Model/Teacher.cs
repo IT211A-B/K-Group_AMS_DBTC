@@ -17,6 +17,9 @@ namespace Backend.Backend.Model
         [Key]
         public string Teacher_ID { get; set; } = Ulid.NewUlid().ToString();
 
+        [MaxLength(16)]
+        public required string DocumentSeries { get; set; }
+
         [MaxLength(50)]
         [Required]
         public required string Department { get; set; }

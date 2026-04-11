@@ -3,6 +3,7 @@
     public class GetTeacherDTO
     {
         public string Teacher_ID { get; set; } = null!;
+        public string? DocumentSeries { get; set; }
         public required string Department { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastUpdatedAt { get; set; }

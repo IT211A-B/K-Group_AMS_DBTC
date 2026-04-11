@@ -6,7 +6,7 @@ namespace Backend.Backend.Interface.ServiceInterface
     {
         Task<IEnumerable<GetUserDTO>> GetAllAsync();
         Task<GetUserDTO?> GetByIdAsync(int id);
-        Task<GetUserDTO> AddAsync(AddUserDTO userDto);
+        Task<UserResponse> AddAsync(AddUserDTO userDto);
         Task<LoginResult> LoginAsync(LoginUserDto login);
         //Task<GetUserDTO?> UpdateAsync(int id, AddUserDTO userDto);
         Task<bool> DeleteAsync(int id);

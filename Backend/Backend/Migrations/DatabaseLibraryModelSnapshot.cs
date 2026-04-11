@@ -267,9 +267,8 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Backend.Model.Student", b =>
                 {
-                    b.Property<Guid>("Student_ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                    b.Property<string>("Student_ID")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -301,9 +300,8 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Backend.Model.Teacher", b =>
                 {
-                    b.Property<Guid>("Teacher_ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                    b.Property<string>("Teacher_ID")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -331,9 +329,8 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Backend.Model.User", b =>
                 {
-                    b.Property<Guid>("User_ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                    b.Property<string>("User_ID")
+                        .HasColumnType("text");
 
                     b.Property<string>("Address")
                         .HasMaxLength(512)

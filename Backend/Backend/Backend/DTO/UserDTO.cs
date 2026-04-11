@@ -1,11 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Backend.Backend.Model;
 
 namespace Backend.Backend.DTO
 {
     public class GetUserDTO
     {
-        public string User_ID { get; set; } = null!;
-        public string? Full_Name { get; set; }
+        public string? DocumentSeries { get; set; }
+        public required string Full_Name { get; set; }
         public required string Email { get; set; }
         public string? Phone_Number { get; set; }
         public char? Gender { get; set; }
@@ -20,7 +21,8 @@ namespace Backend.Backend.DTO
 
     public class AddUserDTO
     {
-        public string? Full_Name { get; set; }
+        public string? DocumentSeries { get; set; }
+        public required string Full_Name { get; set; }
         public required string Email { get; set; }
         public required string Password { get; set; }
         public string? Phone_Number { get; set; }
@@ -44,5 +46,11 @@ namespace Backend.Backend.DTO
     {
         public bool isSuccess { get; set; }  
         public string? Detail { get; set; }
+    }
+
+    public class UserResponse
+    {
+        public int Status_code { get; set; }
+        public User? Data { get; set; }
     }
 }

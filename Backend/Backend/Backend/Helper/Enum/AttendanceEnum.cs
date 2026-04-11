@@ -1,8 +1,8 @@
-﻿namespace Backend.Backend.Helper
+﻿namespace Backend.Backend.Helper.Enum
 {
-    public class Enum
+    public class AttendanceEnum
     {
-        public enum Status
+        public enum AttStatus
         {
             Present,
             Absent,

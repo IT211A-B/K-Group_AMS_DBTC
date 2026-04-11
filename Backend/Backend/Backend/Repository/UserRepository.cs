@@ -42,5 +42,13 @@ namespace Backend.Backend.Repository
             _db.Users.Remove(user);
             await _db.SaveChangesAsync();
         }
+
+        public async Task<long> GetNextStudentNumberAsync()
+        {
+            var result = await _db.Database
+                .SqlQuery<long>($"SELECT NEXT VALUE FOR StudentSeq")
+                .SingleAsync();
+            return result;
+        }
     }
 }
