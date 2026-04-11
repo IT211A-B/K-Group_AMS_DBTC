@@ -3,7 +3,6 @@
         type: 'GET', url: '/api/User', dataType: 'json',
         success: function (r) {
             var arr = Array.isArray(r) ? r : [];
-            // count by userGroup — but we just show total users for now
         }
     });
     $.ajax({

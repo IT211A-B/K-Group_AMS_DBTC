@@ -49,7 +49,6 @@ function addStudent(userData, studentData, cb) {
 function updateStudent(userId, userData, studentId, studentData, cb) {
     $('#page-loader').fadeIn(150);
 
-    // Step 1: GET current user to preserve password hash
     $.ajax({
         type: 'GET', url: '/api/User/' + userId, dataType: 'json',
         success: function (currentUser) {

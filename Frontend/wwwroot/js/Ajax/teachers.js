@@ -49,13 +49,10 @@ function addTeacher(userData, teacherData, cb) {
 function updateTeacher(userId, userData, teacherId, teacherData, cb) {
     $('#page-loader').fadeIn(150);
 
-    // Step 1: GET current user to get existing passHash
     $.ajax({
         type: 'GET', url: '/api/User/' + userId, dataType: 'json',
         success: function (currentUser) {
-            // Use existing hash as the password so backend can re-hash it
-            // BUT since UserService hashes whatever we send, we skip user update
-            // if only teacher info changed — just update teacher record
+       
             var updateUserData = {
                 user_ID: parseInt(userId),
                 full_Name: userData.full_Name,
