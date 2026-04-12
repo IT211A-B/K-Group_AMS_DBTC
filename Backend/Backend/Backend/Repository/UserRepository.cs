@@ -43,10 +43,10 @@ namespace Backend.Backend.Repository
             await _db.SaveChangesAsync();
         }
 
-        public async Task<long> GetNextStudentNumberAsync()
+        public async Task<long> GetNextUserNumberAsync()
         {
             var result = await _db.Database
-                .SqlQuery<long>($"SELECT NEXT VALUE FOR StudentSeq")
+                .SqlQuery<long>($"SELECT nextval('UserSeq') AS \"Value\"")
                 .SingleAsync();
             return result;
         }

@@ -36,5 +36,17 @@ namespace Backend.Backend.Repository
             _db.Teachers.Remove(teacher);
             await _db.SaveChangesAsync();
         }
+
+        public async Task<Department?> GetDepartmentById(int ID)
+        {
+            return await _db.Departments.FindAsync(ID);
+        }
+
+        public async Task<long> GetNextTeacherNumberAsync()
+        {
+            return await _db.Database
+                .SqlQuery<long>($"SELECT nextval('TeacherSeq') AS \"Value\"")
+                .SingleAsync();
+        }
     }
 }

@@ -2,9 +2,8 @@
 {
     public class GetTeacherDTO
     {
-        public string Teacher_ID { get; set; } = null!;
         public string? DocumentSeries { get; set; }
-        public required string Department { get; set; }
+        public required int DepartmentId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastUpdatedAt { get; set; }
         public string? CreatedBy { get; set; }
@@ -13,7 +12,7 @@
 
     public class AddTeacherDTO
     {
-        public required string Department { get; set; }
+        public required int DepartmentId { get; set; }
         public string? LastUpdatedBy { get; set; }
     }
 }

@@ -19,7 +19,7 @@ namespace Backend.Backend.Service
             var students = await _studentRepository.GetAllAsync();
             return students.Select(s => new GetStudentDTO
             {
-                Student_ID = s.Student_ID,
+                DocumentSeries = s.DocumentSeries,
                 Program_ID = s.Program_ID,
                 Department_ID = s.Department_ID,
                 Year_Level = s.Year_Level,
@@ -37,7 +37,7 @@ namespace Backend.Backend.Service
 
             return new GetStudentDTO
             {
-                Student_ID = s.Student_ID,
+                DocumentSeries = s.DocumentSeries,
                 Program_ID = s.Program_ID,
                 Department_ID = s.Department_ID,
                 Year_Level = s.Year_Level,
@@ -50,8 +50,20 @@ namespace Backend.Backend.Service
 
         public async Task<GetStudentDTO> AddAsync(AddStudentDTO dto)
         {
+            // Get Program
+            var get_program = await _studentRepository.GetProgramByIdAsync(dto.Program_ID);
+            // Get Student Program's Ackronym
+            string getStudentProgram = Helper.GetAcronym.GetAllCapitalLettersPerWord(get_program!.Name);
+            // Get Year
+            int getYear = DateTime.Now.Year;
+            // Get Student Id
+            long getId = await _studentRepository.GetNextStudentNumber();
+            // Generate Document Series
+            string DocSer = $"{getStudentProgram}-{getYear}-{getId}";
+
             var student = new Student
             {
+                DocumentSeries = DocSer,
                 Program_ID = dto.Program_ID,
                 Department_ID = dto.Department_ID,
                 Year_Level = dto.Year_Level,
@@ -64,7 +76,7 @@ namespace Backend.Backend.Service
 
             return new GetStudentDTO
             {
-                Student_ID = student.Student_ID,
+                DocumentSeries = student.DocumentSeries,
                 Program_ID = student.Program_ID,
                 Department_ID = student.Department_ID,
                 Year_Level = student.Year_Level,
@@ -90,7 +102,7 @@ namespace Backend.Backend.Service
 
             return new GetStudentDTO
             {
-                Student_ID = existing.Student_ID,
+                DocumentSeries = existing.DocumentSeries,
                 Program_ID = existing.Program_ID,
                 Department_ID = existing.Department_ID,
                 Year_Level = existing.Year_Level,

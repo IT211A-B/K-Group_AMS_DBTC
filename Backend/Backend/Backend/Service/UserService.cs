@@ -22,17 +22,14 @@ namespace Backend.Backend.Service
             var users = await _userRepository.GetAllAsync();
             return users.Select(u => new GetUserDTO
             {
+                DocumentSeries = u.DocumentSeries,
                 Full_Name = u.Full_Name,
                 Email = u.Email,
                 Phone_Number = u.Phone_Number,
-                Gender = u.Gender,
+                Sex = u.Sex,
                 Birth_Date = u.Birth_Date,
                 Address = u.Address,
                 UserGroup_ID = u.UserGroup_ID,
-                CreatedAt = u.CreatedAt,
-                LastUpdatedAt = u.LastUpdatedAt,
-                CreatedBy = u.CreatedBy,
-                LastUpdatedBy = u.LastUpdatedBy
             });
         }
 
@@ -43,17 +40,14 @@ namespace Backend.Backend.Service
 
             return new GetUserDTO
             {
+                DocumentSeries = u.DocumentSeries,
                 Full_Name = u.Full_Name,
                 Email = u.Email,
                 Phone_Number = u.Phone_Number,
-                Gender = u.Gender,
+                Sex = u.Sex,
                 Birth_Date = u.Birth_Date,
                 Address = u.Address,
                 UserGroup_ID = u.UserGroup_ID,
-                CreatedAt = u.CreatedAt,
-                LastUpdatedAt = u.LastUpdatedAt,
-                CreatedBy = u.CreatedBy,
-                LastUpdatedBy = u.LastUpdatedBy
             };
         }
 
@@ -86,7 +80,7 @@ namespace Backend.Backend.Service
             // Get Year
             int year = DateTime.Now.Year;
             // Get the next student number used by sequence that we made early in migration and such
-            long id = await _userRepository.GetNextStudentNumberAsync();
+            long id = await _userRepository.GetNextUserNumberAsync();
             // Add Document Series
             string DocSer = $"{role}-{year}-{id}";
 
@@ -97,22 +91,34 @@ namespace Backend.Backend.Service
                 Email = userDto.Email,
                 PassHash = Pass_Hash,
                 Phone_Number = userDto.Phone_Number,
-                Gender = userDto.Gender,
+                Sex = userDto.Sex,
                 Birth_Date = userDto.Birth_Date,
                 Address = userDto.Address,
                 UserGroup_ID = userDto.UserGroup_ID,
                 CreatedAt = DateTime.UtcNow,
                 LastUpdatedAt = DateTime.UtcNow,
-                CreatedBy = userDto.LastUpdatedBy,
-                LastUpdatedBy = userDto.LastUpdatedBy
+                CreatedBy = "Admin",
+                LastUpdatedBy = "Admin"
             };
 
             await _userRepository.AddAsync(user);
 
+            GetUserDTO show = new GetUserDTO()
+            {
+                DocumentSeries = user.DocumentSeries,
+                Full_Name = user.Full_Name,
+                Email = user.Email,
+                Phone_Number = user.Phone_Number,
+                Sex = user.Sex,
+                Birth_Date = user.Birth_Date,
+                Address = user.Address,
+                UserGroup_ID = user.UserGroup_ID
+            };
+
             return new UserResponse
             {
                 Status_code = 200,
-                Data = user
+                Data = show
             };
         }
 
@@ -150,7 +156,7 @@ namespace Backend.Backend.Service
         //    existing.Email = userDto.Email;
         //    existing.PassHash = userDto.PassHash;
         //    existing.Phone_Number = userDto.Phone_Number;
-        //    existing.Gender = userDto.Gender;
+        //    existing.Sex = userDto.Sex;
         //    existing.Birth_Date = userDto.Birth_Date;
         //    existing.Address = userDto.Address;
         //    existing.UserGroup_ID = userDto.UserGroup_ID;
@@ -165,7 +171,7 @@ namespace Backend.Backend.Service
         //        Full_Name = existing.Full_Name,
         //        Email = existing.Email,
         //        Phone_Number = existing.Phone_Number,
-        //        Gender = existing.Gender,
+        //        Sex = existing.Sex,
         //        Birth_Date = existing.Birth_Date,
         //        Address = existing.Address,
         //        UserGroup_ID = existing.UserGroup_ID,

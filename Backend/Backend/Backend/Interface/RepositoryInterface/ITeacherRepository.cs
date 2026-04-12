@@ -9,5 +9,7 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task AddAsync(Teacher teacher);
         Task UpdateAsync(Teacher teacher);
         Task DeleteAsync(Teacher teacher);
+        Task<Department?> GetDepartmentById(int ID);
+        Task<long> GetNextTeacherNumberAsync();
     }
 }

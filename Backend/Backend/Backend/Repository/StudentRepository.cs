@@ -36,5 +36,17 @@ namespace Backend.Backend.Repository
             _db.Students.Remove(student);
             await _db.SaveChangesAsync();
         }
+
+        public async Task<Program_?> GetProgramByIdAsync(int id)
+        {
+            return await _db.Programs.FindAsync(id);
+        }
+
+        public async Task<long> GetNextStudentNumber()
+        {
+            return await _db.Database
+                .SqlQuery<long>($"SELECT nextval('StudentSeq') AS \"Value\"")
+                .SingleAsync();
+        }
     }
 }
