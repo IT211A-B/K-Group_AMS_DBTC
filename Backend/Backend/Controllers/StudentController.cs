@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
+using System.ComponentModel;
 
 namespace Backend.Backend.Controller
 {
@@ -39,6 +40,12 @@ namespace Backend.Backend.Controller
         public async Task<IActionResult> Add(AddStudentDTO dto)
         {
             var student = await _studentService.AddAsync(dto);
+
+            if (student.Status_Code == 503)
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, "Service Unavailable: Program Does not Exist or The Program does not have");
+            }
+
             return Ok(student);
         }
 

@@ -19,12 +19,9 @@ namespace Backend.Backend.Service
             var teachers = await _teacherRepository.GetAllAsync();
             return teachers.Select(t => new GetTeacherDTO
             {
+                User_ID = t.User_ID,
                 DocumentSeries = t.DocumentSeries,
                 DepartmentId = t.DepartmentId,
-                CreatedAt = t.CreatedAt,
-                LastUpdatedAt = t.LastUpdatedAt,
-                CreatedBy = t.CreatedBy,
-                LastUpdatedBy = t.LastUpdatedBy
             });
         }
 
@@ -35,12 +32,9 @@ namespace Backend.Backend.Service
 
             return new GetTeacherDTO
             {
+                User_ID = t.User_ID,
                 DocumentSeries = t.DocumentSeries,
                 DepartmentId = t.DepartmentId,
-                CreatedAt = t.CreatedAt,
-                LastUpdatedAt = t.LastUpdatedAt,
-                CreatedBy = t.CreatedBy,
-                LastUpdatedBy = t.LastUpdatedBy
             };
         }
 
@@ -60,23 +54,20 @@ namespace Backend.Backend.Service
 
             var teacher = new Teacher
             {
+                User_ID=dto.User_ID,
                 DocumentSeries = docSer,
                 DepartmentId = dto.DepartmentId,
                 CreatedAt = DateTime.UtcNow,
                 LastUpdatedAt = DateTime.UtcNow,
-                LastUpdatedBy = dto.LastUpdatedBy
             };
 
             await _teacherRepository.AddAsync(teacher);
 
             return new GetTeacherDTO
             {
+                User_ID = teacher.User_ID,
                 DocumentSeries = teacher.DocumentSeries,
                 DepartmentId = teacher.DepartmentId,
-                CreatedAt = teacher.CreatedAt,
-                LastUpdatedAt = teacher.LastUpdatedAt,
-                CreatedBy = teacher.CreatedBy,
-                LastUpdatedBy = teacher.LastUpdatedBy
             };
         }
 
@@ -87,17 +78,12 @@ namespace Backend.Backend.Service
 
             existing.DepartmentId = dto.DepartmentId;
             existing.LastUpdatedAt = DateTime.UtcNow;
-            existing.LastUpdatedBy = dto.LastUpdatedBy;
-
             await _teacherRepository.UpdateAsync(existing);
 
             return new GetTeacherDTO
             {
+                User_ID = existing.User_ID,
                 DepartmentId = existing.DepartmentId,
-                CreatedAt = existing.CreatedAt,
-                LastUpdatedAt = existing.LastUpdatedAt,
-                CreatedBy = existing.CreatedBy,
-                LastUpdatedBy = existing.LastUpdatedBy
             };
         }
 

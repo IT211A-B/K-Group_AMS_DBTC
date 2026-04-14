@@ -19,14 +19,11 @@ namespace Backend.Backend.Service
             var students = await _studentRepository.GetAllAsync();
             return students.Select(s => new GetStudentDTO
             {
+                User_ID = s.User_ID,
                 DocumentSeries = s.DocumentSeries,
                 Program_ID = s.Program_ID,
                 Department_ID = s.Department_ID,
                 Year_Level = s.Year_Level,
-                CreatedAt = s.CreatedAt,
-                LastUpdatedAt = s.LastUpdatedAt,
-                CreatedBy = s.CreatedBy,
-                LastUpdatedBy = s.LastUpdatedBy
             });
         }
 
@@ -37,24 +34,30 @@ namespace Backend.Backend.Service
 
             return new GetStudentDTO
             {
+                User_ID = s.User_ID,
                 DocumentSeries = s.DocumentSeries,
                 Program_ID = s.Program_ID,
                 Department_ID = s.Department_ID,
                 Year_Level = s.Year_Level,
-                CreatedAt = s.CreatedAt,
-                LastUpdatedAt = s.LastUpdatedAt,
-                CreatedBy = s.CreatedBy,
-                LastUpdatedBy = s.LastUpdatedBy
             };
         }
 
-        public async Task<GetStudentDTO> AddAsync(AddStudentDTO dto)
+        public async Task<StudentResponse> AddAsync(AddStudentDTO dto)
         {
             // Get Program
             var get_program = await _studentRepository.GetProgramByIdAsync(dto.Program_ID);
             // Get Student Program's Ackronym
             string getStudentProgram = Helper.GetAcronym.GetAllCapitalLettersPerWord(get_program!.Name);
-            // Get Year
+            // check if the there are program or THE PROGRAM NAME IS NOT CAPITAL 
+            if (getStudentProgram is null)
+            {
+                return new StudentResponse
+                {
+                    Status_Code = 503,
+                    data = null
+                };
+            }
+                // Get Year
             int getYear = DateTime.Now.Year;
             // Get Student Id
             long getId = await _studentRepository.GetNextStudentNumber();
@@ -63,27 +66,30 @@ namespace Backend.Backend.Service
 
             var student = new Student
             {
+                User_ID = dto.User_ID,
                 DocumentSeries = DocSer,
                 Program_ID = dto.Program_ID,
                 Department_ID = dto.Department_ID,
                 Year_Level = dto.Year_Level,
                 CreatedAt = DateTime.UtcNow,
                 LastUpdatedAt = DateTime.UtcNow,
-                LastUpdatedBy = dto.LastUpdatedBy
             };
 
             await _studentRepository.AddAsync(student);
 
-            return new GetStudentDTO
+            var data = new GetStudentDTO
             {
+                User_ID = student.User_ID,
                 DocumentSeries = student.DocumentSeries,
                 Program_ID = student.Program_ID,
                 Department_ID = student.Department_ID,
                 Year_Level = student.Year_Level,
-                CreatedAt = student.CreatedAt,
-                LastUpdatedAt = student.LastUpdatedAt,
-                CreatedBy = student.CreatedBy,
-                LastUpdatedBy = student.LastUpdatedBy
+            };
+
+            return new StudentResponse
+            {
+                Status_Code = 200,
+                data = data
             };
         }
 
@@ -96,20 +102,16 @@ namespace Backend.Backend.Service
             existing.Department_ID = dto.Department_ID;
             existing.Year_Level = dto.Year_Level;
             existing.LastUpdatedAt = DateTime.UtcNow;
-            existing.LastUpdatedBy = dto.LastUpdatedBy;
 
             await _studentRepository.UpdateAsync(existing);
 
             return new GetStudentDTO
             {
+                User_ID = existing.User_ID,
                 DocumentSeries = existing.DocumentSeries,
                 Program_ID = existing.Program_ID,
                 Department_ID = existing.Department_ID,
                 Year_Level = existing.Year_Level,
-                CreatedAt = existing.CreatedAt,
-                LastUpdatedAt = existing.LastUpdatedAt,
-                CreatedBy = existing.CreatedBy,
-                LastUpdatedBy = existing.LastUpdatedBy
             };
         }
 

@@ -295,6 +295,9 @@ namespace Backend.Migrations
                     b.Property<int>("Program_ID")
                         .HasColumnType("integer");
 
+                    b.Property<int>("User_ID")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Year_Level")
                         .HasColumnType("integer");
 
@@ -329,6 +332,9 @@ namespace Backend.Migrations
                     b.Property<string>("LastUpdatedBy")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<int>("User_ID")
+                        .HasColumnType("integer");
 
                     b.HasKey("Teacher_ID");
 

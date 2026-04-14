@@ -22,6 +22,9 @@ namespace Backend.Backend.Model
         public required string DocumentSeries { get; set; }
 
         [Required]
+        public required int User_ID { get; set; }
+
+        [Required]
         public required int DepartmentId { get; set; }
 
         public DateTime CreatedAt {get; set;}

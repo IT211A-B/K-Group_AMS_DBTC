@@ -5,20 +5,24 @@ namespace Backend.Backend.Helper
     public static class GetAcronym
     {
         // Convert Into Acronym Every First Capital Letter Each Word
-        public static string GetAllCapitalLettersPerWord(this string Title)
+        public static string GetAllCapitalLettersPerWord(this string title)
         {
-            // No new string every loop
-            StringBuilder ackronym = new StringBuilder();
+            if (string.IsNullOrWhiteSpace(title))
+                return string.Empty;
 
-            string[] words = Title.Split(' ');
+            StringBuilder acronym = new StringBuilder();
+
+            string[] words = title.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
             foreach (string word in words)
             {
-                if (!string.IsNullOrEmpty(word) && char.IsUpper(word[1]))
+                if (!string.IsNullOrEmpty(word) && char.IsLetter(word[0]) && char.IsUpper(word[0]))
                 {
-                    ackronym.Append(word[0]);
+                    acronym.Append(char.ToUpper(word[0]));
                 }
             }
-            return ackronym.ToString();
+
+            return acronym.ToString();
         }
     }
 }

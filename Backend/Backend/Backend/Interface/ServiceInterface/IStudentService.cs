@@ -1,4 +1,5 @@
 ﻿using Backend.Backend.DTOs;
+using Backend.Backend.Repository;
 
 namespace Backend.Backend.Interface.ServiceInterface
 {
@@ -6,7 +7,7 @@ namespace Backend.Backend.Interface.ServiceInterface
     {
         Task<IEnumerable<GetStudentDTO>> GetAllAsync();
         Task<GetStudentDTO?> GetByIdAsync(int id);
-        Task<GetStudentDTO> AddAsync(AddStudentDTO dto);
+        Task<StudentResponse> AddAsync(AddStudentDTO dto);
         Task<GetStudentDTO?> UpdateAsync(int id, AddStudentDTO dto);
         Task<bool> DeleteAsync(int id);
     }
