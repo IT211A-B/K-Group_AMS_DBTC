@@ -1,6 +1,8 @@
 ﻿@{
     Layout = "_Layout";
     ViewData["Title"] = "My Courses";
+    var userId = Context.Session.GetString("UserId") ?? "";
+    var userName = Context.Session.GetString("UserName") ?? "Student";
 }
 <div class="page-header">
     <div>
@@ -11,8 +13,13 @@
         </ol>
     </div>
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#enrollModal">
-        <i class="bi bi-plus-circle"></i> Enroll in Course
+        <i class="bi bi-plus-circle"></i> Co-Enroll in Course
     </button>
+</div>
+
+<div id="absAlert" class="alert alert-danger d-none mb-3">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <span id="absAlertMsg"></span>
 </div>
 
 <div class="card">
@@ -22,44 +29,34 @@
     <div class="table-wrapper">
         <table class="table table-striped">
             <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Course Code</th>
-                    <th>Course Name</th>
-                    <th>Credits</th>
-                    <th>Teacher</th>
-                    <th>Actions</th>
-                </tr>
+                <tr><th>#</th><th>Code</th><th>Course Name</th><th>Assigned Teacher</th><th>Absences</th><th>Actions</th></tr>
             </thead>
             <tbody id="enrolledBody"></tbody>
         </table>
     </div>
 </div>
 
-<!-- Enroll Modal -->
+<!-- Co-Enroll Modal -->
 <div class="modal fade" id="enrollModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Enroll in Course</h5>
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Co-Enroll in Course</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <p class="text-muted mb-3" style="font-size:13px;">Select an available course. The assigned teacher will be shown automatically.</p>
                 <div class="mb-3">
-                    <label class="form-label">Course Name</label>
-                    <input type="text" class="form-control" id="newCourseName" placeholder="e.g. Web Development" />
+                    <label class="form-label">Available Course <span class="text-danger">*</span></label>
+                    <select class="form-select" id="enrollCourseSelect"><option value="">Loading courses…</option></select>
+                </div>
+                <div id="coursePreviewBox" class="p-3 rounded mb-3 d-none" style="background:#F0F4FF;font-size:13px;">
+                    <div><strong>Teacher:</strong> <span id="previewTeacher">—</span></div>
+                    <div><strong>Description:</strong> <span id="previewDesc">—</span></div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Course Code</label>
-                    <input type="text" class="form-control" id="newCourseCode" placeholder="e.g. WEB101" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Credits</label>
-                    <input type="number" class="form-control" id="newCourseCredits" value="3" min="1" max="6" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Teacher</label>
-                    <input type="text" class="form-control" id="newCourseTeacher" placeholder="e.g. Mr. Santos" />
+                    <label class="form-label">Schedule <span class="text-danger">*</span></label>
+                    <select class="form-select" id="enrollScheduleSelect"><option value="">Select a course first</option></select>
                 </div>
             </div>
             <div class="modal-footer">
@@ -70,54 +67,162 @@
     </div>
 </div>
 
+<!-- Drop Course Modal -->
+<div class="modal fade" id="dropModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-dash-circle"></i> Request Course Drop</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px;">Dropping a course will notify your teacher. Please provide a reason.</p>
+                <input type="hidden" id="dropEid">
+                <div id="dropCourseInfo" class="mb-3 p-2 rounded" style="background:#FEF3C7;font-size:13px;"></div>
+                <div class="mb-3">
+                    <label class="form-label">Reason <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="dropReason" rows="4" placeholder="Explain why you want to drop this course…"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-danger" id="confirmDropBtn"><i class="bi bi-dash-circle"></i> Submit Drop Request</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
-        var enrolled = [
-            { id:1, code:'PROG1', name:'Programming 1',     credits:3, teacher:'Mr. Garcia'  },
-            { id:2, code:'DS101', name:'Data Structures',   credits:3, teacher:'Ms. Santos'  },
-            { id:3, code:'WEB1',  name:'Web Development',   credits:3, teacher:'Mr. Reyes'   },
-        ];
-        var nextCid = 4;
+        var currentUserId='@userId', currentUserName='@userName';
+        var myEnrollments=[],allCourses=[],allTeachers=[],allUsers=[],allSchedules=[],allAtt=[];
 
-        function renderEnrolled() {
-            var html = '';
-            if (!enrolled.length) {
-                html = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox" style="font-size:2rem;display:block;opacity:.3;"></i>No enrolled courses.</td></tr>';
+        function tName(tid){
+            var t=allTeachers.find(function(x){ return String(x.teacher_ID||x.id)===String(tid); });
+            var u=t?allUsers.find(function(x){ return String(x.user_ID)===String(t.user_ID||t.userId); }):null;
+            return u?u.full_Name:(tid?'Teacher #'+tid:'—');
+        }
+
+        function absCount(eid){
+            return allAtt.filter(function(a){ return String(a.enrollment_ID)===String(eid)&&(a.status||'').toLowerCase()==='absent'; }).length;
+        }
+
+        function renderEnrolled(){
+            var html='';
+            if(!myEnrollments.length){
+                html='<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox" style="font-size:2rem;display:block;opacity:.3;"></i>No enrolled courses.</td></tr>';
             } else {
-                enrolled.forEach(function (c, i) {
-                    html += '<tr><td>'+(i+1)+'</td>' +
-                        '<td><span class="badge" style="background:#DBEAFE;color:var(--accent);padding:5px 10px;border-radius:6px;">'+c.code+'</span></td>' +
-                        '<td>'+c.name+'</td><td>'+c.credits+' units</td><td>'+c.teacher+'</td>' +
-                        '<td><button class="btn btn-sm btn-outline-danger btn-icon drop-btn" data-id="'+c.id+'" data-name="'+c.name+'" title="Drop"><i class="bi bi-trash3"></i></button></td></tr>';
+                myEnrollments.forEach(function(enr,i){
+                    var eid=enr.enrollment_ID||enr.id;
+                    var course=allCourses.find(function(c){ return String(c.course_ID||c.id)===String(enr._courseId); });
+                    var title=course?(course.title||'—'):'—', code=course?(course.code||'—'):'—';
+                    var teacher=course?tName(course.teacher_ID):'—';
+                    var abs=absCount(eid);
+                    var absBadge=abs>=5?'<span class="badge badge-absent">'+abs+' &#9888;</span>':'<span style="background:#F1F5F9;color:var(--text);font-size:11px;padding:2px 8px;border-radius:20px;">'+abs+'</span>';
+                    html+='<tr>'
+                        +'<td>'+(i+1)+'</td>'
+                        +'<td><span style="background:#DBEAFE;color:var(--accent);padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">'+code+'</span></td>'
+                        +'<td><strong>'+title+'</strong></td>'
+                        +'<td><div class="d-flex align-items-center gap-2">'
+                        +'<div style="width:28px;height:28px;border-radius:50%;background:#16A34A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">'+(teacher[0]||'T').toUpperCase()+'</div>'
+                        +teacher+'</div></td>'
+                        +'<td>'+absBadge+'</td>'
+                        +'<td><button class="btn btn-sm btn-outline-danger drop-btn" data-eid="'+eid+'" data-cname="'+title+'" data-teacher="'+teacher+'"><i class="bi bi-dash-circle"></i> Drop</button></td>'
+                        +'</tr>';
                 });
             }
             $('#enrolledBody').html(html);
+            var maxAbs=myEnrollments.reduce(function(m,e){ return Math.max(m,absCount(e.enrollment_ID||e.id)); },0);
+            if(maxAbs>=5){ $('#absAlertMsg').text('You have '+maxAbs+' or more absences. Please contact your teacher.'); $('#absAlert').removeClass('d-none'); }
+            else { $('#absAlert').addClass('d-none'); }
         }
 
-        $(function () {
-            renderEnrolled();
-
-            $('#enrollBtn').on('click', function () {
-                var name    = $('#newCourseName').val().trim();
-                var code    = $('#newCourseCode').val().trim();
-                var credits = $('#newCourseCredits').val();
-                var teacher = $('#newCourseTeacher').val().trim();
-                if (!name || !code) { showToast('Course name and code required.', 'warning'); return; }
-                enrolled.push({ id: nextCid++, code: code, name: name, credits: credits, teacher: teacher || 'TBA' });
+        function loadMyData(){
+            $('#page-loader').fadeIn(150);
+            $.when(
+                $.ajax({url:'/AttendanceManagement/Enrollment',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Course',dataType:'json'}),
+                $.ajax({url:'/api/Teacher',dataType:'json'}),
+                $.ajax({url:'/api/User',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Schedule',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Attendance',dataType:'json'}),
+                $.ajax({url:'/api/Student',dataType:'json'})
+            ).done(function(eR,cR,tR,uR,sR,aR,stR){
+                var allEnr=Array.isArray(eR[0])?eR[0]:[];
+                allCourses=Array.isArray(cR[0])?cR[0]:[];
+                allTeachers=Array.isArray(tR[0])?tR[0]:[];
+                allUsers=Array.isArray(uR[0])?uR[0]:[];
+                allSchedules=Array.isArray(sR[0])?sR[0]:[];
+                allAtt=Array.isArray(aR[0])?aR[0]:[];
+                var allStus=Array.isArray(stR[0])?stR[0]:[];
+                var myStu=allStus.find(function(s){ return String(s.user_ID||s.userId)===String(currentUserId); });
+                var mySid=myStu?(myStu.student_ID||myStu.id):null;
+                myEnrollments=allEnr.filter(function(e){ return String(e.student_ID)===String(mySid); });
+                myEnrollments.forEach(function(e){
+                    var sch=allSchedules.find(function(s){ return String(s.schedule_ID||s.id)===String(e.schedule_ID); });
+                    e._courseId=sch?(sch.course_ID||sch.courseId):null;
+                });
                 renderEnrolled();
-                $('#enrollModal').modal('hide');
-                $('#newCourseName,#newCourseCode,#newCourseTeacher').val('');
-                $('#newCourseCredits').val('3');
-                showToast('Enrolled successfully.', 'success');
+                $('#page-loader').fadeOut(200);
+            }).fail(function(){ $('#page-loader').fadeOut(200); showToast('Failed to load courses.','error'); });
+        }
+
+        $(function(){
+            loadMyData();
+
+            $('#enrollModal').on('show.bs.modal',function(){
+                var o='<option value="">Select a course</option>';
+                allCourses.forEach(function(c){ o+='<option value="'+(c.course_ID||c.id)+'">'+(c.code||'')+' — '+(c.title||'')+'</option>'; });
+                $('#enrollCourseSelect').html(o);
+                $('#coursePreviewBox').addClass('d-none');
+                $('#enrollScheduleSelect').html('<option value="">Select a course first</option>');
             });
 
-            $(document).on('click', '.drop-btn', function () {
-                var id   = parseInt($(this).data('id'));
-                var name = $(this).data('name');
-                confirmDelete(name, function () {
-                    enrolled = enrolled.filter(function (c) { return c.id !== id; });
-                    renderEnrolled();
-                    showToast('Course dropped.', 'success');
+            $('#enrollCourseSelect').on('change',function(){
+                var cid=$(this).val();
+                var c=allCourses.find(function(x){ return String(x.course_ID||x.id)===String(cid); });
+                if(!c){ $('#coursePreviewBox').addClass('d-none'); return; }
+                $('#previewTeacher').text(tName(c.teacher_ID));
+                $('#previewDesc').text(c.description||'—');
+                $('#coursePreviewBox').removeClass('d-none');
+                var schOpts='<option value="">Select schedule</option>';
+                allSchedules.filter(function(s){ return String(s.course_ID||s.courseId)===String(cid); }).forEach(function(s){ schOpts+='<option value="'+(s.schedule_ID||s.id)+'">Schedule #'+(s.schedule_ID||s.id)+'</option>'; });
+                if(schOpts==='<option value="">Select schedule</option>') schOpts+='<option disabled>No schedules available</option>';
+                $('#enrollScheduleSelect').html(schOpts);
+            });
+
+            $('#enrollBtn').on('click',function(){
+                var schId=$('#enrollScheduleSelect').val();
+                if(!schId){ showToast('Please select a schedule.','warning'); return; }
+                $.ajax({url:'/api/Student',dataType:'json',success:function(allS){
+                    var me=allS.find(function(s){ return String(s.user_ID||s.userId)===String(currentUserId); });
+                    if(!me){ showToast('Student record not found.','error'); return; }
+                    $.ajax({type:'POST',url:'/AttendanceManagement/Enrollment',contentType:'application/json',dataType:'json',
+                        data:JSON.stringify({student_ID:parseInt(me.student_ID||me.id),schedule_ID:parseInt(schId)}),
+                        beforeSend:function(){ $('#page-loader').fadeIn(150); },
+                        success:function(){ $('#page-loader').fadeOut(200); $('#enrollModal').modal('hide'); showToast('Enrolled successfully!','success'); loadMyData(); },
+                        error:function(x){ $('#page-loader').fadeOut(200); showToast((x.responseJSON&&x.responseJSON.message)||'Enrollment failed.','error'); }
+                    });
+                }});
+            });
+
+            $(document).on('click','.drop-btn',function(){
+                var eid=$(this).data('eid'),cname=$(this).data('cname'),teacher=$(this).data('teacher');
+                $('#dropEid').val(eid);
+                $('#dropCourseInfo').html('<strong>Course:</strong> '+cname+'<br><strong>Teacher:</strong> '+teacher);
+                $('#dropReason').val('');
+                $('#dropModal').modal('show');
+            });
+
+            $('#confirmDropBtn').on('click',function(){
+                var eid=$('#dropEid').val(), reason=$('#dropReason').val().trim();
+                if(!reason){ showToast('Please provide a reason.','warning'); return; }
+                pushNotification('Drop Request — '+currentUserName,'Student '+currentUserName+' requests to drop Enrollment #'+eid+'. Reason: '+reason,'warning','teacher');
+                pushNotification('Drop Request — '+currentUserName,'Student '+currentUserName+' requests to drop Enrollment #'+eid+'. Reason: '+reason,'warning','admin');
+                $.ajax({type:'DELETE',url:'/AttendanceManagement/Enrollment/'+eid,
+                    beforeSend:function(){ $('#page-loader').fadeIn(150); },
+                    success:function(){ $('#page-loader').fadeOut(200); $('#dropModal').modal('hide'); showToast('Drop request submitted. Teacher has been notified.','success'); loadMyData(); },
+                    error:function(){ $('#page-loader').fadeOut(200); showToast('Failed to drop course.','error'); }
                 });
             });
         });

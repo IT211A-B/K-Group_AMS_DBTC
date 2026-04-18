@@ -39,28 +39,22 @@
                 @if (isAdmin)
                 {
                     <div class="sidebar-label">MAIN</div>
-                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Dashboard" ? "active" : "")"
-                       href="/Admin/Dashboard">
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Dashboard" ? "active" : "")" href="/Admin/Dashboard">
                         <i class="bi bi-speedometer2"></i> Dashboard
                     </a>
-                    <a class="sidebar-link @(currentController == "Student" && currentAction == "Index" ? "active" : "")"
-                       href="/Student/Index">
+                    <a class="sidebar-link @(currentController == "Student" && currentAction == "Index" ? "active" : "")" href="/Student/Index">
                         <i class="bi bi-people"></i> Students
                     </a>
-                    <a class="sidebar-link @(currentController == "Teacher" && currentAction == "Index" ? "active" : "")"
-                       href="/Teacher/Index">
+                    <a class="sidebar-link @(currentController == "Teacher" && currentAction == "Index" ? "active" : "")" href="/Teacher/Index">
                         <i class="bi bi-person-badge"></i> Teachers
                     </a>
-                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Courses" ? "active" : "")"
-                       href="/Admin/Courses">
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Courses" ? "active" : "")" href="/Admin/Courses">
                         <i class="bi bi-journal-bookmark-fill"></i> Courses
                     </a>
-                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Attendance" ? "active" : "")"
-                       href="/Admin/Attendance">
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Attendance" ? "active" : "")" href="/Admin/Attendance">
                         <i class="bi bi-calendar-check"></i> Attendance
                     </a>
-                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "AttendanceHistory" ? "active" : "")"
-                       href="/Admin/AttendanceHistory">
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "AttendanceHistory" ? "active" : "")" href="/Admin/AttendanceHistory">
                         <i class="bi bi-clock-history"></i> History
                     </a>
                     <div class="sidebar-label">ACCOUNT</div>
@@ -74,16 +68,13 @@
                 else if (isTeacher)
                 {
                     <div class="sidebar-label">MAIN</div>
-                    <a class="sidebar-link @(currentAction == "Dashboard" ? "active" : "")"
-                       href="/Teacher/Dashboard">
+                    <a class="sidebar-link @(currentAction == "Dashboard" ? "active" : "")" href="/Teacher/Dashboard">
                         <i class="bi bi-speedometer2"></i> Dashboard
                     </a>
-                    <a class="sidebar-link @(currentController == "Student" && currentAction == "Index" ? "active" : "")"
-                       href="/Student/Index">
+                    <a class="sidebar-link @(currentController == "Student" && currentAction == "Index" ? "active" : "")" href="/Student/Index">
                         <i class="bi bi-people"></i> My Students
                     </a>
-                    <a class="sidebar-link @(currentAction == "Attendance" ? "active" : "")"
-                       href="/Teacher/Attendance">
+                    <a class="sidebar-link @(currentAction == "Attendance" ? "active" : "")" href="/Teacher/Attendance">
                         <i class="bi bi-calendar-check"></i> Take Attendance
                     </a>
                     <div class="sidebar-label">ACCOUNT</div>
@@ -97,12 +88,10 @@
                 else if (isStudent)
                 {
                     <div class="sidebar-label">PROFILE</div>
-                    <a class="sidebar-link @(currentAction == "Profile" ? "active" : "")"
-                       href="/Student/Profile">
+                    <a class="sidebar-link @(currentAction == "Profile" ? "active" : "")" href="/Student/Profile">
                         <i class="bi bi-person-circle"></i> My Profile
                     </a>
-                    <a class="sidebar-link @(currentAction == "Courses" ? "active" : "")"
-                       href="/Student/Courses">
+                    <a class="sidebar-link @(currentAction == "Courses" ? "active" : "")" href="/Student/Courses">
                         <i class="bi bi-journal-bookmark-fill"></i> My Courses
                     </a>
                     <a class="sidebar-link" href="/Login/Logout">
@@ -113,7 +102,7 @@
             </div>
 
             <div class="sidebar-footer">
-                <a href="#"><i class="bi bi-question-circle"></i> Help & Support</a>
+                <a href="#"><i class="bi bi-question-circle"></i> Help &amp; Support</a>
             </div>
         </aside>
 
@@ -126,19 +115,36 @@
                     <div class="topbar-title">@ViewData["Title"]</div>
                 </div>
                 <div class="topbar-right">
+
+                    @* Envelope button — students and teachers only *@
+                    @if (isStudent || isTeacher)
+                    {
+                        <button class="topbar-icon" id="openMsgBtn" title="Send message" style="position:relative;">
+                            <i class="bi bi-envelope"></i>
+                        </button>
+                    }
+
+                    @* Notification bell — all roles *@
                     <div class="dropdown">
-                        <button class="topbar-icon" data-bs-toggle="dropdown">
+                        <button class="topbar-icon" data-bs-toggle="dropdown" id="notifBellBtn" style="position:relative;">
                             <i class="bi bi-bell"></i>
                             <span class="badge-dot" id="notifDot" style="display:none;"></span>
                         </button>
-                        <div class="dropdown-menu dropdown-menu-end" style="width:280px;">
+                        <div class="dropdown-menu dropdown-menu-end" style="width:320px;max-height:420px;overflow-y:auto;">
                             <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                                <strong>Notifications</strong>
+                                <strong style="font-size:14px;">Notifications</strong>
                                 <a href="#" id="clearNotif" class="small text-muted">Clear all</a>
                             </div>
-                            <div id="notifList"></div>
+                            <div id="notifList">
+                                <div class="text-center text-muted py-4" style="font-size:13px;">
+                                    <i class="bi bi-bell-slash" style="font-size:2rem;display:block;opacity:.3;"></i>
+                                    No notifications
+                                </div>
+                            </div>
                         </div>
                     </div>
+
+                    @* User dropdown *@
                     <div class="dropdown">
                         <a class="topbar-user" data-bs-toggle="dropdown" style="cursor:pointer;">
                             <div class="topbar-avatar">@userInitial</div>
@@ -164,7 +170,83 @@
         </div>
     </div>
 
-    <!-- Delete Modal -->
+    @* Send Message Modal — students and teachers only *@
+    @if (isStudent || isTeacher)
+    {
+        <div class="modal fade" id="sendMsgModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="bi bi-envelope-plus"></i> Send Message</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">To <span class="text-danger">*</span></label>
+                            <select class="form-select" id="msgTo">
+                                <option value="admin">Admin</option>
+                                @if (isStudent)
+                                {
+                                    <option value="teacher">My Teacher</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" id="msgType">
+                                <option value="message">General Message</option>
+                                <option value="excuse">Excuse Letter</option>
+                                <option value="concern">Concern / Report</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Subject <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="msgSubject" placeholder="e.g. Absent on April 10 due to illness">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Message <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="msgBody" rows="5" placeholder="Write your message here…"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button class="btn btn-primary" id="sendMsgBtn"><i class="bi bi-send"></i> Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Attendance popup — Present / Absent / Late *@
+    <div class="modal fade" id="attPopupModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:340px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-calendar-check"></i> Mark Attendance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center pb-4">
+                    <p class="fw-semibold mb-4" id="attPopupName" style="font-size:15px;"></p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <button class="btn btn-success att-status-btn" data-status="Present"
+                                style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
+                            <i class="bi bi-check-circle-fill" style="font-size:22px;"></i>Present
+                        </button>
+                        <button class="btn btn-danger att-status-btn" data-status="Absent"
+                                style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
+                            <i class="bi bi-x-circle-fill" style="font-size:22px;"></i>Absent
+                        </button>
+                        <button class="btn btn-warning att-status-btn" data-status="Late"
+                                style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
+                            <i class="bi bi-clock-fill" style="font-size:22px;"></i>Late
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Delete confirm modal *@
     <div class="modal fade" id="deleteModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -183,7 +265,7 @@
         </div>
     </div>
 
-    <!-- Warning Modal -->
+    @* Warning modal *@
     <div class="modal fade" id="warningModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -200,7 +282,7 @@
         </div>
     </div>
 
-    <!-- Error Modal -->
+    @* Error modal *@
     <div class="modal fade" id="errorModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">

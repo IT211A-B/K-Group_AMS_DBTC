@@ -8,17 +8,26 @@
     </div>
     <button class="btn btn-primary" id="openAddCourse"><i class="bi bi-plus-circle"></i> Add Course</button>
 </div>
+<div class="alert alert-info d-flex align-items-center gap-2 mb-3" style="font-size:13px;">
+    <i class="bi bi-info-circle-fill"></i>
+    Courses cannot be deleted. You may edit or reassign the teacher at any time.
+</div>
 <div class="card">
-    <div class="card-header">
+    <div class="card-header flex-wrap gap-2">
         <div class="card-header-title"><i class="bi bi-list-ul"></i> Course List</div>
-        <div class="search-bar">
-            <i class="bi bi-search"></i>
-            <input type="text" class="form-control" id="searchCourse" placeholder="Search...">
+        <div class="d-flex flex-wrap gap-2 ms-auto">
+            <select class="form-select form-select-sm" id="filterCourseTeacher" style="width:180px;">
+                <option value="">All Teachers</option>
+            </select>
+            <div class="search-bar">
+                <i class="bi bi-search"></i>
+                <input type="text" class="form-control" id="searchCourse" placeholder="Search title or code…">
+            </div>
         </div>
     </div>
     <div class="table-wrapper">
         <table class="table table-striped">
-            <thead><tr><th>ID</th><th>Title</th><th>Code</th><th>Description</th><th>Teacher</th><th>Actions</th></tr></thead>
+            <thead><tr><th>ID</th><th>Title</th><th>Code</th><th>Description</th><th>Assigned Teacher</th><th>Actions</th></tr></thead>
             <tbody id="courseTableBody"></tbody>
         </table>
     </div>
@@ -27,7 +36,7 @@
 
 <!-- Add/Edit Course Modal -->
 <div class="modal fade" id="courseModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="courseModalTitle"><i class="bi bi-plus-circle"></i> Add Course</h5>
@@ -35,26 +44,28 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="courseId">
-                <div class="mb-2">
-                    <label class="form-label">Title <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="courseTitle" placeholder="e.g. Web Development">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Code <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="courseCode" placeholder="e.g. WEB101">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Description</label>
-                    <textarea class="form-control" id="courseDesc" rows="2"></textarea>
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Teacher <span class="text-danger">*</span></label>
-                    <select class="form-select" id="courseTeacherId"></select>
+                <div class="row g-2">
+                    <div class="col-md-8">
+                        <label class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="courseTitle" placeholder="e.g. Web Development">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Code <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="courseCode" placeholder="e.g. WEB101">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="courseDesc" rows="2" placeholder="Optional…"></textarea>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Assigned Teacher <span class="text-danger">*</span></label>
+                        <select class="form-select" id="courseTeacherId"></select>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveCourseBtn">Save Course</button>
+                <button type="button" class="btn btn-primary" id="saveCourseBtn"><i class="bi bi-check-lg"></i> Save Course</button>
             </div>
         </div>
     </div>
@@ -62,112 +73,91 @@
 
 @section Scripts {
     <script>
-        let allCourses = [], allTeachers = [], allUsers = [], coursePaginator;
+        var allCourses=[],allTeachers=[],allUsers=[],coursePaginator;
 
-        function renderCourseRow(c, idx) {
-            var t    = allTeachers.find(function(x){ return (x.teacher_ID||x.id) == c.teacher_ID; });
-            var tUsr = t ? allUsers.find(function(u){ return u.user_ID == (t.user_ID||t.userId); }) : null;
-            var tName = tUsr ? tUsr.full_Name : (c.teacher_ID ? 'Teacher #'+c.teacher_ID : 'Unassigned');
-            var cid   = c.course_ID || c.id;
-            var title = c.title || c.courseTitle || '';
-            var code  = c.code  || c.courseCode  || '';
-            return `<tr>
-                <td>${cid}</td>
-                <td>${title}</td>
-                <td><span class="badge" style="background:#DBEAFE;color:var(--accent);padding:4px 10px;border-radius:6px;">${code}</span></td>
-                <td>${c.description||'—'}</td>
-                <td>${tName}</td>
-                <td class="d-flex gap-1">
-                    <button class="btn btn-sm btn-outline-primary btn-icon edit-course" data-id="${cid}" title="Edit"><i class="bi bi-pencil"></i></button>
-                    <button class="btn btn-sm btn-outline-danger btn-icon delete-course" data-id="${cid}" data-name="${title}" title="Delete"><i class="bi bi-trash"></i></button>
-                </td></tr>`;
+        function tName(tid){
+            var t=allTeachers.find(function(x){ return String(x.teacher_ID||x.id)===String(tid); });
+            var u=t?allUsers.find(function(x){ return String(x.user_ID)===String(t.user_ID||t.userId); }):null;
+            return u?u.full_Name:(tid?'Teacher #'+tid:'Unassigned');
         }
 
-        function loadTeacherDropdown(selectedId) {
-            var opts = '<option value="">Select Teacher</option>';
-            allTeachers.forEach(function(t) {
-                var u = allUsers.find(function(x){ return x.user_ID == (t.user_ID||t.userId); }) || {};
-                var n = u.full_Name || 'Teacher #' + (t.teacher_ID||t.id);
-                var tid = t.teacher_ID || t.id;
-                opts += '<option value="' + tid + '" ' + (tid == selectedId ? 'selected' : '') + '>' + n + '</option>';
-            });
-            $('#courseTeacherId').html(opts);
+        function renderCourseRow(c,idx){
+            var cid=c.course_ID||c.id,title=c.title||'',code=c.code||'',tn=tName(c.teacher_ID);
+            var init=(tn[0]||'T').toUpperCase();
+            return '<tr>'
+                +'<td>'+cid+'</td>'
+                +'<td><strong>'+title+'</strong></td>'
+                +'<td><span style="background:#DBEAFE;color:var(--accent);padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">'+code+'</span></td>'
+                +'<td>'+(c.description||'—')+'</td>'
+                +'<td><div class="d-flex align-items-center gap-2">'
+                +'<div style="width:28px;height:28px;border-radius:50%;background:#16A34A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">'+init+'</div>'
+                +tn+'</div></td>'
+                +'<td><button class="btn btn-sm btn-outline-primary btn-icon edit-course" data-id="'+cid+'" title="Edit"><i class="bi bi-pencil"></i></button></td>'
+                +'</tr>';
         }
 
-        function loadCourses() {
+        function buildTeacherDropdown(selId){
+            var o='<option value="">Select Teacher</option>';
+            allTeachers.forEach(function(t){ var u=allUsers.find(function(x){ return String(x.user_ID)===String(t.user_ID||t.userId); })||{}; var n=u.full_Name||'Teacher #'+(t.teacher_ID||t.id); var tid=t.teacher_ID||t.id; o+='<option value="'+tid+'"'+(String(tid)===String(selId)?' selected':'')+'>'+n+'</option>'; });
+            return o;
+        }
+
+        function buildTeacherFilter(){
+            var o='<option value="">All Teachers</option>';
+            allTeachers.forEach(function(t){ var u=allUsers.find(function(x){ return String(x.user_ID)===String(t.user_ID||t.userId); })||{}; var n=u.full_Name||'Teacher #'+(t.teacher_ID||t.id); var tid=t.teacher_ID||t.id; o+='<option value="'+tid+'">'+n+'</option>'; });
+            $('#filterCourseTeacher').html(o);
+        }
+
+        function filterCourses(){
+            var q=$('#searchCourse').val().toLowerCase();
+            var tid=$('#filterCourseTeacher').val();
+            var res=allCourses.filter(function(c){ return(!q||(c.title||'').toLowerCase().includes(q)||(c.code||'').toLowerCase().includes(q))&&(!tid||String(c.teacher_ID)===String(tid)); });
+            if(coursePaginator) coursePaginator.refresh(res);
+        }
+
+        function loadCourses(){
             $.when(
-                $.ajax({ url: '/AttendanceManagement/Course', dataType: 'json' }),
-                $.ajax({ url: '/api/Teacher', dataType: 'json' }),
-                $.ajax({ url: '/api/User',    dataType: 'json' })
-            ).done(function(cRes, tRes, uRes) {
-                allCourses  = Array.isArray(cRes[0]) ? cRes[0] : [];
-                allTeachers = Array.isArray(tRes[0]) ? tRes[0] : [];
-                allUsers    = Array.isArray(uRes[0]) ? uRes[0] : [];
-                if (coursePaginator) coursePaginator.refresh(allCourses);
-                else coursePaginator = paginate({
-                    data: allCourses, pageSize: 10,
-                    containerId: 'courseTableBody', paginationId: 'coursePagination',
-                    renderRow: renderCourseRow, emptyMsg: 'No courses found.', colSpan: 6
-                });
-            }).fail(function() { showToast('Failed to load courses.', 'error'); });
+                $.ajax({url:'/AttendanceManagement/Course',dataType:'json'}),
+                $.ajax({url:'/api/Teacher',dataType:'json'}),
+                $.ajax({url:'/api/User',dataType:'json'})
+            ).done(function(cR,tR,uR){
+                allCourses=Array.isArray(cR[0])?cR[0]:[];
+                allTeachers=Array.isArray(tR[0])?tR[0]:[];
+                allUsers=Array.isArray(uR[0])?uR[0]:[];
+                buildTeacherFilter();
+                if(coursePaginator) coursePaginator.refresh(allCourses);
+                else coursePaginator=paginate({data:allCourses,pageSize:10,containerId:'courseTableBody',paginationId:'coursePagination',renderRow:renderCourseRow,emptyMsg:'No courses found.',colSpan:6});
+            }).fail(function(){ showToast('Failed to load courses.','error'); });
         }
 
-        $(function () {
+        $(function(){
             loadCourses();
+            $('#searchCourse,#filterCourseTeacher').on('input change',filterCourses);
 
-            $('#openAddCourse').click(function () {
+            $('#openAddCourse').click(function(){
                 $('#courseModalTitle').html('<i class="bi bi-plus-circle"></i> Add Course');
                 $('#courseId,#courseTitle,#courseCode,#courseDesc').val('');
-                loadTeacherDropdown(null);
+                $('#courseTeacherId').html(buildTeacherDropdown(null));
                 $('#courseModal').modal('show');
             });
 
-            $('#searchCourse').on('keyup', function () {
-                var q = $(this).val().toLowerCase();
-                coursePaginator.refresh(allCourses.filter(function(c) {
-                    return (c.title||c.courseTitle||'').toLowerCase().includes(q) ||
-                           (c.code||c.courseCode||'').toLowerCase().includes(q);
-                }));
+            $('#saveCourseBtn').click(function(){
+                var id=$('#courseId').val(),title=$('#courseTitle').val().trim(),code=$('#courseCode').val().trim(),tid=$('#courseTeacherId').val();
+                if(!title){showToast('Title is required.','warning');return;}
+                if(!code){showToast('Code is required.','warning');return;}
+                if(!tid){showToast('Please select a teacher.','warning');return;}
+                var data={title:title,code:code,description:$('#courseDesc').val().trim(),teacher_ID:parseInt(tid),lastUpdatedBy:'admin'};
+                if(id){ updateCourse(id,data,function(){ $('#courseModal').modal('hide'); loadCourses(); }); }
+                else  { addCourse(data,function(){ $('#courseModal').modal('hide'); loadCourses(); pushNotification('Course Added','"'+title+'" assigned to '+tName(tid),'info','all'); }); }
             });
 
-            $('#saveCourseBtn').click(function () {
-                var id    = $('#courseId').val();
-                var title = $('#courseTitle').val().trim();
-                var code  = $('#courseCode').val().trim();
-                var tid   = $('#courseTeacherId').val();
-                if (!title) { showToast('Title is required.', 'warning'); return; }
-                if (!code)  { showToast('Code is required.', 'warning'); return; }
-                if (!tid)   { showToast('Teacher is required.', 'warning'); return; }
-                var data = {
-                    title:        title,
-                    code:         code,
-                    description:  $('#courseDesc').val().trim(),
-                    teacher_ID:   parseInt(tid),
-                    lastUpdatedBy:'admin'
-                };
-                if (id) {
-                    updateCourse(id, data, function() { $('#courseModal').modal('hide'); loadCourses(); });
-                } else {
-                    addCourse(data, function() { $('#courseModal').modal('hide'); loadCourses(); });
-                }
-            });
-
-            $(document).on('click', '.edit-course', function () {
-                var id = $(this).data('id');
-                var c  = allCourses.find(function(x){ return (x.course_ID||x.id) == id; }) || {};
+            $(document).on('click','.edit-course',function(){
+                var id=$(this).data('id');
+                var c=allCourses.find(function(x){ return String(x.course_ID||x.id)===String(id); })||{};
                 $('#courseModalTitle').html('<i class="bi bi-pencil"></i> Edit Course');
-                $('#courseId').val(id);
-                $('#courseTitle').val(c.title||c.courseTitle||'');
-                $('#courseCode').val(c.code||c.courseCode||'');
-                $('#courseDesc').val(c.description||'');
-                loadTeacherDropdown(c.teacher_ID);
+                $('#courseId').val(id);$('#courseTitle').val(c.title||'');$('#courseCode').val(c.code||'');$('#courseDesc').val(c.description||'');
+                $('#courseTeacherId').html(buildTeacherDropdown(c.teacher_ID));
                 $('#courseModal').modal('show');
-            });
-
-            $(document).on('click', '.delete-course', function () {
-                var id   = $(this).data('id');
-                var name = $(this).data('name');
-                confirmDelete(name, function() { deleteCourse(id, loadCourses); });
             });
         });
     </script>

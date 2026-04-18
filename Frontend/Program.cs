@@ -17,6 +17,7 @@ builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<StudentService>();
 builder.Services.AddScoped<TeacherService>();
+builder.Services.AddScoped<ApiService>();
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();

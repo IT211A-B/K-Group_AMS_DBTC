@@ -1,81 +1,164 @@
 ﻿@{
     ViewData["Title"] = "Take Attendance";
 }
-<div class="page-header">
+<div class="page-header flex-wrap gap-2">
     <div>
         <h4><i class="bi bi-calendar-check"></i> Take Attendance</h4>
         <ol class="breadcrumb"><li class="breadcrumb-item"><a href="/Teacher/Dashboard">Home</a></li><li class="breadcrumb-item active">Attendance</li></ol>
     </div>
-    <input type="date" id="attendanceDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" style="width:auto;">
+    <div class="d-flex align-items-center gap-2 ms-auto">
+        <button class="btn btn-outline-secondary btn-sm" id="prevDayBtn"><i class="bi bi-chevron-left"></i></button>
+        <input type="date" id="attendanceDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" style="width:150px;">
+        <button class="btn btn-outline-secondary btn-sm" id="nextDayBtn"><i class="bi bi-chevron-right"></i></button>
+        <button class="btn btn-primary btn-sm" id="todayBtn"><i class="bi bi-calendar-day"></i> Today</button>
+    </div>
 </div>
+
 <div class="row g-4 mb-4">
-    <div class="col-md-4"><div class="stat-card"><div class="stat-icon green"><i class="bi bi-check-circle"></i></div><div><div class="stat-label">Present</div><div class="stat-value" id="presentCount">0</div></div></div></div>
-    <div class="col-md-4"><div class="stat-card"><div class="stat-icon red"><i class="bi bi-x-circle"></i></div><div><div class="stat-label">Absent</div><div class="stat-value" id="absentCount">0</div></div></div></div>
-    <div class="col-md-4"><div class="stat-card"><div class="stat-icon orange"><i class="bi bi-clock"></i></div><div><div class="stat-label">Late</div><div class="stat-value" id="lateCount">0</div></div></div></div>
+    <div class="col-4"><div class="stat-card"><div class="stat-icon green"><i class="bi bi-check-circle"></i></div><div><div class="stat-label">Present</div><div class="stat-value" id="presentCount">0</div></div></div></div>
+    <div class="col-4"><div class="stat-card"><div class="stat-icon red"><i class="bi bi-x-circle"></i></div><div><div class="stat-label">Absent</div><div class="stat-value" id="absentCount">0</div></div></div></div>
+    <div class="col-4"><div class="stat-card"><div class="stat-icon orange"><i class="bi bi-clock"></i></div><div><div class="stat-label">Late</div><div class="stat-value" id="lateCount">0</div></div></div></div>
 </div>
+
+<div id="absenceAlert" class="alert alert-danger d-none mb-3">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <span id="absenceAlertMsg"></span>
+</div>
+
 <div class="card">
-    <div class="card-header">
-        <div class="card-header-title"><i class="bi bi-table"></i> Attendance Sheet</div>
-        <div class="search-bar"><i class="bi bi-search"></i><input type="text" class="form-control" id="searchStudent" placeholder="Search student..."></div>
+    <div class="card-header flex-wrap gap-2">
+        <div class="card-header-title"><i class="bi bi-table"></i> Student Attendance</div>
+        <div class="d-flex gap-2 ms-auto">
+            <select class="form-select form-select-sm" id="filterStatus" style="width:130px;">
+                <option value="">All Status</option>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Late">Late</option>
+                <option value="unmarked">Unmarked</option>
+            </select>
+            <div class="search-bar"><i class="bi bi-search"></i><input type="text" class="form-control" id="searchStudent" placeholder="Search student…"></div>
+        </div>
     </div>
     <div class="table-wrapper">
         <table class="table table-striped">
-            <thead><tr><th>ID</th><th>Name</th><th>Course</th><th>Status</th><th>Hours</th><th>Actions</th></tr></thead>
+            <thead><tr><th>#</th><th>Student</th><th>Enrollment ID</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="attendanceTableBody"></tbody>
         </table>
+    </div>
+    <div class="px-4 py-2 border-top d-flex gap-4" style="font-size:13px;background:#F8FAFF;">
+        <span>Total: <strong id="sumTotal">0</strong></span>
+        <span class="text-success">Present: <strong id="sumPresent">0</strong></span>
+        <span class="text-danger">Absent: <strong id="sumAbsent">0</strong></span>
+        <span class="text-warning">Late: <strong id="sumLate">0</strong></span>
+        <span class="text-muted">Unmarked: <strong id="sumUnmarked">0</strong></span>
     </div>
     <div class="pagination-wrapper"><div id="attendancePagination"></div></div>
 </div>
 
 @section Scripts {
     <script>
-        let attendancePaginator, attendanceData = [], currentDate = '';
+        var attPag,allEnrollments=[],allStudents=[],allUsers=[],allAttRec=[],displayData=[],currentDate='';
 
-        function renderAttendanceRow(r, idx) {
-            var sid = r.studentId || r.id;
-            var name = r.studentName || r.name || ((r.firstName||'')+(r.lastName||'')).trim();
-            var course = r.course || r.courseName || '—';
-            var status = r.status || r.statusName || 'absent';
-            var hours = r.hours || r.hoursRendered || 0;
-            return `<tr>
-                <td>${sid}</td><td>${name}</td><td>${course}</td>
-                <td><select class="form-select form-select-sm status-select" data-id="${sid}" style="width:120px;">
-                    <option value="present" ${status==='present'?'selected':''}>Present</option>
-                    <option value="absent"  ${status==='absent' ?'selected':''}>Absent</option>
-                    <option value="late"    ${status==='late'   ?'selected':''}>Late</option>
-                </select></td>
-                <td><input type="number" class="form-control form-control-sm hours-input" data-id="${sid}" value="${hours}" step="0.5" min="0" max="8" style="width:70px;"></td>
-                <td><button class="btn btn-sm btn-primary save-attendance" data-id="${sid}">Save</button></td>
-            </tr>`;
+        function renderAttRow(r,idx){
+            var eid=r.enrollment_ID,name=r._name||'Student #'+r._sid,status=r.status||'',attId=r._attId||'';
+            var cls=status.toLowerCase()==='present'?'badge-present':status.toLowerCase()==='absent'?'badge-absent':status.toLowerCase()==='late'?'badge-late':'';
+            var badge=status?'<span class="badge '+cls+'">'+status+'</span>':'<span class="text-muted" style="font-size:12px;">Unmarked</span>';
+            var init=(name[0]||'?').toUpperCase();
+            return '<tr>'
+                +'<td>'+(idx+1)+'</td>'
+                +'<td><div class="d-flex align-items-center gap-2">'
+                +'<div style="width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">'+init+'</div>'
+                +name+'</div></td>'
+                +'<td>'+eid+'</td>'
+                +'<td>'+badge+'</td>'
+                +'<td><button class="btn btn-sm btn-outline-primary mark-att-btn" data-eid="'+eid+'" data-attid="'+attId+'" data-name="'+name+'" data-status="'+status+'"><i class="bi bi-pencil-square"></i> Mark</button></td>'
+                +'</tr>';
         }
 
-        function loadAttendance(date) {
-            getTeacherAttendance(date, function (data) {
-                attendanceData = Array.isArray(data) ? data : (data.data || data.items || []);
-                currentDate = date;
-                if (attendancePaginator) attendancePaginator.refresh(attendanceData);
-                else attendancePaginator = paginate({ data: attendanceData, pageSize: 10, containerId: 'attendanceTableBody', paginationId: 'attendancePagination', renderRow: renderAttendanceRow, emptyMsg: 'No students found.', colSpan: 6 });
-                $('#presentCount').text(attendanceData.filter(s=>(s.status||s.statusName)==='present').length);
-                $('#absentCount').text(attendanceData.filter(s=>(s.status||s.statusName)==='absent').length);
-                $('#lateCount').text(attendanceData.filter(s=>(s.status||s.statusName)==='late').length);
-            });
+        function updateSummary(data){
+            var p=data.filter(function(r){ return (r.status||'').toLowerCase()==='present'; }).length;
+            var a=data.filter(function(r){ return (r.status||'').toLowerCase()==='absent'; }).length;
+            var l=data.filter(function(r){ return (r.status||'').toLowerCase()==='late'; }).length;
+            var u=data.filter(function(r){ return !r.status; }).length;
+            $('#presentCount').text(p);$('#absentCount').text(a);$('#lateCount').text(l);
+            $('#sumTotal').text(data.length);$('#sumPresent').text(p);$('#sumAbsent').text(a);$('#sumLate').text(l);$('#sumUnmarked').text(u);
+            var absMap={};
+            allAttRec.forEach(function(x){ if((x.status||'').toLowerCase()==='absent'){ absMap[x.enrollment_ID]=(absMap[x.enrollment_ID]||0)+1; } });
+            var high=Object.keys(absMap).filter(function(eid){ return absMap[eid]>=5; });
+            if(high.length){
+                var names=high.map(function(eid){
+                    var e=allEnrollments.find(function(x){ return String(x.enrollment_ID||x.id)===String(eid); });
+                    var s=e?allStudents.find(function(x){ return String(x.student_ID||x.id)===String(e.student_ID); }):null;
+                    var u2=s?allUsers.find(function(x){ return String(x.user_ID)===String(s.user_ID||s.userId); }):null;
+                    return u2?u2.full_Name:'Enrollment #'+eid;
+                });
+                $('#absenceAlertMsg').text(names.length+' student(s) have 5+ absences: '+names.slice(0,3).join(', ')+(names.length>3?'…':'')+'. Consider allowing a drop request.');
+                $('#absenceAlert').removeClass('d-none');
+            } else { $('#absenceAlert').addClass('d-none'); }
         }
 
-        $(function () {
-            let today = new Date().toISOString().slice(0,10);
+        function applyFilter(src){
+            var q=$('#searchStudent').val().toLowerCase();
+            var f=$('#filterStatus').val().toLowerCase();
+            return src.filter(function(r){ if(q&&!(r._name||'').toLowerCase().includes(q)) return false; if(f==='unmarked') return !r.status; if(f&&(r.status||'').toLowerCase()!==f) return false; return true; });
+        }
+
+        function loadAttendance(date){
+            currentDate=date;
+            $('#page-loader').fadeIn(150);
+            $.when(
+                $.ajax({url:'/AttendanceManagement/Attendance',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Enrollment',dataType:'json'}),
+                $.ajax({url:'/api/Student',dataType:'json'}),
+                $.ajax({url:'/api/User',dataType:'json'})
+            ).done(function(aR,eR,sR,uR){
+                allAttRec=Array.isArray(aR[0])?aR[0]:[];
+                allEnrollments=Array.isArray(eR[0])?eR[0]:[];
+                allStudents=Array.isArray(sR[0])?sR[0]:[];
+                allUsers=Array.isArray(uR[0])?uR[0]:[];
+                var todayAtt=allAttRec.filter(function(a){ return (a.date||a.attendanceDate||'').substring(0,10)===date; });
+                displayData=allEnrollments.map(function(enr){
+                    var eid=enr.enrollment_ID||enr.id;
+                    var att=todayAtt.find(function(a){ return String(a.enrollment_ID)===String(eid); });
+                    var s=allStudents.find(function(x){ return String(x.student_ID||x.id)===String(enr.student_ID); });
+                    var u=s?allUsers.find(function(x){ return String(x.user_ID)===String(s.user_ID||s.userId); }):null;
+                    return {enrollment_ID:eid,_sid:enr.student_ID,_name:u?u.full_Name:'Student #'+enr.student_ID,status:att?att.status:'',_attId:att?(att.attendance_ID||att.id):''};
+                });
+                var filtered=applyFilter(displayData);
+                if(attPag) attPag.refresh(filtered);
+                else attPag=paginate({data:filtered,pageSize:15,containerId:'attendanceTableBody',paginationId:'attendancePagination',renderRow:renderAttRow,emptyMsg:'No enrollments found.',colSpan:5});
+                updateSummary(displayData);
+                $('#page-loader').fadeOut(200);
+            }).fail(function(){ $('#page-loader').fadeOut(200); showToast('Failed to load attendance.','error'); });
+        }
+
+        $(function(){
+            var today=new Date().toISOString().slice(0,10);
+            $('#attendanceDate').val(today);
             loadAttendance(today);
-            $('#attendanceDate').change(function () { loadAttendance($(this).val()); });
-            $('#searchStudent').on('keyup', function () {
-                var q=$(this).val().toLowerCase();
-                attendancePaginator.refresh(attendanceData.filter(s=>{
-                    var n=s.studentName||s.name||((s.firstName||'')+(s.lastName||''));
-                    return n.toLowerCase().includes(q);
-                }));
+
+            $('#attendanceDate').on('change',function(){ loadAttendance($(this).val()); });
+            $('#todayBtn').on('click',function(){ var t=new Date().toISOString().slice(0,10); $('#attendanceDate').val(t); loadAttendance(t); });
+            $('#prevDayBtn').on('click',function(){ var d=new Date($('#attendanceDate').val()); d.setDate(d.getDate()-1); var v=d.toISOString().slice(0,10); $('#attendanceDate').val(v); loadAttendance(v); });
+            $('#nextDayBtn').on('click',function(){ var d=new Date($('#attendanceDate').val()); d.setDate(d.getDate()+1); var v=d.toISOString().slice(0,10); $('#attendanceDate').val(v); loadAttendance(v); });
+
+            $('#searchStudent,#filterStatus').on('input change',function(){ if(attPag) attPag.refresh(applyFilter(displayData)); });
+
+            $(document).on('click','.mark-att-btn',function(){
+                var eid=$(this).data('eid'),attId=$(this).data('attid'),name=$(this).data('name'),status=$(this).data('status');
+                $('#attPopupName').text(name);
+                $('#attPopupModal').data('eid',eid).data('attid',attId).modal('show');
+                $('.att-status-btn').css('outline','none');
+                if(status) $('.att-status-btn[data-status="'+status+'"]').css('outline','3px solid var(--primary)');
             });
-            $(document).on('click', '.save-attendance', function () {
-                var id=$(this).data('id');
-                markAttendance({ date:currentDate, studentId:id, status:$(`.status-select[data-id="${id}"]`).val(), hours:$(`.hours-input[data-id="${id}"]`).val() },
-                    function(){ loadAttendance(currentDate); });
+
+            $(document).on('click','.att-status-btn',function(){
+                var status=$(this).data('status');
+                var modal=$('#attPopupModal');
+                var eid=modal.data('eid'),attId=modal.data('attid');
+                var payload={enrollment_ID:parseInt(eid),date:new Date(currentDate+'T00:00:00').toISOString(),status:status,lastUpdatedBy:'teacher'};
+                var done=function(){ modal.modal('hide'); loadAttendance(currentDate); };
+                if(attId){ updateAttendance(attId,payload,done); } else { markAttendance(payload,done); }
             });
         });
     </script>

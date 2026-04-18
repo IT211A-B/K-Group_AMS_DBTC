@@ -7,31 +7,31 @@
         <h4><i class="bi bi-speedometer2"></i> Dashboard</h4>
         <ol class="breadcrumb"><li class="breadcrumb-item active">Dashboard</li></ol>
     </div>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-        <i class="bi bi-person-plus"></i> Add Student
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+        <i class="bi bi-person-plus"></i> Enroll New Account
     </button>
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="stat-icon blue"><i class="bi bi-people"></i></div>
             <div><div class="stat-label">Total Students</div><div class="stat-value" id="statStudents">—</div></div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="stat-icon green"><i class="bi bi-person-badge"></i></div>
             <div><div class="stat-label">Total Teachers</div><div class="stat-value" id="statTeachers">—</div></div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="stat-icon orange"><i class="bi bi-journal-bookmark-fill"></i></div>
             <div><div class="stat-label">Total Courses</div><div class="stat-value" id="statCourses">—</div></div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="stat-icon red"><i class="bi bi-calendar-x"></i></div>
             <div><div class="stat-label">Absences Today</div><div class="stat-value" id="statAbsences">—</div></div>
@@ -40,16 +40,35 @@
 </div>
 
 <div class="card">
-    <div class="card-header">
+    <div class="card-header flex-wrap gap-2">
         <div class="card-header-title"><i class="bi bi-table"></i> Population List</div>
-        <div class="search-bar">
-            <i class="bi bi-search"></i>
-            <input type="text" class="form-control" id="searchStudent" placeholder="Search student...">
+        <div class="d-flex flex-wrap gap-2 ms-auto align-items-center">
+            <select class="form-select form-select-sm" id="filterRole" style="width:120px;">
+                <option value="">All Roles</option>
+                <option value="student">Students</option>
+                <option value="teacher">Teachers</option>
+            </select>
+            <select class="form-select form-select-sm" id="filterStatus" style="width:130px;">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+            <select class="form-select form-select-sm" id="sortBy" style="width:140px;">
+                <option value="">Sort by…</option>
+                <option value="name-asc">Name A→Z</option>
+                <option value="name-desc">Name Z→A</option>
+            </select>
+            <div class="search-bar">
+                <i class="bi bi-search"></i>
+                <input type="text" class="form-control" id="searchStudent" placeholder="Search name or email…">
+            </div>
         </div>
     </div>
     <div class="table-wrapper">
         <table class="table table-striped">
-            <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Gender</th><th>Program</th><th>Year</th><th>Actions</th></tr></thead>
+            <thead>
+                <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Gender</th><th>Program / Dept</th><th>Status</th><th>Actions</th></tr>
+            </thead>
             <tbody id="studentTableBody"></tbody>
         </table>
     </div>
@@ -59,19 +78,29 @@
     </div>
 </div>
 
-<!-- Add Student Modal -->
-<div class="modal fade" id="addStudentModal" tabindex="-1">
+<!-- Enroll New Account Modal -->
+<div class="modal fade" id="addAccountModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-person-plus"></i> Add Student</h5>
+                <h5 class="modal-title"><i class="bi bi-person-plus"></i> Enroll New Account</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Account Type</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="acctType" id="typeStudent" value="student" checked>
+                        <label class="btn btn-outline-primary" for="typeStudent"><i class="bi bi-mortarboard"></i> Student</label>
+                        <input type="radio" class="btn-check" name="acctType" id="typeTeacher" value="teacher">
+                        <label class="btn btn-outline-primary" for="typeTeacher"><i class="bi bi-person-badge"></i> Teacher</label>
+                    </div>
+                </div>
+                <hr>
                 <h6 class="text-muted mb-3"><i class="bi bi-person-fill"></i> User Account</h6>
                 <div class="row g-2">
                     <div class="col-md-6"><label class="form-label">Full Name <span class="text-danger">*</span></label><input type="text" class="form-control" id="addFullName" placeholder="e.g. Juan Dela Cruz"></div>
-                    <div class="col-md-6"><label class="form-label">Email <span class="text-danger">*</span></label><input type="email" class="form-control" id="addEmail" placeholder="student@email.com"></div>
+                    <div class="col-md-6"><label class="form-label">Email <span class="text-danger">*</span></label><input type="email" class="form-control" id="addEmail" placeholder="user@dbtc.edu.ph"></div>
                     <div class="col-md-6"><label class="form-label">Password <span class="text-danger">*</span></label><input type="password" class="form-control" id="addPassword"></div>
                     <div class="col-md-6"><label class="form-label">Phone</label><input type="text" class="form-control" id="addPhone" placeholder="09xxxxxxxxx"></div>
                     <div class="col-md-4">
@@ -82,30 +111,41 @@
                     <div class="col-md-4"><label class="form-label">Address</label><input type="text" class="form-control" id="addAddress"></div>
                 </div>
                 <hr>
-                <h6 class="text-muted mb-3"><i class="bi bi-mortarboard"></i> Student Info</h6>
-                <div class="row g-2">
-                    <div class="col-md-4">
-                        <label class="form-label">Program <span class="text-danger">*</span></label>
-                        <select class="form-select" id="addProgramId"><option value="">Loading...</option></select>
+                <div id="studentFields">
+                    <h6 class="text-muted mb-3"><i class="bi bi-mortarboard"></i> Student Info</h6>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <label class="form-label">Program <span class="text-danger">*</span></label>
+                            <select class="form-select" id="addProgramId"><option value="">Loading…</option></select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Department <span class="text-danger">*</span></label>
+                            <select class="form-select" id="addDeptId"><option value="">Loading…</option></select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Year Level <span class="text-danger">*</span></label>
+                            <select class="form-select" id="addYearLevel">
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Department <span class="text-danger">*</span></label>
-                        <select class="form-select" id="addDeptId"><option value="">Loading...</option></select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Year Level <span class="text-danger">*</span></label>
-                        <select class="form-select" id="addYearLevel">
-                            <option value="1st Year">1st Year</option>
-                            <option value="2nd Year">2nd Year</option>
-                            <option value="3rd Year">3rd Year</option>
-                            <option value="4th Year">4th Year</option>
-                        </select>
+                </div>
+                <div id="teacherFields" style="display:none;">
+                    <h6 class="text-muted mb-3"><i class="bi bi-briefcase"></i> Teacher Info</h6>
+                    <div class="row g-2">
+                        <div class="col-md-12">
+                            <label class="form-label">Department <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="addTeacherDept" placeholder="e.g. College of Computing Studies">
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn btn-primary" id="saveStudentBtn"><i class="bi bi-check-lg"></i> Save Student</button>
+                <button class="btn btn-primary" id="saveAccountBtn"><i class="bi bi-check-lg"></i> Save Account</button>
             </div>
         </div>
     </div>
@@ -140,11 +180,11 @@
                 <div class="row g-2">
                     <div class="col-md-4">
                         <label class="form-label">Program</label>
-                        <select class="form-select" id="editProgramId"><option value="">Loading...</option></select>
+                        <select class="form-select" id="editProgramId"><option value="">Loading…</option></select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Department</label>
-                        <select class="form-select" id="editDeptId"><option value="">Loading...</option></select>
+                        <select class="form-select" id="editDeptId"><option value="">Loading…</option></select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Year Level</label>
@@ -167,188 +207,169 @@
 
 @section Scripts {
     <script>
-        var STUDENT_GROUP_ID = 3;
-        var allStudents = [], allUsers = [], allPrograms = [], allDepts = [], pg;
+        var STUDENT_GID=3, TEACHER_GID=2;
+        var allAccounts=[], allStudents=[], allTeachers=[], allUsers=[], allPrograms=[], allAtt=[], pg;
 
-        function toUtcIso(dateVal) {
-            if (!dateVal) return new Date().toISOString();
-            return new Date(dateVal).toISOString();
+        function toUtcIso(v){ return v?new Date(v).toISOString():new Date().toISOString(); }
+        function nameOf(a){ return (a._name||'').toLowerCase(); }
+
+        function renderRow(a,i){
+            var init=(a._name[0]||'?').toUpperCase();
+            var roleBadge=a._role==='teacher'
+                ?'<span style="background:#EDE9FE;color:#6D28D9;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Teacher</span>'
+                :'<span style="background:#DBEAFE;color:var(--accent);font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Student</span>';
+            var statusBadge=a._inactive
+                ?'<span style="background:#F1F5F9;color:#64748B;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Inactive</span>'
+                :'<span style="background:#DCFCE7;color:#166534;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Active</span>';
+            var rowStyle=a._inactive?'style="opacity:.65;"':'';
+            var bgColor=a._role==='teacher'?'#7C3AED':'var(--accent)';
+            var actions=a._role==='student'
+                ?'<button class="btn btn-sm btn-outline-primary btn-icon edit-btn" data-sid="'+a._sid+'" data-uid="'+a._uid+'" data-ugid="'+a._ugid+'" title="Edit"><i class="bi bi-pencil"></i></button>'
+                 +'<button class="btn btn-sm btn-outline-danger btn-icon del-btn" data-sid="'+a._sid+'" data-uid="'+a._uid+'" data-name="'+a._name+'" title="Delete"><i class="bi bi-trash3"></i></button>'
+                :'<a href="/Teacher/Index" class="btn btn-sm btn-outline-secondary btn-icon" title="Manage"><i class="bi bi-box-arrow-up-right"></i></a>';
+            return '<tr '+rowStyle+'>'
+                +'<td>'+(i+1)+'</td>'
+                +'<td><div class="d-flex align-items-center gap-2">'
+                +'<div style="width:32px;height:32px;border-radius:50%;background:'+bgColor+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;">'+init+'</div>'
+                +a._name+'</div></td>'
+                +'<td>'+a._email+'</td>'
+                +'<td>'+roleBadge+'</td>'
+                +'<td>'+(a._gender==='M'?'Male':a._gender==='F'?'Female':(a._gender||'—'))+'</td>'
+                +'<td>'+a._dept+'</td>'
+                +'<td>'+statusBadge+'</td>'
+                +'<td class="d-flex gap-1">'+actions+'</td></tr>';
         }
 
-        function renderRow(s, i) {
-            var user = allUsers.find(function(u){ return u.user_ID == (s.user_ID || s.userId); }) || {};
-            var name = user.full_Name || s.full_Name || '—';
-            var email = user.email || s.email || '—';
-            var gender = user.gender === 'M' ? 'Male' : user.gender === 'F' ? 'Female' : (user.gender || '—');
-            var prog = allPrograms.find(function(p){ return p.id == s.program_ID; });
-            var progName = prog ? (prog.name || prog.program_Name || prog.title || '') : (s.program_ID ? 'Program #'+s.program_ID : '—');
-            var year = s.year_Level || '—';
-            var sid = s.student_ID || s.id || s.studentId;
-            var uid = s.user_ID || s.userId;
-            var ugid = user.userGroup_ID || STUDENT_GROUP_ID;
-            return '<tr>' +
-                '<td>' + (i+1) + '</td>' +
-                '<td><div class="d-flex align-items-center gap-2">' +
-                '<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;">' + (name[0]||'?').toUpperCase() + '</div>' +
-                name + '</div></td>' +
-                '<td>' + email + '</td>' +
-                '<td>' + gender + '</td>' +
-                '<td>' + progName + '</td>' +
-                '<td>' + year + '</td>' +
-                '<td class="d-flex gap-1">' +
-                '<button class="btn btn-sm btn-outline-primary btn-icon edit-btn" data-sid="' + sid + '" data-uid="' + uid + '" data-ugid="' + ugid + '" title="Edit"><i class="bi bi-pencil"></i></button>' +
-                '<button class="btn btn-sm btn-outline-danger btn-icon del-btn" data-sid="' + sid + '" data-uid="' + uid + '" data-name="' + name + '" title="Delete"><i class="bi bi-trash3"></i></button>' +
-                '</td></tr>';
-        }
-
-        function loadDropdowns(progSelId, deptSelId, selProgId, selDeptId) {
-            getPrograms(function(p) {
-                allPrograms = p;
-                var o = '<option value="">Select Program</option>';
-                p.forEach(function(x) {
-                    var n = x.name || x.program_Name || x.title || 'Program ' + x.id;
-                    o += '<option value="' + x.id + '" ' + (x.id == selProgId ? 'selected' : '') + '>' + n + '</option>';
-                });
-                $(progSelId).html(o);
+        function applyFilter(){
+            var q=$('#searchStudent').val().toLowerCase();
+            var role=$('#filterRole').val();
+            var status=$('#filterStatus').val();
+            var sort=$('#sortBy').val();
+            var result=allAccounts.filter(function(a){
+                if(role&&a._role!==role) return false;
+                if(status==='inactive'&&!a._inactive) return false;
+                if(status==='active'&&a._inactive) return false;
+                if(q&&!a._name.toLowerCase().includes(q)&&!a._email.toLowerCase().includes(q)) return false;
+                return true;
             });
-            getDepartments(function(d) {
-                var o = '<option value="">Select Department</option>';
-                d.forEach(function(x) {
-                    var n = x.name || x.department_Name || 'Dept ' + x.id;
-                    o += '<option value="' + x.id + '" ' + (x.id == selDeptId ? 'selected' : '') + '>' + n + '</option>';
-                });
-                $(deptSelId).html(o);
+            if(sort==='name-asc')  result.sort(function(a,b){ return nameOf(a).localeCompare(nameOf(b)); });
+            if(sort==='name-desc') result.sort(function(a,b){ return nameOf(b).localeCompare(nameOf(a)); });
+            if(pg) pg.refresh(result);
+            else pg=paginate({data:result,pageSize:15,containerId:'studentTableBody',paginationId:'studentPagination',colSpan:8,emptyMsg:'No accounts found.',renderRow:renderRow});
+        }
+
+        function buildAccounts(){
+            allAccounts=[];
+            allStudents.forEach(function(s){
+                var u=allUsers.find(function(x){ return String(x.user_ID)===String(s.user_ID||s.userId); })||{};
+                var p=allPrograms.find(function(x){ return String(x.id)===String(s.program_ID); });
+                var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-30);
+                var inactive=!allAtt.some(function(a){ return new Date(a.date||a.attendanceDate)>=cutoff; })&&allAtt.length>0;
+                allAccounts.push({_role:'student',_sid:s.student_ID||s.id,_uid:s.user_ID||s.userId,_ugid:u.userGroup_ID||STUDENT_GID,_name:u.full_Name||'—',_email:u.email||'—',_gender:u.gender||'',_dept:p?(p.name||p.program_Name||p.title||''):(s.program_ID?'Program #'+s.program_ID:'—'),_inactive:inactive});
+            });
+            allTeachers.forEach(function(t){
+                var u=allUsers.find(function(x){ return String(x.user_ID)===String(t.user_ID||t.userId); })||{};
+                allAccounts.push({_role:'teacher',_sid:null,_uid:t.user_ID||t.userId,_ugid:TEACHER_GID,_name:u.full_Name||'—',_email:u.email||'—',_gender:u.gender||'',_dept:t.department||'—',_inactive:false});
+            });
+            applyFilter();
+        }
+
+        function loadDropdowns(progSel,deptSel,selProg,selDept){
+            getPrograms(function(p){
+                allPrograms=p;
+                var o='<option value="">Select Program</option>';
+                p.forEach(function(x){ var n=x.name||x.program_Name||x.title||'Program '+x.id; o+='<option value="'+x.id+'"'+(x.id==selProg?' selected':'')+'>'+n+'</option>'; });
+                $(progSel).html(o);
+            });
+            getDepartments(function(d){
+                var o='<option value="">Select Department</option>';
+                d.forEach(function(x){ var n=x.name||x.department_Name||'Dept '+x.id; o+='<option value="'+x.id+'"'+(x.id==selDept?' selected':'')+'>'+n+'</option>'; });
+                $(deptSel).html(o);
             });
         }
 
-        function loadStudents() {
+        function loadAll(){
             $.when(
-                $.ajax({ url: '/api/Student', dataType: 'json' }),
-                $.ajax({ url: '/api/User', dataType: 'json' })
-            ).done(function(sRes, uRes) {
-                allStudents = Array.isArray(sRes[0]) ? sRes[0] : [];
-                allUsers    = Array.isArray(uRes[0]) ? uRes[0] : [];
-                if (pg) pg.refresh(allStudents);
-                else pg = paginate({
-                    data: allStudents, pageSize: 10,
-                    containerId: 'studentTableBody', paginationId: 'studentPagination',
-                    colSpan: 7, emptyMsg: 'No students found.', renderRow: renderRow
-                });
+                $.ajax({url:'/api/Student',dataType:'json'}),
+                $.ajax({url:'/api/Teacher',dataType:'json'}),
+                $.ajax({url:'/api/User',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Attendance',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Program',dataType:'json'})
+            ).done(function(sR,tR,uR,aR,pR){
+                allStudents=Array.isArray(sR[0])?sR[0]:[];
+                allTeachers=Array.isArray(tR[0])?tR[0]:[];
+                allUsers=Array.isArray(uR[0])?uR[0]:[];
+                allAtt=Array.isArray(aR[0])?aR[0]:[];
+                allPrograms=Array.isArray(pR[0])?pR[0]:[];
+                buildAccounts();
                 $('#statStudents').text(allStudents.length);
-            }).fail(function() { showToast('Failed to load students.', 'error'); });
+            }).fail(function(){ showToast('Failed to load data.','error'); });
         }
 
-        $(function () {
-            loadStudents();
+        $(function(){
+            loadAll();
             getDashboardStats();
 
-            $('#addStudentModal').on('show.bs.modal', function() {
-                loadDropdowns('#addProgramId', '#addDeptId', null, null);
+            $('input[name="acctType"]').on('change',function(){
+                var s=$(this).val()==='student';
+                $('#studentFields').toggle(s); $('#teacherFields').toggle(!s);
             });
 
-            $('#searchStudent').on('input', function () {
-                var q = $(this).val().toLowerCase();
-                pg.refresh(allStudents.filter(function(s) {
-                    var user = allUsers.find(function(u){ return u.user_ID == (s.user_ID||s.userId); }) || {};
-                    return (user.full_Name||'').toLowerCase().includes(q) ||
-                           (user.email||'').toLowerCase().includes(q);
-                }));
+            $('#addAccountModal').on('show.bs.modal',function(){ loadDropdowns('#addProgramId','#addDeptId',null,null); });
+
+            $('#searchStudent,#filterRole,#filterStatus,#sortBy').on('input change',applyFilter);
+
+            $('#saveAccountBtn').on('click',function(){
+                var type=$('input[name="acctType"]:checked').val();
+                var name=$('#addFullName').val().trim(), email=$('#addEmail').val().trim(), pass=$('#addPassword').val().trim();
+                if(!name){showToast('Full name is required.','warning');return;}
+                if(!email){showToast('Email is required.','warning');return;}
+                if(!pass){showToast('Password is required.','warning');return;}
+                var ud={full_Name:name,email:email,password:pass,phone_Number:$('#addPhone').val().trim(),gender:$('#addGender').val(),birth_Date:toUtcIso($('#addBirthDate').val()),address:$('#addAddress').val().trim(),userGroup_ID:type==='student'?STUDENT_GID:TEACHER_GID,createdBy:'admin',lastUpdatedBy:'admin'};
+                if(type==='student'){
+                    var dept=$('#addDeptId').val();
+                    if(!dept){showToast('Department is required.','warning');return;}
+                    addStudent(ud,{program_ID:parseInt($('#addProgramId').val())||0,department_ID:parseInt(dept),year_Level:$('#addYearLevel').val(),lastUpdatedBy:'admin'},function(){
+                        $('#addAccountModal').modal('hide');
+                        $('#addFullName,#addEmail,#addPassword,#addPhone,#addAddress').val('');
+                        loadAll();
+                        pushNotification('New Student Enrolled',name+' has been enrolled.','info','admin');
+                    });
+                } else {
+                    var dept2=$('#addTeacherDept').val().trim();
+                    if(!dept2){showToast('Department is required.','warning');return;}
+                    addTeacher(ud,{department:dept2,lastUpdatedBy:'admin'},function(){
+                        $('#addAccountModal').modal('hide');
+                        $('#addFullName,#addEmail,#addPassword,#addPhone,#addAddress,#addTeacherDept').val('');
+                        loadAll();
+                        pushNotification('New Teacher Added',name+' added as teacher.','info','admin');
+                    });
+                }
             });
 
-            $('#saveStudentBtn').on('click', function () {
-                var fullName = $('#addFullName').val().trim();
-                var email    = $('#addEmail').val().trim();
-                var password = $('#addPassword').val().trim();
-                var deptId   = $('#addDeptId').val();
-                var yearLvl  = $('#addYearLevel').val();
-
-                if (!fullName) { showToast('Full name is required.', 'warning'); return; }
-                if (!email)    { showToast('Email is required.', 'warning'); return; }
-                if (!password) { showToast('Password is required.', 'warning'); return; }
-                if (!deptId)   { showToast('Department is required.', 'warning'); return; }
-
-                var userData = {
-                    full_Name:    fullName,
-                    email:        email,
-                    password:     password,
-                    phone_Number: $('#addPhone').val().trim(),
-                    gender:       $('#addGender').val(),
-                    birth_Date:   toUtcIso($('#addBirthDate').val()),
-                    address:      $('#addAddress').val().trim(),
-                    userGroup_ID: STUDENT_GROUP_ID,
-                    createdBy:    'admin',
-                    lastUpdatedBy:'admin'
-                };
-                var studentData = {
-                    program_ID:    parseInt($('#addProgramId').val()) || 0,
-                    department_ID: parseInt(deptId),
-                    year_Level:    yearLvl,
-                    lastUpdatedBy: 'admin'
-                };
-                addStudent(userData, studentData, function () {
-                    $('#addStudentModal').modal('hide');
-                    $('#addFullName,#addEmail,#addPassword,#addPhone,#addAddress').val('');
-                    loadStudents();
-                });
-            });
-
-            $(document).on('click', '.edit-btn', function () {
-                var sid  = $(this).data('sid');
-                var uid  = $(this).data('uid');
-                var ugid = $(this).data('ugid');
-                var s = allStudents.find(function(x){ return (x.student_ID||x.id||x.studentId) == sid; }) || {};
-                var u = allUsers.find(function(x){ return x.user_ID == uid; }) || {};
-
-                $('#editStudentId').val(sid);
-                $('#editUserId').val(uid);
-                $('#editUserGroupId').val(ugid || STUDENT_GROUP_ID);
-                $('#editFullName').val(u.full_Name||'');
-                $('#editEmail').val(u.email||'');
-                $('#editPhone').val(u.phone_Number||'');
-                $('#editGender').val(u.gender||'M');
-                $('#editBirthDate').val((u.birth_Date||'').substring(0,10));
-                $('#editAddress').val(u.address||'');
-                $('#editYearLevel').val(s.year_Level||'1st Year');
-                loadDropdowns('#editProgramId', '#editDeptId', s.program_ID, s.department_ID);
+            $(document).on('click','.edit-btn',function(){
+                var sid=$(this).data('sid'),uid=$(this).data('uid'),ugid=$(this).data('ugid');
+                var s=allStudents.find(function(x){ return String(x.student_ID||x.id)===String(sid); })||{};
+                var u=allUsers.find(function(x){ return String(x.user_ID)===String(uid); })||{};
+                $('#editStudentId').val(sid);$('#editUserId').val(uid);$('#editUserGroupId').val(ugid||STUDENT_GID);
+                $('#editFullName').val(u.full_Name||'');$('#editEmail').val(u.email||'');$('#editPhone').val(u.phone_Number||'');
+                $('#editGender').val(u.gender||'M');$('#editBirthDate').val((u.birth_Date||'').substring(0,10));
+                $('#editAddress').val(u.address||'');$('#editYearLevel').val(s.year_Level||'1st Year');
+                loadDropdowns('#editProgramId','#editDeptId',s.program_ID,s.department_ID);
                 $('#editStudentModal').modal('show');
             });
 
-            $('#updateStudentBtn').on('click', function () {
-                var uid  = $('#editUserId').val();
-                var sid  = $('#editStudentId').val();
-                var ugid = parseInt($('#editUserGroupId').val()) || STUDENT_GROUP_ID;
-
-                if (!$('#editFullName').val().trim()) { showToast('Full name is required.', 'warning'); return; }
-
-                var userData = {
-                    user_ID:      parseInt(uid),
-                    full_Name:    $('#editFullName').val().trim(),
-                    email:        $('#editEmail').val().trim(),
-                    password:     'unchanged',
-                    phone_Number: $('#editPhone').val().trim(),
-                    gender:       $('#editGender').val(),
-                    birth_Date:   toUtcIso($('#editBirthDate').val()),
-                    address:      $('#editAddress').val().trim(),
-                    userGroup_ID: ugid,
-                    lastUpdatedBy:'admin'
-                };
-                var studentData = {
-                    program_ID:    parseInt($('#editProgramId').val()) || 0,
-                    department_ID: parseInt($('#editDeptId').val()) || 0,
-                    year_Level:    $('#editYearLevel').val(),
-                    lastUpdatedBy: 'admin'
-                };
-                updateStudent(uid, userData, sid, studentData, function () {
-                    $('#editStudentModal').modal('hide');
-                    loadStudents();
-                });
+            $('#updateStudentBtn').on('click',function(){
+                var uid=$('#editUserId').val(),sid=$('#editStudentId').val(),ugid=parseInt($('#editUserGroupId').val())||STUDENT_GID;
+                if(!$('#editFullName').val().trim()){showToast('Full name is required.','warning');return;}
+                var ud={user_ID:parseInt(uid),full_Name:$('#editFullName').val().trim(),email:$('#editEmail').val().trim(),password:'unchanged',phone_Number:$('#editPhone').val().trim(),gender:$('#editGender').val(),birth_Date:toUtcIso($('#editBirthDate').val()),address:$('#editAddress').val().trim(),userGroup_ID:ugid,lastUpdatedBy:'admin'};
+                var sd={program_ID:parseInt($('#editProgramId').val())||0,department_ID:parseInt($('#editDeptId').val())||0,year_Level:$('#editYearLevel').val(),lastUpdatedBy:'admin'};
+                updateStudent(uid,ud,sid,sd,function(){ $('#editStudentModal').modal('hide'); loadAll(); });
             });
 
-            $(document).on('click', '.del-btn', function () {
-                var sid  = $(this).data('sid');
-                var uid  = $(this).data('uid');
-                var name = $(this).data('name');
-                confirmDelete(name, function () { deleteStudent(uid, sid, loadStudents); });
+            $(document).on('click','.del-btn',function(){
+                var sid=$(this).data('sid'),uid=$(this).data('uid'),name=$(this).data('name');
+                confirmDelete(name,function(){ deleteStudent(uid,sid,loadAll); });
             });
         });
     </script>
