@@ -14,43 +14,55 @@ namespace Backend.Backend.Service
             _courseRepository = courseRepository;
         }
 
-        public async Task<IEnumerable<GetCourseDTO>> GetAllAsync()
+        public async Task<ResponseDTO<IEnumerable<GetCourseDTO>>> GetAllAsync()
         {
             var courses = await _courseRepository.GetAllAsync();
-            return courses.Select(c => new GetCourseDTO
+            if (courses is null || !courses.Any())
+                return new ResponseDTO<IEnumerable<GetCourseDTO>>
+                {
+                    Status_code= 404,
+                    Data = null
+                };
+            var data = courses.Select(c => new GetCourseDTO
             {
                 Course_ID = c.Course_ID,
                 Title = c.Title,
                 Code = c.Code,
                 Description = c.Description,
                 Teacher_ID = c.Teacher_ID,
-                CreatedAt = c.CreatedAt,
-                LastUpdatedAt = c.LastUpdatedAt,
-                CreatedBy = c.CreatedBy,
-                LastUpdatedBy = c.LastUpdatedBy
             });
-        }
 
-        public async Task<GetCourseDTO?> GetByIdAsync(int id)
-        {
-            var c = await _courseRepository.GetByIdAsync(id);
-            if (c == null) return null;
-
-            return new GetCourseDTO
+            return new ResponseDTO<IEnumerable<GetCourseDTO>>()
             {
-                Course_ID = c.Course_ID,
-                Title = c.Title,
-                Code = c.Code,
-                Description = c.Description,
-                Teacher_ID = c.Teacher_ID,
-                CreatedAt = c.CreatedAt,
-                LastUpdatedAt = c.LastUpdatedAt,
-                CreatedBy = c.CreatedBy,
-                LastUpdatedBy = c.LastUpdatedBy
+                Status_code = 200,
+                Data = data
             };
         }
 
-        public async Task<GetCourseDTO> AddAsync(AddCourseDTO dto)
+        public async Task<ResponseDTO<GetCourseDTO>> GetByIdAsync(int id)
+        {
+            var c = await _courseRepository.GetByIdAsync(id);
+            if (c == null)
+                return new ResponseDTO<GetCourseDTO>()
+                {
+                    Status_code = 200,
+                    Data = null
+                };
+
+            var data = new GetCourseDTO
+            {
+                Course_ID = c.Course_ID,
+                Title = c.Title,
+                Code = c.Code,
+                Description = c.Description,
+                Teacher_ID = c.Teacher_ID,
+            };
+
+            return new ResponseDTO<GetCourseDTO>()
+                { Status_code = 200, Data = data };
+        }
+
+        public async Task<ResponseDTO<GetCourseDTO>> AddAsync(AddCourseDTO dto)
         {
             var course = new Course
             {
@@ -60,51 +72,51 @@ namespace Backend.Backend.Service
                 Teacher_ID = dto.Teacher_ID,
                 CreatedAt = DateTime.UtcNow,
                 LastUpdatedAt = DateTime.UtcNow,
-                LastUpdatedBy = dto.LastUpdatedBy
             };
 
             await _courseRepository.AddAsync(course);
 
-            return new GetCourseDTO
+            var data = new GetCourseDTO
             {
                 Course_ID = course.Course_ID,
                 Title = course.Title,
                 Code = course.Code,
                 Description = course.Description,
                 Teacher_ID = course.Teacher_ID,
-                CreatedAt = course.CreatedAt,
-                LastUpdatedAt = course.LastUpdatedAt,
-                CreatedBy = course.CreatedBy,
-                LastUpdatedBy = course.LastUpdatedBy
+            };
+
+            return new ResponseDTO<GetCourseDTO>()
+            {
+                Status_code = 200,
+                Data = data
             };
         }
 
-        public async Task<GetCourseDTO?> UpdateAsync(int id, AddCourseDTO dto)
+        public async Task<ResponseDTO<GetCourseDTO>> UpdateAsync(int id, AddCourseDTO dto)
         {
             var existing = await _courseRepository.GetByIdAsync(id);
-            if (existing == null) return null;
+            if (existing == null) return new ResponseDTO<GetCourseDTO>() { Status_code = 404, Data = null };
 
             existing.Title = dto.Title;
             existing.Code = dto.Code;
             existing.Description = dto.Description;
             existing.Teacher_ID = dto.Teacher_ID;
             existing.LastUpdatedAt = DateTime.UtcNow;
-            existing.LastUpdatedBy = dto.LastUpdatedBy;
 
             await _courseRepository.UpdateAsync(existing);
 
-            return new GetCourseDTO
+            var data = new GetCourseDTO
             {
                 Course_ID = existing.Course_ID,
                 Title = existing.Title,
                 Code = existing.Code,
                 Description = existing.Description,
                 Teacher_ID = existing.Teacher_ID,
-                CreatedAt = existing.CreatedAt,
-                LastUpdatedAt = existing.LastUpdatedAt,
-                CreatedBy = existing.CreatedBy,
-                LastUpdatedBy = existing.LastUpdatedBy
             };
+
+            return new ResponseDTO<GetCourseDTO>()
+                { Status_code = 200,
+                Data = data };
         }
 
         public async Task<bool> DeleteAsync(int id)

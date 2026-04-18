@@ -18,48 +18,83 @@ namespace Backend.Backend.Controller
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var teachers = await _teacherService.GetAllAsync();
-            if (!teachers.Any())
-                return NotFound("No teachers found.");
+            try { 
+                var teachers = await _teacherService.GetAllAsync();
+                if (!(teachers.Data?.Any() ?? false))
+                    return NotFound("No teachers found.");
 
-            return Ok(teachers);
+                return Ok(teachers);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var teacher = await _teacherService.GetByIdAsync(id);
-            if (teacher == null)
-                return NotFound($"Teacher with ID {id} not found.");
+            try { 
+                var teacher = await _teacherService.GetByIdAsync(id);
+                if (teacher == null)
+                    return NotFound($"Teacher with ID {id} not found.");
 
-            return Ok(teacher);
+                return Ok(teacher);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> Add(AddTeacherDTO dto)
         {
-            var teacher = await _teacherService.AddAsync(dto);
-            return Ok(teacher);
+            try { 
+                var teacher = await _teacherService.AddAsync(dto);
+                return Ok(teacher);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, AddTeacherDTO dto)
         {
-            var teacher = await _teacherService.UpdateAsync(id, dto);
-            if (teacher == null)
-                return NotFound($"Teacher with ID {id} not found.");
+            try { 
+                var teacher = await _teacherService.UpdateAsync(id, dto);
+                if (teacher == null)
+                    return NotFound($"Teacher with ID {id} not found.");
 
-            return Ok(teacher);
+                return Ok(teacher);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var success = await _teacherService.DeleteAsync(id);
-            if (!success)
-                return NotFound($"Teacher with ID {id} not found.");
+            try { 
+                var success = await _teacherService.DeleteAsync(id);
+                if (!success)
+                    return NotFound($"Teacher with ID {id} not found.");
 
-            return Ok($"Teacher with ID {id} deleted successfully.");
+                return Ok($"Teacher with ID {id} deleted successfully.");
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
     }
 }

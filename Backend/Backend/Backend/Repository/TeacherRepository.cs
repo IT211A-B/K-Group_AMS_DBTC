@@ -16,7 +16,10 @@ namespace Backend.Backend.Repository
 
         public async Task<Teacher?> GetByIdAsync(int ID)
         {
-            return await _db.Teachers.FindAsync(ID);
+            return await _db.Teachers
+                .FromSqlRaw(@"SELECT * FROM ""Students"" 
+                  WHERE CAST(SPLIT_PART(""DocumentSeries"", '-', 3) AS INT) = {0}", ID)
+                .FirstOrDefaultAsync();
         }
 
         public async Task AddAsync(Teacher teacher)
@@ -35,6 +38,18 @@ namespace Backend.Backend.Repository
         {
             _db.Teachers.Remove(teacher);
             await _db.SaveChangesAsync();
+        }
+
+        public async Task<Department?> GetDepartmentById(int ID)
+        {
+            return await _db.Departments.FindAsync(ID);
+        }
+
+        public async Task<long> GetNextTeacherNumberAsync()
+        {
+            return await _db.Database
+                .SqlQuery<long>($"SELECT nextval('TeacherSeq') AS \"Value\"")
+                .SingleAsync();
         }
     }
 }

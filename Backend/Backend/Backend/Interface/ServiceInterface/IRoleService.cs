@@ -4,10 +4,10 @@ namespace Backend.Backend.Interface.ServiceInterface
 {
     public interface IRoleService
     {
-        Task<IEnumerable<GetRoleDTO>> GetAllAsync();
-        Task<GetRoleDTO?> GetByIdAsync(int id);
-        Task<GetRoleDTO> AddAsync(AddRoleDTO dto);
-        Task<GetRoleDTO?> UpdateAsync(int id, AddRoleDTO dto);
+        Task<ResponseDTO<IEnumerable<GetRoleDTO>>> GetAllAsync();
+        Task<ResponseDTO<GetRoleDTO>> GetByIdAsync(int id);
+        Task<ResponseDTO<GetRoleDTO>> AddAsync(AddRoleDTO dto);
+        Task<ResponseDTO<GetRoleDTO>> UpdateAsync(int id, AddRoleDTO dto);
         Task<bool> DeleteAsync(int id);
     }
 }

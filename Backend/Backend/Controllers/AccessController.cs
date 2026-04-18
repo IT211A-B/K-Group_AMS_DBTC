@@ -45,11 +45,19 @@ namespace Backend.Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllAccesses()
         {
-            var accesses = await _accessService.GetAllAsync();
-            if (!accesses.Any())
-                return NotFound("No Access Records Found");
+            try { 
 
-            return Ok(accesses);
+                var accesses = await _accessService.GetAllAsync();
+                if (!(accesses?.Data?.Any() ?? false))
+                    return NotFound("No Access Records Found");
+
+                return Ok(accesses);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -80,11 +88,18 @@ namespace Backend.Backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetAccessById(int id)
         {
-            var access = await _accessService.GetByIdAsync(id);
-            if (access == null)
-                return NotFound($"#404! Access with ID {id} not found");
+            try { 
+                var access = await _accessService.GetByIdAsync(id);
+                if (access == null)
+                    return NotFound($"#404! Access with ID {id} not found");
 
-            return Ok(access);
+                return Ok(access);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -119,8 +134,16 @@ namespace Backend.Backend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddAccess(AddAccessDTO dto)
         {
-            var access = await _accessService.AddAsync(dto);
-            return Ok(access);
+            try { 
+
+                var access = await _accessService.AddAsync(dto);
+                return Ok(access);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -149,11 +172,18 @@ namespace Backend.Backend.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateAccess(int id, AddAccessDTO dto)
         {
-            var updatedAccess = await _accessService.UpdateAsync(id, dto);
-            if (updatedAccess == null)
-                return NotFound($"#404! Access with ID {id} not found");
+            try { 
+                var updatedAccess = await _accessService.UpdateAsync(id, dto);
+                if (updatedAccess == null)
+                    return NotFound($"#404! Access with ID {id} not found");
 
-            return Ok(updatedAccess);
+                return Ok(updatedAccess);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -179,11 +209,19 @@ namespace Backend.Backend.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteAccess(int id)
         {
-            var success = await _accessService.DeleteAsync(id);
-            if (!success)
-                return NotFound($"#404! Access with ID {id} not found");
+            try
+            {
+                var success = await _accessService.DeleteAsync(id);
+                if (!success)
+                    return NotFound($"#404! Access with ID {id} not found");
 
-            return Ok($"Access with ID {id} deleted successfully");
+                return Ok($"Access with ID {id} deleted successfully");
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
     }
 }

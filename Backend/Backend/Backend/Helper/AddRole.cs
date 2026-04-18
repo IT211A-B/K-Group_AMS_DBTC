@@ -13,15 +13,15 @@ namespace Backend.Backend.Helper
             {
                 role = Role.SUP;
                 status_code = 200;
-            } else if (email.Contains("@.dbtc-cebu"))
+            } else if (email.Contains("@dbtc-cebu"))
             {
                 role = Role.STU;
                 status_code = 200;
-            } else if (email.Contains("@.local"))
+            } else if (email.Contains("@local"))
             {
                 role = Role.TEA;
                 status_code = 200;
-            } else if (email.Contains("@.admin"))
+            } else if (email.Contains("@admin"))
             {
                 role = Role.ADM;
                 status_code = 200;

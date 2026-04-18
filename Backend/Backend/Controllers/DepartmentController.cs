@@ -45,11 +45,18 @@ namespace Backend.Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllDepartments()
         {
-            var departments = await _departmentService.GetAllAsync();
-            if (!departments.Any())
-                return NotFound("No Departments Found");
+            try { 
+                var departments = await _departmentService.GetAllAsync();
+                if (!(departments?.Data?.Any() ?? false))
+                    return NotFound("No Departments Found");
 
-            return Ok(departments);
+                return Ok(departments);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -80,11 +87,18 @@ namespace Backend.Backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetDepartmentById(int id)
         {
-            var department = await _departmentService.GetByIdAsync(id);
-            if (department == null)
-                return NotFound($"#404! Department with ID {id} not found");
+            try { 
+                var department = await _departmentService.GetByIdAsync(id);
+                if (department == null)
+                    return NotFound($"#404! Department with ID {id} not found");
 
-            return Ok(department);
+                return Ok(department);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -109,8 +123,8 @@ namespace Backend.Backend.Controllers
         /// <code>
         /// POST /AttendanceManagement/Department
         /// {
-        ///   "name": "Computer Science",
-        ///   "description": "Handles IT-related programs"
+        ///   "name": "Basic Education",
+        ///   "description": "Range From Grade 1 to Grade 12 (Senior High)"
         /// }
         /// </code>
         /// </remarks>
@@ -119,8 +133,15 @@ namespace Backend.Backend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddDepartment(AddDepartmentDTO dto)
         {
-            var department = await _departmentService.AddAsync(dto);
-            return Ok(department);
+            try { 
+                var department = await _departmentService.AddAsync(dto);
+                return Ok(department);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -149,11 +170,18 @@ namespace Backend.Backend.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateDepartment(int id, AddDepartmentDTO dto)
         {
-            var updatedDepartment = await _departmentService.UpdateAsync(id, dto);
-            if (updatedDepartment == null)
-                return NotFound($"#404! Department with ID {id} not found");
+            try { 
+                var updatedDepartment = await _departmentService.UpdateAsync(id, dto);
+                if (updatedDepartment == null)
+                    return NotFound($"#404! Department with ID {id} not found");
 
-            return Ok(updatedDepartment);
+                return Ok(updatedDepartment);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -179,11 +207,18 @@ namespace Backend.Backend.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteDepartment(int id)
         {
-            var success = await _departmentService.DeleteAsync(id);
-            if (!success)
-                return NotFound($"#404! Department with ID {id} not found");
+            try { 
+                var success = await _departmentService.DeleteAsync(id);
+                if (!success)
+                    return NotFound($"#404! Department with ID {id} not found");
 
-            return Ok($"Department with ID {id} deleted successfully");
+                return Ok($"Department with ID {id} deleted successfully");
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
     }
 }

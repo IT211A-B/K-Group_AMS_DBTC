@@ -14,31 +14,51 @@ namespace Backend.Backend.Service
             _programRepository = programRepository;
         }
 
-        public async Task<IEnumerable<GetProgramDTO>> GetAllAsync()
+        public async Task<ResponseDTO<IEnumerable<GetProgramDTO>>> GetAllAsync()
         {
             var programs = await _programRepository.GetAllAsync();
-            return programs.Select(p => new GetProgramDTO
+            if (!programs.Any() || programs is null)
+                return new ResponseDTO<IEnumerable<GetProgramDTO>>
+                {
+                    Status_code = 404,
+                    Data = null
+                };
+
+            var data = programs.Select(p => new GetProgramDTO
             {
                 Program_Id = p.Program_Id,
                 Name = p.Name,
                 Description = p.Description
             });
+
+            return new ResponseDTO<IEnumerable<GetProgramDTO>>
+            {
+                Status_code = 200,
+                Data = data
+            };
         }
 
-        public async Task<GetProgramDTO?> GetByIdAsync(int id)
+        public async Task<ResponseDTO<GetProgramDTO>> GetByIdAsync(int id)
         {
             var p = await _programRepository.GetByIdAsync(id);
-            if (p == null) return null;
+            if (p == null)
+                return new ResponseDTO<GetProgramDTO>
+                {
+                    Status_code= 404,
+                    Data = null
+                };
 
-            return new GetProgramDTO
+            var data = new GetProgramDTO
             {
                 Program_Id = p.Program_Id,
                 Name = p.Name,
                 Description = p.Description
             };
+
+            return new ResponseDTO<GetProgramDTO> { Status_code = 200, Data = data };
         }
 
-        public async Task<GetProgramDTO> AddAsync(AddProgramDTO dto)
+        public async Task<ResponseDTO<GetProgramDTO>> AddAsync(AddProgramDTO dto)
         {
             var program = new Program_
             {
@@ -48,29 +68,46 @@ namespace Backend.Backend.Service
 
             await _programRepository.AddAsync(program);
 
-            return new GetProgramDTO
+            var data = new GetProgramDTO
             {
                 Program_Id = program.Program_Id,
                 Name = program.Name,
                 Description = program.Description
             };
+
+            return new ResponseDTO<GetProgramDTO>
+            {
+                Status_code= 200,
+                Data = data
+            };
         }
 
-        public async Task<GetProgramDTO?> UpdateAsync(int id, AddProgramDTO dto)
+        public async Task<ResponseDTO<GetProgramDTO>> UpdateAsync(int id, AddProgramDTO dto)
         {
             var existing = await _programRepository.GetByIdAsync(id);
-            if (existing == null) return null;
+            if (existing == null)
+                return new ResponseDTO<GetProgramDTO>
+                {
+                    Status_code = 404,
+                    Data = null
+                };
 
             existing.Name = dto.Name;
             existing.Description = dto.Description;
 
             await _programRepository.UpdateAsync(existing);
 
-            return new GetProgramDTO
+            var data = new GetProgramDTO
             {
                 Program_Id = existing.Program_Id,
                 Name = existing.Name,
                 Description = existing.Description
+            };
+
+            return new ResponseDTO<GetProgramDTO>
+            {
+                Status_code= 200,
+                Data = data
             };
         }
 

@@ -18,48 +18,83 @@ namespace Backend.Backend.Controller
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var groups = await _userGroupService.GetAllAsync();
-            if (!groups.Any())
-                return NotFound("No user groups found.");
+            try { 
+                var groups = await _userGroupService.GetAllAsync();
+                if (!(groups.Data?.Any() ?? false))
+                    return NotFound("No user groups found.");
 
-            return Ok(groups);
+                return Ok(groups);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var group = await _userGroupService.GetByIdAsync(id);
-            if (group == null)
-                return NotFound($"User group with ID {id} not found.");
+            try { 
+                var group = await _userGroupService.GetByIdAsync(id);
+                if (group == null)
+                    return NotFound($"User group with ID {id} not found.");
 
-            return Ok(group);
+                return Ok(group);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> Add(AddUserGroupDTO dto)
         {
-            var group = await _userGroupService.AddAsync(dto);
-            return Ok(group);
+            try { 
+                var group = await _userGroupService.AddAsync(dto);
+                return Ok(group);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, AddUserGroupDTO dto)
         {
-            var group = await _userGroupService.UpdateAsync(id, dto);
-            if (group == null)
-                return NotFound($"User group with ID {id} not found.");
+            try { 
+                var group = await _userGroupService.UpdateAsync(id, dto);
+                if (group == null)
+                    return NotFound($"User group with ID {id} not found.");
 
-            return Ok(group);
+                return Ok(group);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var success = await _userGroupService.DeleteAsync(id);
-            if (!success)
-                return NotFound($"User group with ID {id} not found.");
+            try { 
+                var success = await _userGroupService.DeleteAsync(id);
+                if (!success)
+                    return NotFound($"User group with ID {id} not found.");
 
-            return Ok($"User group with ID {id} deleted successfully.");
+                return Ok($"User group with ID {id} deleted successfully.");
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
     }
 }

@@ -23,7 +23,7 @@ ProjectAssetsFile=<PATH>obj/project.assets.json
 RootNamespace=Backend
 RunAnalyzers=
 RunAnalyzersDuringLiveAnalysis=
-SolutionPath=*Undefined*
+SolutionPath=<PATH>../Backend.sln
 TargetFrameworkIdentifier=.NETCoreApp
 TargetPath=<PATH>bin/Debug/net8.0/Backend.dll
 TargetRefPath=<PATH>obj/Debug/net8.0/ref/Backend.dll
@@ -66,7 +66,9 @@ Backend/
   EnrollmentDTO.cs
   PermissionDTO.cs
   ProgramDTO.cs
+  ResponseDTO.cs
   RoleDTO.cs
+  ScheduleDTO.cs
   StudentDTO.cs
   TeacherDTO.cs
   UserDTO.cs
@@ -77,6 +79,9 @@ Backend/
    AttendanceEnum.cs
    DeptEnum.cs
    PosEnum.cs
+  ExtractDocuSer.cs
+  GetAcronym.cs
+  ThreeFirstLetterCapital.cs
  Interface/RepositoryInterface/
   IAccessRepository.cs
   IAttendanceRepository.cs
@@ -167,6 +172,12 @@ Migrations/
  20260402104806_InitialMigration.Designer.cs
  20260405100943_AddSequences.cs
  20260405100943_AddSequences.Designer.cs
+ 20260412123753_UpdatedUserDocStringMaxLength.cs
+ 20260412123753_UpdatedUserDocStringMaxLength.Designer.cs
+ 20260412144246_UpdatedGenderToSex.cs
+ 20260412144246_UpdatedGenderToSex.Designer.cs
+ 20260412144906_AddedUserIdtoTeacherStudent.cs
+ 20260412144906_AddedUserIdtoTeacherStudent.Designer.cs
  DatabaseLibraryModelSnapshot.cs
 obj/Debug/net8.0/
  .NETCoreApp,Version=v8.0.AssemblyAttributes.cs

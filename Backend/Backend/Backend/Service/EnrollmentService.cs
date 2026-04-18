@@ -14,31 +14,51 @@ namespace Backend.Backend.Service
             _enrollmentRepository = enrollmentRepository;
         }
 
-        public async Task<IEnumerable<GetEnrollmentDTO>> GetAllAsync()
+        public async Task<ResponseDTO<IEnumerable<GetEnrollmentDTO>>> GetAllAsync()
         {
             var enrollments = await _enrollmentRepository.GetAllAsync();
-            return enrollments.Select(e => new GetEnrollmentDTO
+            if (enrollments is null || !enrollments.Any())
+                return new ResponseDTO<IEnumerable<GetEnrollmentDTO>>
+                {
+                    Status_code= 404,
+                    Data = null
+                };
+            var data = enrollments.Select(e => new GetEnrollmentDTO
             {
                 Enrollment_ID = e.Enrollment_ID,
                 Student_ID = e.Student_ID,
                 Schedule_ID = e.Schedule_ID
             });
+
+            return new ResponseDTO<IEnumerable<GetEnrollmentDTO>>
+            { Status_code = 200, Data = data };
         }
 
-        public async Task<GetEnrollmentDTO?> GetByIdAsync(int id)
+        public async Task<ResponseDTO<GetEnrollmentDTO>> GetByIdAsync(int id)
         {
             var e = await _enrollmentRepository.GetByIdAsync(id);
-            if (e == null) return null;
+            if (e == null)
+                return new ResponseDTO<GetEnrollmentDTO>()
+                {
+                    Status_code = 404,
+                    Data = null
+                };
 
-            return new GetEnrollmentDTO
+            var data = new GetEnrollmentDTO
             {
                 Enrollment_ID = e.Enrollment_ID,
                 Student_ID = e.Student_ID,
                 Schedule_ID = e.Schedule_ID
             };
+
+            return new ResponseDTO<GetEnrollmentDTO>
+            {
+                Status_code = 200,
+                Data = data
+            };
         }
 
-        public async Task<GetEnrollmentDTO> AddAsync(AddEnrollmentDTO dto)
+        public async Task<ResponseDTO<GetEnrollmentDTO>> AddAsync(AddEnrollmentDTO dto)
         {
             var enrollment = new Enrollment
             {
@@ -48,29 +68,41 @@ namespace Backend.Backend.Service
 
             await _enrollmentRepository.AddAsync(enrollment);
 
-            return new GetEnrollmentDTO
+            var data = new GetEnrollmentDTO
             {
                 Enrollment_ID = enrollment.Enrollment_ID,
                 Student_ID = enrollment.Student_ID,
                 Schedule_ID = enrollment.Schedule_ID
             };
+
+            return new ResponseDTO<GetEnrollmentDTO>
+            {
+                Status_code = 200,
+                Data = data
+            };
         }
 
-        public async Task<GetEnrollmentDTO?> UpdateAsync(int id, AddEnrollmentDTO dto)
+        public async Task<ResponseDTO<GetEnrollmentDTO>> UpdateAsync(int id, AddEnrollmentDTO dto)
         {
             var existing = await _enrollmentRepository.GetByIdAsync(id);
-            if (existing == null) return null;
+            if (existing == null) return new ResponseDTO<GetEnrollmentDTO>() { Status_code = 404, Data = null };
 
             existing.Student_ID = dto.Student_ID;
             existing.Schedule_ID = dto.Schedule_ID;
 
             await _enrollmentRepository.UpdateAsync(existing);
 
-            return new GetEnrollmentDTO
+            var data = new GetEnrollmentDTO
             {
                 Enrollment_ID = existing.Enrollment_ID,
                 Student_ID = existing.Student_ID,
                 Schedule_ID = existing.Schedule_ID
+            };
+
+            return new ResponseDTO<GetEnrollmentDTO>
+            {
+                Status_code = 200,
+                Data = data
             };
         }
 

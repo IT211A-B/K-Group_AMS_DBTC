@@ -30,11 +30,18 @@ namespace Backend.Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllPrograms()
         {
-            var programs = await _programService.GetAllAsync();
-            if (!programs.Any())
-                return NotFound("No Programs Found");
+            try { 
+                var programs = await _programService.GetAllAsync();
+                if (!(programs?.Data?.Any() ?? false))
+                    return NotFound("No Programs Found");
 
-            return Ok(programs);
+                return Ok(programs);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -47,11 +54,18 @@ namespace Backend.Backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetProgramById(int id)
         {
-            var program = await _programService.GetByIdAsync(id);
-            if (program == null)
-                return NotFound($"#404! Program with ID {id} not found");
+            try { 
+                var program = await _programService.GetByIdAsync(id);
+                if (program == null)
+                    return NotFound($"#404! Program with ID {id} not found");
 
-            return Ok(program);
+                return Ok(program);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -63,8 +77,15 @@ namespace Backend.Backend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddProgram(AddProgramDTO dto)
         {
-            var program = await _programService.AddAsync(dto);
-            return Ok(program);
+            try { 
+                var program = await _programService.AddAsync(dto);
+                return Ok(program);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -78,11 +99,18 @@ namespace Backend.Backend.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateProgram(int id, AddProgramDTO dto)
         {
-            var updatedProgram = await _programService.UpdateAsync(id, dto);
-            if (updatedProgram == null)
-                return NotFound($"#404! Program with ID {id} not found");
+            try { 
+                var updatedProgram = await _programService.UpdateAsync(id, dto);
+                if (updatedProgram == null)
+                    return NotFound($"#404! Program with ID {id} not found");
 
-            return Ok(updatedProgram);
+                return Ok(updatedProgram);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -95,11 +123,18 @@ namespace Backend.Backend.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteProgram(int id)
         {
-            var success = await _programService.DeleteAsync(id);
-            if (!success)
-                return NotFound($"#404! Program with ID {id} not found");
+            try { 
+                var success = await _programService.DeleteAsync(id);
+                if (!success)
+                    return NotFound($"#404! Program with ID {id} not found");
 
-            return Ok($"Program with ID {id} deleted successfully");
+                return Ok($"Program with ID {id} deleted successfully");
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
     }
 }

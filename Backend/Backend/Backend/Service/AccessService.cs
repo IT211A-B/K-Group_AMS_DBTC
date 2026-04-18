@@ -14,31 +14,55 @@ namespace Backend.Backend.Service
             _accessRepository = accessRepository;
         }
 
-        public async Task<IEnumerable<GetAccessDTO>> GetAllAsync()
+        public async Task<ResponseDTO<IEnumerable<GetAccessDTO>>> GetAllAsync()
         {
             var accesses = await _accessRepository.GetAllAsync();
-            return accesses.Select(a => new GetAccessDTO
+            if (accesses is null || !accesses.Any())
+                return new ResponseDTO<IEnumerable<GetAccessDTO>>
+                {
+                    Status_code= 404,
+                    Data = null
+                };
+
+            var data = accesses.Select(a => new GetAccessDTO
             {
                 Access_ID = a.Access_ID,
                 Name = a.Name,
                 Description = a.Description
             });
+
+            return new ResponseDTO<IEnumerable<GetAccessDTO>>
+            {
+                Status_code = 200,
+                Data = data
+            };
         }
 
-        public async Task<GetAccessDTO?> GetByIdAsync(int id)
+        public async Task<ResponseDTO<GetAccessDTO>> GetByIdAsync(int id)
         {
             var a = await _accessRepository.GetByIdAsync(id);
-            if (a == null) return null;
+            if (a == null)
+                return new ResponseDTO<GetAccessDTO>
+                {
+                    Status_code = 404,
+                    Data = null
+                };
 
-            return new GetAccessDTO
+            var data = new GetAccessDTO
             {
                 Access_ID = a.Access_ID,
                 Name = a.Name,
                 Description = a.Description
             };
+
+            return new ResponseDTO<GetAccessDTO>
+            {
+                Status_code = 200,
+                Data = data
+            };
         }
 
-        public async Task<GetAccessDTO> AddAsync(AddAccessDTO dto)
+        public async Task<ResponseDTO<GetAccessDTO>> AddAsync(AddAccessDTO dto)
         {
             var access = new Access
             {
@@ -48,29 +72,46 @@ namespace Backend.Backend.Service
 
             await _accessRepository.AddAsync(access);
 
-            return new GetAccessDTO
+            var data = new GetAccessDTO
             {
                 Access_ID = access.Access_ID,
                 Name = access.Name,
                 Description = access.Description
             };
+
+            return new ResponseDTO<GetAccessDTO>
+            {
+                Status_code=200,
+                Data = data
+            };
         }
 
-        public async Task<GetAccessDTO?> UpdateAsync(int id, AddAccessDTO dto)
+        public async Task<ResponseDTO<GetAccessDTO>> UpdateAsync(int id, AddAccessDTO dto)
         {
             var existing = await _accessRepository.GetByIdAsync(id);
-            if (existing == null) return null;
+            if (existing == null)
+                return new ResponseDTO<GetAccessDTO>()
+                {
+                    Status_code = 404,
+                    Data = null
+                };
 
             existing.Name = dto.Name;
             existing.Description = dto.Description;
 
             await _accessRepository.UpdateAsync(existing);
 
-            return new GetAccessDTO
+            var data = new GetAccessDTO
             {
                 Access_ID = existing.Access_ID,
                 Name = existing.Name,
                 Description = existing.Description
+            };
+
+            return new ResponseDTO<GetAccessDTO>()
+            {
+                Status_code = 200,
+                Data = data
             };
         }
 

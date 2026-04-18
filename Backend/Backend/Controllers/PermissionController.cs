@@ -30,11 +30,18 @@ namespace Backend.Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllPermissions()
         {
-            var permissions = await _permissionService.GetAllAsync();
-            if (!permissions.Any())
-                return NotFound("No Permissions Found");
+            try { 
+                var permissions = await _permissionService.GetAllAsync();
+                if (!(permissions?.Data?.Any() ?? false))
+                    return NotFound("No Permissions Found");
 
-            return Ok(permissions);
+                return Ok(permissions);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -47,11 +54,18 @@ namespace Backend.Backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetPermissionById(int id)
         {
-            var permission = await _permissionService.GetByIdAsync(id);
-            if (permission == null)
-                return NotFound($"#404! Permission with ID {id} not found");
+            try { 
+                var permission = await _permissionService.GetByIdAsync(id);
+                if (permission == null)
+                    return NotFound($"#404! Permission with ID {id} not found");
 
-            return Ok(permission);
+                return Ok(permission);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -63,8 +77,15 @@ namespace Backend.Backend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddPermission(AddPermissionDTO dto)
         {
-            var permission = await _permissionService.AddAsync(dto);
-            return Ok(permission);
+            try { 
+                var permission = await _permissionService.AddAsync(dto);
+                return Ok(permission);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -78,11 +99,18 @@ namespace Backend.Backend.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdatePermission(int id, AddPermissionDTO dto)
         {
-            var updatedPermission = await _permissionService.UpdateAsync(id, dto);
-            if (updatedPermission == null)
-                return NotFound($"#404! Permission with ID {id} not found");
+            try { 
+                var updatedPermission = await _permissionService.UpdateAsync(id, dto);
+                if (updatedPermission == null)
+                    return NotFound($"#404! Permission with ID {id} not found");
 
-            return Ok(updatedPermission);
+                return Ok(updatedPermission);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -95,11 +123,18 @@ namespace Backend.Backend.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeletePermission(int id)
         {
-            var success = await _permissionService.DeleteAsync(id);
-            if (!success)
-                return NotFound($"#404! Permission with ID {id} not found");
+            try { 
+                var success = await _permissionService.DeleteAsync(id);
+                if (!success)
+                    return NotFound($"#404! Permission with ID {id} not found");
 
-            return Ok($"Permission with ID {id} deleted successfully");
+                return Ok($"Permission with ID {id} deleted successfully");
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
     }
 }

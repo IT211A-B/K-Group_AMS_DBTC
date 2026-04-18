@@ -45,11 +45,18 @@ namespace Backend.Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllEnrollments()
         {
-            var enrollments = await _enrollmentService.GetAllAsync();
-            if (!enrollments.Any())
-                return NotFound("No Enrollments Found");
+            try { 
+                var enrollments = await _enrollmentService.GetAllAsync();
+                if (!(enrollments?.Data?.Any() ?? false))
+                    return NotFound("No Enrollments Found");
 
-            return Ok(enrollments);
+                return Ok(enrollments);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -80,11 +87,18 @@ namespace Backend.Backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetEnrollmentById(int id)
         {
-            var enrollment = await _enrollmentService.GetByIdAsync(id);
-            if (enrollment == null)
-                return NotFound($"#404! Enrollment with ID {id} not found");
+            try { 
+                var enrollment = await _enrollmentService.GetByIdAsync(id);
+                if (enrollment == null)
+                    return NotFound($"#404! Enrollment with ID {id} not found");
 
-            return Ok(enrollment);
+                return Ok(enrollment);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -119,8 +133,15 @@ namespace Backend.Backend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddEnrollment(AddEnrollmentDTO dto)
         {
-            var enrollment = await _enrollmentService.AddAsync(dto);
-            return Ok(enrollment);
+            try { 
+                var enrollment = await _enrollmentService.AddAsync(dto);
+                return Ok(enrollment);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -149,11 +170,18 @@ namespace Backend.Backend.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateEnrollment(int id, AddEnrollmentDTO dto)
         {
-            var updatedEnrollment = await _enrollmentService.UpdateAsync(id, dto);
-            if (updatedEnrollment == null)
-                return NotFound($"#404! Enrollment with ID {id} not found");
+            try { 
+                var updatedEnrollment = await _enrollmentService.UpdateAsync(id, dto);
+                if (updatedEnrollment == null)
+                    return NotFound($"#404! Enrollment with ID {id} not found");
 
-            return Ok(updatedEnrollment);
+                return Ok(updatedEnrollment);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -179,11 +207,18 @@ namespace Backend.Backend.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteEnrollment(int id)
         {
-            var success = await _enrollmentService.DeleteAsync(id);
-            if (!success)
-                return NotFound($"#404! Enrollment with ID {id} not found");
+            try { 
+                var success = await _enrollmentService.DeleteAsync(id);
+                if (!success)
+                    return NotFound($"#404! Enrollment with ID {id} not found");
 
-            return Ok($"Enrollment with ID {id} deleted successfully");
+                return Ok($"Enrollment with ID {id} deleted successfully");
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
     }
 }

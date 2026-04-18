@@ -2,6 +2,7 @@
 using Backend.Backend.Model;
 using Backend.Backend.Repository;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Backend.Backend.Repository
 {
@@ -16,7 +17,10 @@ namespace Backend.Backend.Repository
 
         public async Task<Student?> GetByIdAsync(int ID)
         {
-            return await _db.Students.FindAsync(ID);
+            return await _db.Students
+                .FromSqlRaw(@"SELECT * FROM ""Students"" 
+                  WHERE CAST(SPLIT_PART(""DocumentSeries"", '-', 3) AS INT) = {0}", ID)
+                .FirstOrDefaultAsync();
         }
 
         public async Task AddAsync(Student student)
@@ -36,5 +40,23 @@ namespace Backend.Backend.Repository
             _db.Students.Remove(student);
             await _db.SaveChangesAsync();
         }
+
+        public async Task<Program_?> GetProgramByIdAsync(int id)
+        {
+            return await _db.Programs.FindAsync(id);
+        }
+
+        public async Task<long> GetNextStudentNumber()
+        {
+            return await _db.Database
+                .SqlQuery<long>($"SELECT nextval('StudentSeq') AS \"Value\"")
+                .SingleAsync();
+        }
+
+        public async Task<bool> CheckUserIfTaken(int uId)
+        {
+            return await _db.Students.AnyAsync(s => s.User_ID == uId);
+        }
+
     }
 }

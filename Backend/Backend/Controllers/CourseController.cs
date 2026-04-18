@@ -45,11 +45,18 @@ namespace Backend.Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllCourses()
         {
-            var courses = await _courseService.GetAllAsync();
-            if (!courses.Any())
-                return NotFound("No Courses Found");
+            try { 
+                var courses = await _courseService.GetAllAsync();
+                if (!(courses?.Data?.Any() ?? false))
+                    return NotFound("No Courses Found");
 
-            return Ok(courses);
+                return Ok(courses);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -80,11 +87,18 @@ namespace Backend.Backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetCourseById(int id)
         {
-            var course = await _courseService.GetByIdAsync(id);
-            if (course == null)
-                return NotFound($"#404! Course with ID {id} not found");
+            try { 
+                var course = await _courseService.GetByIdAsync(id);
+                if (course == null)
+                    return NotFound($"#404! Course with ID {id} not found");
 
-            return Ok(course);
+                return Ok(course);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -123,8 +137,15 @@ namespace Backend.Backend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddCourse(AddCourseDTO dto)
         {
-            var course = await _courseService.AddAsync(dto);
-            return Ok(course);
+            try { 
+                var course = await _courseService.AddAsync(dto);
+                return Ok(course);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -155,11 +176,18 @@ namespace Backend.Backend.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateCourse(int id, AddCourseDTO dto)
         {
-            var updatedCourse = await _courseService.UpdateAsync(id, dto);
-            if (updatedCourse == null)
-                return NotFound($"#404! Course with ID {id} not found");
+            try { 
+                var updatedCourse = await _courseService.UpdateAsync(id, dto);
+                if (updatedCourse == null)
+                    return NotFound($"#404! Course with ID {id} not found");
 
-            return Ok(updatedCourse);
+                return Ok(updatedCourse);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -185,11 +213,18 @@ namespace Backend.Backend.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteCourse(int id)
         {
-            var success = await _courseService.DeleteAsync(id);
-            if (!success)
-                return NotFound($"#404! Course with ID {id} not found");
+            try { 
+                var success = await _courseService.DeleteAsync(id);
+                if (!success)
+                    return NotFound($"#404! Course with ID {id} not found");
 
-            return Ok($"Course with ID {id} deleted successfully");
+                return Ok($"Course with ID {id} deleted successfully");
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
     }
 }

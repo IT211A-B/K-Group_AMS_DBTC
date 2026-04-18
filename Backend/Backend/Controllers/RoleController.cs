@@ -30,11 +30,18 @@ namespace Backend.Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllRoles()
         {
-            var roles = await _roleService.GetAllAsync();
-            if (!roles.Any())
-                return NotFound("No Roles Found");
+            try { 
+                var roles = await _roleService.GetAllAsync();
+                if (!(roles?.Data?.Any() ?? false))
+                    return NotFound("No Roles Found");
 
-            return Ok(roles);
+                return Ok(roles);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -47,11 +54,18 @@ namespace Backend.Backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetRoleById(int id)
         {
-            var role = await _roleService.GetByIdAsync(id);
-            if (role == null)
-                return NotFound($"#404! Role with ID {id} not found");
+            try { 
+                var role = await _roleService.GetByIdAsync(id);
+                if (role == null)
+                    return NotFound($"#404! Role with ID {id} not found");
 
-            return Ok(role);
+                return Ok(role);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -63,8 +77,15 @@ namespace Backend.Backend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddRole(AddRoleDTO dto)
         {
-            var role = await _roleService.AddAsync(dto);
-            return Ok(role);
+            try { 
+                var role = await _roleService.AddAsync(dto);
+                return Ok(role);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -78,11 +99,18 @@ namespace Backend.Backend.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateRole(int id, AddRoleDTO dto)
         {
-            var updatedRole = await _roleService.UpdateAsync(id, dto);
-            if (updatedRole == null)
-                return NotFound($"#404! Role with ID {id} not found");
+            try { 
+                var updatedRole = await _roleService.UpdateAsync(id, dto);
+                if (updatedRole == null)
+                    return NotFound($"#404! Role with ID {id} not found");
 
-            return Ok(updatedRole);
+                return Ok(updatedRole);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
 
         /// <summary>
@@ -95,11 +123,18 @@ namespace Backend.Backend.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteRole(int id)
         {
-            var success = await _roleService.DeleteAsync(id);
-            if (!success)
-                return NotFound($"#404! Role with ID {id} not found");
+            try { 
+                var success = await _roleService.DeleteAsync(id);
+                if (!success)
+                    return NotFound($"#404! Role with ID {id} not found");
 
-            return Ok($"Role with ID {id} deleted successfully");
+                return Ok($"Role with ID {id} deleted successfully");
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
         }
     }
 }

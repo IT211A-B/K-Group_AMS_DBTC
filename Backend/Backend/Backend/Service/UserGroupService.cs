@@ -14,10 +14,16 @@ namespace Backend.Backend.Service
             _userGroupRepository = userGroupRepository;
         }
 
-        public async Task<IEnumerable<GetUserGroupDTO>> GetAllAsync()
+        public async Task<ResponseDTO<IEnumerable<GetUserGroupDTO>>> GetAllAsync()
         {
             var groups = await _userGroupRepository.GetAllAsync();
-            return groups.Select(g => new GetUserGroupDTO
+            if (groups is null || !groups.Any())
+                return new ResponseDTO<IEnumerable<GetUserGroupDTO>>
+                {
+                    Status_code= 404,
+                    Data = null
+                };
+            var data = groups.Select(g => new GetUserGroupDTO
             {
                 Group_ID = g.Group_ID,
                 Group_Name = g.Group_Name,
@@ -26,14 +32,25 @@ namespace Backend.Backend.Service
                 Role_ID = g.Role_ID,
                 Permission_ID = g.Permission_ID
             });
+
+            return new ResponseDTO<IEnumerable<GetUserGroupDTO>>
+            {
+                Status_code = 200,
+                Data = data
+            };
         }
 
-        public async Task<GetUserGroupDTO?> GetByIdAsync(int id)
+        public async Task<ResponseDTO<GetUserGroupDTO>> GetByIdAsync(int id)
         {
             var g = await _userGroupRepository.GetByIdAsync(id);
-            if (g == null) return null;
+            if (g == null)
+                return new ResponseDTO<GetUserGroupDTO>
+                {
+                    Status_code = 404,
+                    Data = null
+                };
 
-            return new GetUserGroupDTO
+            var data = new GetUserGroupDTO
             {
                 Group_ID = g.Group_ID,
                 Group_Name = g.Group_Name,
@@ -42,9 +59,15 @@ namespace Backend.Backend.Service
                 Role_ID = g.Role_ID,
                 Permission_ID = g.Permission_ID
             };
+
+            return new ResponseDTO<GetUserGroupDTO>
+            {
+                Status_code = 200,
+                Data =data
+            };
         }
 
-        public async Task<GetUserGroupDTO> AddAsync(AddUserGroupDTO dto)
+        public async Task<ResponseDTO<GetUserGroupDTO>> AddAsync(AddUserGroupDTO dto)
         {
             var group = new UserGroup
             {
@@ -57,7 +80,7 @@ namespace Backend.Backend.Service
 
             await _userGroupRepository.AddAsync(group);
 
-            return new GetUserGroupDTO
+            var data = new GetUserGroupDTO
             {
                 Group_ID = group.Group_ID,
                 Group_Name = group.Group_Name,
@@ -66,12 +89,23 @@ namespace Backend.Backend.Service
                 Role_ID = group.Role_ID,
                 Permission_ID = group.Permission_ID
             };
+
+            return new ResponseDTO<GetUserGroupDTO>
+            {
+                Status_code = 200,
+                Data = data
+            };
         }
 
-        public async Task<GetUserGroupDTO?> UpdateAsync(int id, AddUserGroupDTO dto)
+        public async Task<ResponseDTO<GetUserGroupDTO>> UpdateAsync(int id, AddUserGroupDTO dto)
         {
             var existing = await _userGroupRepository.GetByIdAsync(id);
-            if (existing == null) return null;
+            if (existing == null)
+                return new ResponseDTO<GetUserGroupDTO>
+                {
+                    Status_code = 404,
+                    Data = null
+                };
 
             existing.Group_Name = dto.Group_Name;
             existing.Group_Description = dto.Group_Description;
@@ -80,7 +114,7 @@ namespace Backend.Backend.Service
 
             await _userGroupRepository.UpdateAsync(existing);
 
-            return new GetUserGroupDTO
+            var data = new GetUserGroupDTO
             {
                 Group_ID = existing.Group_ID,
                 Group_Name = existing.Group_Name,
@@ -88,6 +122,12 @@ namespace Backend.Backend.Service
                 Group_Created = existing.Group_Created,
                 Role_ID = existing.Role_ID,
                 Permission_ID = existing.Permission_ID
+            };
+
+            return new ResponseDTO<GetUserGroupDTO>
+            {
+                Status_code=200,
+                Data = data
             };
         }
 
