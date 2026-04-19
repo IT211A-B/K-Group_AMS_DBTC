@@ -18,11 +18,14 @@
             </div>
             <input type="hidden" id="selectedRole" value="admin" />
 
+            <div class="alert alert-info py-2 mb-2" id="emailHint" style="font-size:12px;">
+                <i class="bi bi-info-circle"></i> Admin accounts must end with <strong>.admin</strong>
+            </div>
             <div class="alert alert-danger d-none py-2" id="loginError" style="font-size:12px;"></div>
 
             <div class="mb-3">
                 <label class="form-label">Email</label>
-                <input type="email" class="form-control" id="loginEmail" placeholder="user@dbtc-cebu.edu.ph" autocomplete="username" />
+                <input type="email" class="form-control" id="loginEmail" placeholder="user@domain.admin" autocomplete="username" />
             </div>
             <div class="mb-1">
                 <label class="form-label">Password</label>
@@ -48,6 +51,9 @@
 
 @section Scripts {
     <script>
+        var roleDomains = { admin: '.admin', teacher: '.local', student: '.dbtc-cebu' };
+        var roleHints   = { admin: 'Admin accounts must end with <strong>.admin</strong>', teacher: 'Teacher accounts must end with <strong>.local</strong>', student: 'Student accounts must end with <strong>.dbtc-cebu</strong>' };
+
         document.getElementById('togglePwd').addEventListener('click', function () {
             var i = document.getElementById('loginPassword');
             i.type = i.type === 'password' ? 'text' : 'password';
@@ -59,7 +65,12 @@
             tab.addEventListener('click', function () {
                 document.querySelectorAll('.role-tab').forEach(function (t) { t.classList.remove('active'); });
                 this.classList.add('active');
-                document.getElementById('selectedRole').value = this.getAttribute('data-role');
+                var role = this.getAttribute('data-role');
+                document.getElementById('selectedRole').value = role;
+                document.getElementById('emailHint').innerHTML = '<i class="bi bi-info-circle"></i> ' + roleHints[role];
+                var ph = { admin: 'user@domain.admin', teacher: 'user@domain.local', student: 'user@domain.dbtc-cebu' };
+                document.getElementById('loginEmail').placeholder = ph[role];
+                document.getElementById('loginError').classList.add('d-none');
             });
         });
 
@@ -67,8 +78,17 @@
             var email = document.getElementById('loginEmail').value.trim();
             var pwd   = document.getElementById('loginPassword').value.trim();
             var role  = document.getElementById('selectedRole').value;
-            document.getElementById('loginError').classList.add('d-none');
-            if (!email || !pwd) { document.getElementById('loginError').textContent = 'Email and password are required.'; document.getElementById('loginError').classList.remove('d-none'); return; }
+            var errEl = document.getElementById('loginError');
+            errEl.classList.add('d-none');
+
+            if (!email || !pwd) { errEl.textContent = 'Email and password are required.'; errEl.classList.remove('d-none'); return; }
+
+            var requiredDomain = roleDomains[role];
+            if (!email.endsWith(requiredDomain)) {
+                errEl.textContent = 'Invalid email for ' + role + '. Email must end with "' + requiredDomain + '".';
+                errEl.classList.remove('d-none');
+                return;
+            }
 
             document.getElementById('loginBtnText').textContent = 'Signing in...';
             document.getElementById('loginBtnSpinner').classList.remove('d-none');
@@ -86,16 +106,16 @@
                     else if (data.role === 'student') window.location.href = '/Student/Profile';
                     else window.location.href = '/Admin/Dashboard';
                 } else {
-                    document.getElementById('loginError').textContent = data.message || 'Invalid email or password.';
-                    document.getElementById('loginError').classList.remove('d-none');
+                    errEl.textContent = data.message || 'Invalid email or password.';
+                    errEl.classList.remove('d-none');
                     document.getElementById('loginBtnText').textContent = 'Login';
                     document.getElementById('loginBtnSpinner').classList.add('d-none');
                     document.getElementById('loginBtn').disabled = false;
                 }
             })
             .catch(() => {
-                document.getElementById('loginError').textContent = 'Connection error. Please try again.';
-                document.getElementById('loginError').classList.remove('d-none');
+                errEl.textContent = 'Connection error. Please try again.';
+                errEl.classList.remove('d-none');
                 document.getElementById('loginBtnText').textContent = 'Login';
                 document.getElementById('loginBtnSpinner').classList.add('d-none');
                 document.getElementById('loginBtn').disabled = false;
