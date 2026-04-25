@@ -23,10 +23,10 @@ WORKDIR /ams
 
 # Restore in buld stage is the first one
 COPY . ./
-RUN dotnet restore ./Backend/Backend.csproj
+RUN dotnet restore ./Backend/Backend/Backend.csproj
 
 # Publish in build stage which is  the second one
-RUN dotnet publish ./Backend/Backend.csproj -c Release -o out
+RUN dotnet publish ./Backend/Backend/Backend.csproj -c Release -o out
 
 # Runtime stage -- aspnet
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
@@ -38,7 +38,7 @@ ENTRYPOINT ["dotnet", "Backend.dll"]
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Backend/Backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Backend/Backend/Backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
