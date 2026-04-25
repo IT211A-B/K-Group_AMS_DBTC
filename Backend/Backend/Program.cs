@@ -69,12 +69,13 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 // Will use this if it the environment name is Enviroments.Development, so that it will be disabled if in production, also render already proivdes https
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+//if (app.Environment.IsDevelopment())
+//{
+// Allow the use og swagger in production
+app.UseSwagger();
+app.UseSwaggerUI();
     //app.UseHttpsRedirection();
-}
+//}
 
 app.UseAuthorization();
 
