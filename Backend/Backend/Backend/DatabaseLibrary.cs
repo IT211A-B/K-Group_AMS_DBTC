@@ -12,9 +12,7 @@ namespace Backend.Backend
         public DbSet<Student> Students { get; set; }
         public DbSet<Teacher> Teachers { get; set; }
         public DbSet<Course> Courses { get; set; }
-        //public DbSet<UserGroup> UserGroups { get; set; }
         public DbSet<Permission> Permissions { get; set; }
-        //public DbSet<Access> Accesses { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
