@@ -67,15 +67,18 @@ builder.Services.AddScoped<IScheduleService, ScheduleService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-// Will use this if it the environment name is Enviroments.Development, so that it will be disabled if in production, also render already proivdes https
-//if (app.Environment.IsDevelopment())
-//{
-// Allow the use og swagger in production
-app.UseSwagger();
-app.UseSwaggerUI();
-    //app.UseHttpsRedirection();
-//}
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
+{
+	// Allow the use og swagger both in production and Local dev
+	app.UseSwagger();
+	app.UseSwaggerUI();
+}
+
+// Local Dev
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection(); // Authomatically redirect Http request to Https
+}
 
 app.UseAuthorization();
 
