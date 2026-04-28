@@ -1,9 +1,11 @@
 using Backend.Backend;
 using Backend.Backend.Interface.RepositoryInterface;
-using Microsoft.EntityFrameworkCore;
-using Backend.Backend.Repository;
 using Backend.Backend.Interface.ServiceInterface;
+using Backend.Backend.Repository;
 using Backend.Backend.Service;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using SeedRole = Backend.Backend.Seeder.RolePermissionandPermission;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,6 +64,17 @@ builder.Services.AddScoped<IScheduleService, ScheduleService>();
 
 
 var app = builder.Build();
+
+// Using 'using' to despose	a logic / code block if done once
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+    var context = services.GetRequiredService<DatabaseLibrary>();
+
+    await SeedRole.SeedRolePermissionNPermissionAsync(roleManager, context);
+}
 
 if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
 {
