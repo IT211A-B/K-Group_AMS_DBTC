@@ -6,6 +6,7 @@ using Backend.Backend.Service;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SeedRole = Backend.Backend.Seeder.RolePermissionandPermission;
+using Backend.Backend.Configuration;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,13 +27,18 @@ builder.Services.AddSwaggerGen(options =>
 	options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
-//register cors and allow all origin, may it be from port 1234 or angular framework
+// Add JWT
+// so that, can inject config anywhere, DI pattern
+builder.Services.Configure<ConfigurationModel>(
+    builder.Configuration.GetSection("Jwt"));
+
+//register cors and allow mvc origin
 builder.Services.AddCors(options =>
 {
-	options.AddPolicy("AllowAll",
-		policy => policy.AllowAnyOrigin()
-								 .AllowAnyHeader()
-								 .AllowAnyMethod());
+    options.AddPolicy("AllowMvcClient",
+        policy => policy.WithOrigins("https://localhost:5001") // MVC app origin
+                        .AllowAnyHeader()
+                        .AllowAnyMethod());
 });
 
 // Repository DI for the Service: so service can use this automatically 
