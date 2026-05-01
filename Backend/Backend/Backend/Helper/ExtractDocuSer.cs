@@ -1,29 +1,44 @@
-﻿using System.Runtime.CompilerServices;
+﻿using Backend.Backend.Helper.Enum;
+using System.Runtime.CompilerServices;
 
 namespace Backend.Backend.Helper
 {
     public static class ExtractDocuSer
     {
         /// <summary>
-        /// Extract The Id from Document Series
+        /// Extract The Datas from Document Series
         /// </summary>
         /// <param name="DocumentSeries"></param>
-        /// <param name="position"></param>
         /// <returns></returns>
-        public static (int ExtractedId, int statusCode) ExtractDataFromDocumentSeries(this int position, string DocumentSeries)
+        public static (int? ExtractedId, PosEnum.PosStatus ExtractedPosition, int? ExtractedDate ,int statusCode) ExtractDataFromDocumentSeries(this string DocumentSeries)
         {
-            if (position <= 0 || position > 3)
-                return (0, 401); // Unathorized
+            PosEnum.PosStatus posStatus = PosEnum.PosStatus.STU; //initializer
 
             string[] Data = DocumentSeries.Split('-');
 
-            if (string.IsNullOrEmpty(Data[position - 1]))
-                return (0, 404); // Null or Empty ID
+            for (int position = 0; Data.Length > 0; position++)
+            {
+                if (string.IsNullOrEmpty(Data[position - 1]))
+                    return (null, posStatus, null, 404); // Null or Empty ID
+            }
 
-            if (int.TryParse(Data[position - 1], out int Id)) // Extract
-                return (Id, 200);
+            switch (Data[0])
+            {
+                case "STU":
+                    posStatus = PosEnum.PosStatus.STU;
+                    break;
+                case "ADM":
+                    posStatus = PosEnum.PosStatus.ADM; 
+                    break;
+                case "TEA":
+                    posStatus = PosEnum.PosStatus.TEA;
+                    break;
+            }
 
-            return (0, 422);
+            int id = int.Parse(Data[2]);
+            int year = int.Parse(Data[1]);
+
+            return (id, posStatus, year, 200);
         }
     }
 }
