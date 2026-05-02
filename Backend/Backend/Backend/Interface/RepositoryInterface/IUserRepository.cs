@@ -9,7 +9,9 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task AddAsync(User user);
         Task UpdateAsync(User user);
         Task DeleteAsync(User user);
-        Task<User?> GetByEmailOrUsernameAsync(string emailOrUsername);
+        Task<User?> GetByEmailAsync(string emaile);
+        Task<User?> GetByUsernameAsync(string emaile);
+
         Task<long> GetNextUserNumberAsync();
     }
 }
