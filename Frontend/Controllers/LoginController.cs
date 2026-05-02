@@ -29,11 +29,14 @@ namespace Frontend.Controllers
 
             if (success)
             {
+                // Set secure session cookies
                 HttpContext.Session.SetString("UserRole", role);
                 HttpContext.Session.SetString("UserName", name);
                 HttpContext.Session.SetString("UserId", userId);
                 HttpContext.Session.SetString("UserEmail", model.Email);
                 HttpContext.Session.SetString("UserGroupId", userGroupId);
+
+                // Return role so frontend can redirect
                 return Ok(new { role, name, userId });
             }
             else if (errorMessage.StartsWith("Cannot connect"))

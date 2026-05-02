@@ -17,16 +17,16 @@ namespace Frontend.Controllers
         {
             var role = HttpContext.Session.GetString("UserRole");
             if (!_studentService.IsSessionValid(role)) return Redirect("/Login/Index");
+            if (role == "admin") return Redirect("/Admin/Dashboard");
+            if (role == "teacher") return Redirect("/Teacher/Dashboard");
+            if (role != "student") return Redirect("/Login/Index");
             return null;
         }
 
         public IActionResult Index()
         {
             var check = CheckSession(); if (check != null) return check;
-            var role = HttpContext.Session.GetString("UserRole");
-            if (_studentService.IsStudent(role)) return RedirectToAction("Profile");
-            var vm = new StudentViewModel { CurrentPage = "Index" };
-            return View(vm);
+            return RedirectToAction("Profile");
         }
 
         public IActionResult Profile()

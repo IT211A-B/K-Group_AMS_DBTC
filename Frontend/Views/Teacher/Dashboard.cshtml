@@ -1,29 +1,33 @@
 ﻿@{
     Layout = "_Layout";
     ViewData["Title"] = "Teacher Dashboard";
-    var userName = Context.Session.GetString("UserName") ?? "Teacher";
     var userId = Context.Session.GetString("UserId") ?? "";
 }
 <div class="page-header">
     <div>
-        <h4><i class="bi bi-speedometer2"></i> Teacher Dashboard</h4>
+        <h4><i class="bi bi-speedometer2"></i> Dashboard</h4>
         <ol class="breadcrumb"><li class="breadcrumb-item active">Dashboard</li></ol>
     </div>
 </div>
 <div class="row g-4 mb-4">
-    <div class="col-md-3"><div class="stat-card"><div class="stat-icon green"><i class="bi bi-people"></i></div><div><div class="stat-label">Total Students</div><div class="stat-value" id="statMyStudents">—</div></div></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-icon green"><i class="bi bi-people"></i></div><div><div class="stat-label">Students (This Course)</div><div class="stat-value" id="statMyStudents">—</div></div></div></div>
     <div class="col-md-3"><div class="stat-card"><div class="stat-icon blue"><i class="bi bi-check-circle"></i></div><div><div class="stat-label">Present Today</div><div class="stat-value" id="statPresent">—</div></div></div></div>
     <div class="col-md-3"><div class="stat-card"><div class="stat-icon red"><i class="bi bi-x-circle"></i></div><div><div class="stat-label">Absent Today</div><div class="stat-value" id="statAbsent">—</div></div></div></div>
-    <div class="col-md-3"><div class="stat-card"><div class="stat-icon orange"><i class="bi bi-clock"></i></div><div><div class="stat-label">Late Today</div><div class="stat-value" id="statLate">—</div></div></div></div>
+    <div class="col-md-3"><div class="stat-card"><div class="stat-icon orange"><i class="bi bi-journal-bookmark-fill"></i></div><div><div class="stat-label">My Courses</div><div class="stat-value" id="statCourses">—</div></div></div></div>
 </div>
 <div class="card">
-    <div class="card-header">
+    <div class="card-header flex-wrap gap-2">
         <div class="card-header-title"><i class="bi bi-people-fill"></i> Students</div>
-        <div class="search-bar"><i class="bi bi-search"></i><input type="text" class="form-control" id="tSearch" placeholder="Search..."></div>
+        <div class="d-flex gap-2 ms-auto align-items-center">
+            <select class="form-select form-select-sm" id="courseDropdown" style="width:200px;">
+                <option value="">All My Courses</option>
+            </select>
+            <div class="search-bar"><i class="bi bi-search"></i><input type="text" class="form-control" id="tSearch" placeholder="Search student…"></div>
+        </div>
     </div>
     <div class="table-wrapper">
         <table class="table table-striped">
-            <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Gender</th><th>Year</th></tr></thead>
+            <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Gender</th><th>Year</th><th>Course</th></tr></thead>
             <tbody id="tStudentBody"></tbody>
         </table>
     </div>
@@ -32,50 +36,101 @@
 
 @section Scripts {
     <script>
-        var allStudents=[], allUsers=[], tPg;
-        var currentUserId = '@userId';
+        var allStudents=[], allUsers=[], allTeachers=[], allCourses=[], allEnrollments=[], tPg;
+        var currentUserId='@userId';
+
+        function getMyTeacherId(){
+            var t=allTeachers.find(function(x){ return String(x.user_ID||x.userId)===String(currentUserId); });
+            return t?(t.teacher_ID||t.id):null;
+        }
+
+        function getMyCourses(tid){
+            return allCourses.filter(function(c){ return String(c.teacher_ID)===String(tid); });
+        }
+
+        function buildStudentList(courseId){
+            // Get enrollments for the selected course(s)
+            var relevantEnrollments;
+            if(courseId){
+                relevantEnrollments=allEnrollments.filter(function(e){ return String(e.course_ID)===String(courseId); });
+            } else {
+                // All my courses
+                var tid=getMyTeacherId();
+                var myCourseIds=getMyCourses(tid).map(function(c){ return String(c.course_ID||c.id); });
+                relevantEnrollments=allEnrollments.filter(function(e){ return myCourseIds.includes(String(e.course_ID)); });
+            }
+            // Unique students
+            var seenSids={};
+            var rows=[];
+            relevantEnrollments.forEach(function(enr){
+                if(seenSids[enr.student_ID]) return;
+                seenSids[enr.student_ID]=true;
+                var s=allStudents.find(function(x){ return String(x.student_ID||x.id)===String(enr.student_ID); });
+                var u=s?allUsers.find(function(x){ return String(x.user_ID)===String(s.user_ID||s.userId); }):null;
+                var c=allCourses.find(function(x){ return String(x.course_ID||x.id)===String(enr.course_ID); });
+                rows.push({_name:u?u.full_Name:'—',_email:u?u.email:'—',_gender:u?u.gender:'',_year:s?s.year_Level:'—',_course:c?(c.title||c.code||''):'—'});
+            });
+            return rows;
+        }
+
+        function renderStudentRow(r, i){
+            var name=r._name, init=(name[0]||'?').toUpperCase();
+            var gender=r._gender==='M'?'Male':r._gender==='F'?'Female':'—';
+            return '<tr><td>'+(i+1)+'</td>'
+                +'<td><div class="d-flex align-items-center gap-2"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">'+init+'</div>'+name+'</div></td>'
+                +'<td>'+r._email+'</td><td>'+gender+'</td><td>'+r._year+'</td><td><span style="font-size:12px;background:#DBEAFE;color:var(--accent);padding:2px 8px;border-radius:6px;">'+r._course+'</span></td></tr>';
+        }
+
+        function refreshTable(){
+            var cid=$('#courseDropdown').val();
+            var q=$('#tSearch').val().toLowerCase();
+            var rows=buildStudentList(cid).filter(function(r){ return !q||(r._name.toLowerCase().includes(q)||r._email.toLowerCase().includes(q)); });
+            $('#statMyStudents').text(rows.length);
+            if(tPg) tPg.refresh(rows);
+            else tPg=paginate({data:rows,pageSize:10,containerId:'tStudentBody',paginationId:'tStudentPagination',colSpan:6,emptyMsg:'No students enrolled in this course.',renderRow:renderStudentRow});
+        }
 
         $(function(){
+            $('#page-loader').fadeIn(150);
             $.when(
-                $.ajax({ url: '/api/Student', dataType: 'json' }),
-                $.ajax({ url: '/api/User',    dataType: 'json' })
-            ).done(function(sRes, uRes){
-                allStudents = Array.isArray(sRes[0]) ? sRes[0] : [];
-                allUsers    = Array.isArray(uRes[0]) ? uRes[0] : [];
-                $('#statMyStudents').text(allStudents.length);
-                tPg = paginate({
-                    data: allStudents, pageSize: 10, containerId: 'tStudentBody', paginationId: 'tStudentPagination',
-                    colSpan: 5, emptyMsg: 'No students.',
-                    renderRow: function(s, i){
-                        var u = allUsers.find(function(x){ return x.user_ID==(s.user_ID||s.userId); })||{};
-                        var name=u.full_Name||'—', init=(name[0]||'?').toUpperCase();
-                        var gender=u.gender==='M'?'Male':u.gender==='F'?'Female':'—';
-                        var year=s.year_Level||'—';
-                        return '<tr><td>'+(i+1)+'</td>'+
-                            '<td><div class="d-flex align-items-center gap-2"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">'+init+'</div>'+name+'</div></td>'+
-                            '<td>'+(u.email||'—')+'</td><td>'+gender+'</td><td>'+year+'</td></tr>';
-                    }
-                });
-            });
+                $.ajax({url:'/api/Student',dataType:'json'}),
+                $.ajax({url:'/api/User',dataType:'json'}),
+                $.ajax({url:'/api/Teacher',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Course',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Enrollment',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Attendance',dataType:'json'})
+            ).done(function(sR,uR,tR,cR,eR,aR){
+                allStudents=Array.isArray(sR[0])?sR[0]:[];
+                allUsers=Array.isArray(uR[0])?uR[0]:[];
+                allTeachers=Array.isArray(tR[0])?tR[0]:[];
+                allCourses=Array.isArray(cR[0])?cR[0]:[];
+                allEnrollments=Array.isArray(eR[0])?eR[0]:[];
+                var allAtt=Array.isArray(aR[0])?aR[0]:[];
 
-            // Today's attendance stats
-            var today=new Date().toISOString().slice(0,10);
-            $.ajax({ url:'/AttendanceManagement/Attendance', dataType:'json',
-                success: function(data){
-                    var arr=(Array.isArray(data)?data:[]).filter(function(a){ return (a.date||a.attendanceDate||'').substring(0,10)===today; });
-                    $('#statPresent').text(arr.filter(a=>(a.status||'').toLowerCase()==='present').length);
-                    $('#statAbsent').text(arr.filter(a=>(a.status||'').toLowerCase()==='absent').length);
-                    $('#statLate').text(arr.filter(a=>(a.status||'').toLowerCase()==='late').length);
-                }
-            });
+                var tid=getMyTeacherId();
+                var myCourses=getMyCourses(tid);
+                $('#statCourses').text(myCourses.length);
 
-            $('#tSearch').on('input', function(){
-                var q=$(this).val().toLowerCase();
-                tPg.refresh(allStudents.filter(function(s){
-                    var u=allUsers.find(function(x){ return x.user_ID==(s.user_ID||s.userId); })||{};
-                    return (u.full_Name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q);
-                }));
-            });
+                // Build course dropdown
+                var o='<option value="">All My Courses</option>';
+                myCourses.forEach(function(c){ o+='<option value="'+(c.course_ID||c.id)+'">'+( c.title||c.code||'Course '+(c.course_ID||c.id))+'</option>'; });
+                $('#courseDropdown').html(o);
+
+                refreshTable();
+
+                // Today stats
+                var today=new Date().toISOString().slice(0,10);
+                var myCourseIds=myCourses.map(function(c){ return String(c.course_ID||c.id); });
+                var myEnrollIds=allEnrollments.filter(function(e){ return myCourseIds.includes(String(e.course_ID)); }).map(function(e){ return String(e.enrollment_ID||e.id); });
+                var todayAtt=allAtt.filter(function(a){ return (a.date||a.attendanceDate||'').substring(0,10)===today && myEnrollIds.includes(String(a.enrollment_ID)); });
+                $('#statPresent').text(todayAtt.filter(function(a){ return (a.status||'').toLowerCase()==='present'; }).length);
+                $('#statAbsent').text(todayAtt.filter(function(a){ return (a.status||'').toLowerCase()==='absent'; }).length);
+
+                $('#page-loader').fadeOut(200);
+            }).fail(function(){ $('#page-loader').fadeOut(200); showToast('Failed to load data.','error'); });
+
+            $('#courseDropdown').on('change',function(){ tPg=null; refreshTable(); });
+            $('#tSearch').on('input',function(){ refreshTable(); });
         });
     </script>
 }

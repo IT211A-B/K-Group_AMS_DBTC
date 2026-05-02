@@ -1,9 +1,10 @@
 ﻿@{
-    ViewData["Title"] = "Daily Attendance";
+    Layout = "_Layout";
+    ViewData["Title"] = "Attendance";
 }
-<div class="page-header">
+<div class="page-header flex-wrap gap-2">
     <div>
-        <h4><i class="bi bi-calendar-check"></i> Daily Attendance</h4>
+        <h4><i class="bi bi-calendar-check"></i> Attendance</h4>
         <ol class="breadcrumb"><li class="breadcrumb-item"><a href="/Admin/Dashboard">Home</a></li><li class="breadcrumb-item active">Attendance</li></ol>
     </div>
     <input type="date" id="attendanceDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" style="width:auto;">
@@ -14,94 +15,123 @@
     <div class="col-md-4"><div class="stat-card"><div class="stat-icon orange"><i class="bi bi-clock"></i></div><div><div class="stat-label">Late</div><div class="stat-value" id="lateCount">0</div></div></div></div>
 </div>
 <div class="card">
-    <div class="card-header">
+    <div class="card-header flex-wrap gap-2">
         <div class="card-header-title"><i class="bi bi-table"></i> Attendance Sheet</div>
-        <div class="d-flex gap-2">
-            <div class="search-bar"><i class="bi bi-search"></i><input type="text" class="form-control" id="searchAttendance" placeholder="Search student..."></div>
-            <button class="btn btn-success btn-sm" id="addAttendanceBtn"><i class="bi bi-plus-circle"></i> Add</button>
+        <div class="d-flex flex-wrap gap-2 ms-auto align-items-center">
+            <select class="form-select form-select-sm" id="viewType" style="width:140px;">
+                <option value="student">Students</option>
+                <option value="teacher">Teachers</option>
+            </select>
+            <select class="form-select form-select-sm" id="filterStatus" style="width:130px;">
+                <option value="">All Status</option>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Late">Late</option>
+                <option value="unmarked">Unmarked</option>
+            </select>
         </div>
     </div>
     <div class="table-wrapper">
         <table class="table table-striped">
-            <thead><tr><th>ID</th><th>Enrollment</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="attendanceTableBody"></tbody>
         </table>
+    </div>
+    <div class="px-4 py-2 border-top d-flex gap-4" style="font-size:13px;background:#F8FAFF;">
+        <span>Total: <strong id="sumTotal">0</strong></span>
+        <span class="text-success">Present: <strong id="sumPresent">0</strong></span>
+        <span class="text-danger">Absent: <strong id="sumAbsent">0</strong></span>
+        <span class="text-warning">Late: <strong id="sumLate">0</strong></span>
+        <span class="text-muted">Unmarked: <strong id="sumUnmarked">0</strong></span>
     </div>
     <div class="pagination-wrapper"><div id="attendancePagination"></div></div>
 </div>
 
-<!-- Add/Edit Attendance Modal -->
-<div class="modal fade" id="attendanceModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="attendanceModalTitle"><i class="bi bi-calendar-plus"></i> Add Attendance</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="attendanceId">
-                <div class="mb-2">
-                    <label class="form-label">Enrollment ID <span class="text-danger">*</span></label>
-                    <select class="form-select" id="enrollmentId"></select>
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Date <span class="text-danger">*</span></label>
-                    <input type="date" class="form-control" id="attendanceDateInput">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Status <span class="text-danger">*</span></label>
-                    <select class="form-select" id="attendanceStatus">
-                        <option value="Present">Present</option>
-                        <option value="Absent">Absent</option>
-                        <option value="Late">Late</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveAttendanceBtn">Save</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <script>
-        let attendancePaginator, attendanceData=[], currentDate='', allEnrollments=[];
+        var attPag, allStudents=[], allTeachers=[], allUsers=[], allEnrollments=[], allAttRec=[], displayData=[], currentDate='';
 
-        function renderAttendanceRow(r, idx) {
-            var rid = r.attendance_ID || r.id;
-            var eid = r.enrollment_ID || r.enrollmentId || '—';
-            var date = (r.date||r.attendanceDate||'').substring(0,10);
-            var status = r.status||'—';
-            var cls = status.toLowerCase()==='present'?'badge-present':status.toLowerCase()==='absent'?'badge-absent':'badge-late';
-            return `<tr>
-                <td>${rid}</td><td>${eid}</td><td>${date}</td>
-                <td><span class="badge ${cls}">${status}</span></td>
-                <td class="d-flex gap-1">
-                    <button class="btn btn-sm btn-outline-primary edit-att" data-id="${rid}"><i class="bi bi-pencil"></i></button>
-                    <button class="btn btn-sm btn-outline-danger del-att" data-id="${rid}" data-name="Record #${rid}"><i class="bi bi-trash"></i></button>
-                </td></tr>`;
+        function renderRow(r, idx){
+            var name=r._name, status=r.status||'', attId=r._attId||'';
+            var cls=status.toLowerCase()==='present'?'badge-present':status.toLowerCase()==='absent'?'badge-absent':status.toLowerCase()==='late'?'badge-late':'';
+            var badge=status?'<span class="badge '+cls+'">'+status+'</span>':'<span class="text-muted" style="font-size:12px;">Unmarked</span>';
+            var type=r._type==='teacher'?'<span style="background:#EDE9FE;color:#6D28D9;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Teacher</span>':'<span style="background:#DBEAFE;color:var(--accent);font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Student</span>';
+            var init=(name[0]||'?').toUpperCase();
+            return '<tr>'
+                +'<td>'+(idx+1)+'</td>'
+                +'<td><div class="d-flex align-items-center gap-2"><div style="width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">'+init+'</div>'+name+'</div></td>'
+                +'<td>'+type+'</td>'
+                +'<td>'+badge+'</td>'
+                +'<td><button class="btn btn-sm btn-outline-primary mark-att-btn" data-id="'+r._id+'" data-type="'+r._type+'" data-attid="'+attId+'" data-name="'+name+'" data-status="'+status+'"><i class="bi bi-pencil-square"></i> Mark</button></td>'
+                +'</tr>';
         }
 
-        function loadAttendance(date) {
-            getAttendance(date, function(data){
-                attendanceData=data; currentDate=date;
-                if(attendancePaginator) attendancePaginator.refresh(attendanceData);
-                else attendancePaginator=paginate({data:attendanceData,pageSize:10,containerId:'attendanceTableBody',paginationId:'attendancePagination',renderRow:renderAttendanceRow,emptyMsg:'No attendance records found.',colSpan:5});
-                $('#presentCount').text(attendanceData.filter(s=>(s.status||'').toLowerCase()==='present').length);
-                $('#absentCount').text(attendanceData.filter(s=>(s.status||'').toLowerCase()==='absent').length);
-                $('#lateCount').text(attendanceData.filter(s=>(s.status||'').toLowerCase()==='late').length);
-            });
+        function updateSummary(data){
+            var p=data.filter(function(r){ return (r.status||'').toLowerCase()==='present'; }).length;
+            var a=data.filter(function(r){ return (r.status||'').toLowerCase()==='absent'; }).length;
+            var l=data.filter(function(r){ return (r.status||'').toLowerCase()==='late'; }).length;
+            var u=data.filter(function(r){ return !r.status; }).length;
+            $('#presentCount').text(p);$('#absentCount').text(a);$('#lateCount').text(l);
+            $('#sumTotal').text(data.length);$('#sumPresent').text(p);$('#sumAbsent').text(a);$('#sumLate').text(l);$('#sumUnmarked').text(u);
         }
 
-        function loadEnrollmentDropdown(selId) {
-            getEnrollments(function(data){
-                allEnrollments=data;
-                var opts='<option value="">Select Enrollment</option>';
-                data.forEach(function(e){ var eid=e.enrollment_ID||e.id; opts+='<option value="'+eid+'" '+(eid==selId?'selected':'')+'>Enrollment #'+eid+' (Student:'+e.student_ID+')</option>'; });
-                $('#enrollmentId').html(opts);
+        function buildDisplayData(date, type){
+            var rows=[];
+            if(type==='student'){
+                // All enrollments → students
+                allEnrollments.forEach(function(enr){
+                    var s=allStudents.find(function(x){ return String(x.student_ID||x.id)===String(enr.student_ID); });
+                    var u=s?allUsers.find(function(x){ return String(x.user_ID)===String(s.user_ID||s.userId); }):null;
+                    var name=u?u.full_Name:'Student #'+enr.student_ID;
+                    var att=allAttRec.find(function(a){ return String(a.enrollment_ID)===String(enr.enrollment_ID||enr.id) && (a.date||a.attendanceDate||'').substring(0,10)===date; });
+                    rows.push({_id:enr.enrollment_ID||enr.id, _type:'student', _name:name, status:att?(att.status||''):'', _attId:att?(att.attendance_ID||att.id):''});
+                });
+            } else {
+                // Teachers
+                allTeachers.forEach(function(t){
+                    var u=allUsers.find(function(x){ return String(x.user_ID)===String(t.user_ID||t.userId); });
+                    var name=u?u.full_Name:'Teacher #'+(t.teacher_ID||t.id);
+                    var tid=t.teacher_ID||t.id;
+                    // Teachers use teacher_ID stored in enrollment_ID field for teacher attendance
+                    var att=allAttRec.find(function(a){ return String(a.teacher_ID||a.teacherId)===String(tid) && (a.date||a.attendanceDate||'').substring(0,10)===date; });
+                    rows.push({_id:tid, _type:'teacher', _name:name, status:att?(att.status||''):'', _attId:att?(att.attendance_ID||att.id):''});
+                });
+            }
+            return rows;
+        }
+
+        function applyFilter(){
+            var f=$('#filterStatus').val().toLowerCase();
+            var result=displayData.filter(function(r){
+                if(f==='unmarked') return !r.status;
+                if(f&&(r.status||'').toLowerCase()!==f) return false;
+                return true;
             });
+            if(attPag) attPag.refresh(result);
+            else attPag=paginate({data:result,pageSize:15,containerId:'attendanceTableBody',paginationId:'attendancePagination',colSpan:5,emptyMsg:'No records.',renderRow:renderRow});
+            updateSummary(displayData);
+        }
+
+        function loadAttendance(date){
+            currentDate=date;
+            $('#page-loader').fadeIn(150);
+            $.when(
+                $.ajax({url:'/AttendanceManagement/Attendance',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Enrollment',dataType:'json'}),
+                $.ajax({url:'/api/Student',dataType:'json'}),
+                $.ajax({url:'/api/Teacher',dataType:'json'}),
+                $.ajax({url:'/api/User',dataType:'json'})
+            ).done(function(aR,eR,sR,tR,uR){
+                allAttRec=Array.isArray(aR[0])?aR[0]:[];
+                allEnrollments=Array.isArray(eR[0])?eR[0]:[];
+                allStudents=Array.isArray(sR[0])?sR[0]:[];
+                allTeachers=Array.isArray(tR[0])?tR[0]:[];
+                allUsers=Array.isArray(uR[0])?uR[0]:[];
+                attPag=null;
+                displayData=buildDisplayData(date,$('#viewType').val());
+                applyFilter();
+                $('#page-loader').fadeOut(200);
+            }).fail(function(){ $('#page-loader').fadeOut(200); showToast('Failed to load attendance.','error'); });
         }
 
         $(function(){
@@ -109,56 +139,32 @@
             $('#attendanceDate').val(today);
             loadAttendance(today);
 
-            $('#attendanceDate').change(function(){ loadAttendance($(this).val()); });
+            $('#attendanceDate').change(function(){ attPag=null; loadAttendance($(this).val()); });
+            $('#viewType').change(function(){ attPag=null; displayData=buildDisplayData(currentDate,$(this).val()); applyFilter(); });
+            $('#filterStatus').change(applyFilter);
 
-            $('#searchAttendance').on('keyup',function(){
-                var q=$(this).val().toLowerCase();
-                attendancePaginator.refresh(attendanceData.filter(r=>(r.status||'').toLowerCase().includes(q)||String(r.enrollment_ID||'').includes(q)));
+            $(document).on('click','.mark-att-btn',function(){
+                var id=$(this).data('id'), type=$(this).data('type'), attId=$(this).data('attid'), name=$(this).data('name'), status=$(this).data('status');
+                $('#attPopupName').text('Mark attendance for: '+name);
+                $('#attPopupModal').modal('show');
+                $('#attPopupModal').data({id:id,type:type,attId:attId,date:currentDate});
             });
 
-            $('#addAttendanceBtn').click(function(){
-                $('#attendanceModalTitle').html('<i class="bi bi-calendar-plus"></i> Add Attendance');
-                $('#attendanceId').val('');
-                $('#attendanceDateInput').val(new Date().toISOString().slice(0,10));
-                $('#attendanceStatus').val('Present');
-                loadEnrollmentDropdown(null);
-                $('#attendanceModal').modal('show');
-            });
-
-            $('#saveAttendanceBtn').click(function(){
-                var id=$('#attendanceId').val();
-                var eid=$('#enrollmentId').val();
-                var date=$('#attendanceDateInput').val();
-                var status=$('#attendanceStatus').val();
-                if(!eid){ showToast('Enrollment is required.','warning'); return; }
-                if(!date){ showToast('Date is required.','warning'); return; }
-                var data={ enrollment_ID:parseInt(eid), date:new Date(date).toISOString(), status:status, lastUpdatedBy:'admin' };
-                if(id){
-                    updateAttendance(id, data, function(){ $('#attendanceModal').modal('hide'); loadAttendance(currentDate); });
+            $(document).on('click','.att-status-btn',function(){
+                var s=$(this).data('status');
+                var d=$('#attPopupModal').data();
+                var payload;
+                if(d.type==='student'){
+                    payload={enrollment_ID:parseInt(d.id),date:new Date(d.date).toISOString(),status:s,lastUpdatedBy:'admin'};
                 } else {
-                    markAttendance(data, function(){ $('#attendanceModal').modal('hide'); loadAttendance(currentDate); });
+                    payload={teacher_ID:parseInt(d.id),date:new Date(d.date).toISOString(),status:s,lastUpdatedBy:'admin'};
                 }
-            });
-
-            $(document).on('click','.edit-att',function(){
-                var id=$(this).data('id');
-                var r=attendanceData.find(function(x){ return (x.attendance_ID||x.id)==id; })||{};
-                $('#attendanceModalTitle').html('<i class="bi bi-pencil"></i> Edit Attendance');
-                $('#attendanceId').val(id);
-                $('#attendanceDateInput').val((r.date||r.attendanceDate||'').substring(0,10));
-                $('#attendanceStatus').val(r.status||'Present');
-                loadEnrollmentDropdown(r.enrollment_ID);
-                $('#attendanceModal').modal('show');
-            });
-
-            $(document).on('click','.del-att',function(){
-                var id=$(this).data('id'), name=$(this).data('name');
-                confirmDelete(name, function(){
-                    $.ajax({ type:'DELETE', url:'/AttendanceManagement/Attendance/'+id, dataType:'json',
-                        beforeSend: function(){ $('#page-loader').fadeIn(150); },
-                        success: function(){ $('#page-loader').fadeOut(200); showToast('Attendance deleted.','success'); loadAttendance(currentDate); },
-                        error: function(x){ $('#page-loader').fadeOut(200); showToast('Delete failed.','error'); }
-                    });
+                var url='/AttendanceManagement/Attendance';
+                var method='POST';
+                if(d.attId){ url+='/'+d.attId; method='PUT'; }
+                $.ajax({ type:method, url:url, contentType:'application/json', data:JSON.stringify(payload),
+                    success:function(){ $('#attPopupModal').modal('hide'); loadAttendance(currentDate); showToast('Attendance marked: '+s,'success'); },
+                    error:function(x){ $('#attPopupModal').modal('hide'); showToast('Failed to save: '+(x.responseJSON&&x.responseJSON.message||'error'),'error'); }
                 });
             });
         });

@@ -11,20 +11,14 @@
                 <div style="font-size:14px;color:var(--accent);font-weight:600;margin-top:6px;">Attendance Management</div>
             </div>
 
-            <div class="role-tabs" id="roleTabs">
-                <div class="role-tab active" data-role="admin">Admin</div>
-                <div class="role-tab" data-role="teacher">Teacher</div>
-                <div class="role-tab" data-role="student">Student</div>
-            </div>
-            <input type="hidden" id="selectedRole" value="admin" />
-
             <div class="alert alert-danger d-none py-2" id="loginError" style="font-size:12px;"></div>
 
             <div class="mb-3">
                 <label class="form-label">Email</label>
-                <input type="email" class="form-control" id="loginEmail" placeholder="user@domain.admin" autocomplete="username" />
+                <input type="email" class="form-control" id="loginEmail" placeholder="Enter your email" autocomplete="username" />
+                <div style="font-size:11px;color:#94A3B8;margin-top:4px;" id="emailHint"></div>
             </div>
-            <div class="mb-1">
+            <div class="mb-3">
                 <label class="form-label">Password</label>
                 <div class="input-icon-wrap">
                     <input type="password" class="form-control" id="loginPassword" placeholder="Enter your password" autocomplete="current-password" />
@@ -47,77 +41,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        var roleDomains = { admin: 'admin', teacher: 'local', student: 'dbtc-cebu' };
-
-        document.getElementById('togglePwd').addEventListener('click', function () {
-            var i = document.getElementById('loginPassword');
-            i.type = i.type === 'password' ? 'text' : 'password';
-            this.className = i.type === 'text' ? 'bi bi-eye' : 'bi bi-eye-slash';
-            this.style.cssText = 'position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:#94A3B8;font-size:16px;z-index:10;';
-        });
-
-        document.querySelectorAll('.role-tab').forEach(function (tab) {
-            tab.addEventListener('click', function () {
-                document.querySelectorAll('.role-tab').forEach(function (t) { t.classList.remove('active'); });
-                this.classList.add('active');
-                var role = this.getAttribute('data-role');
-                document.getElementById('selectedRole').value = role;
-                var ph = { admin: 'user@domain.admin', teacher: 'user@domain.local', student: 'user@domain.dbtc-cebu' };
-                document.getElementById('loginEmail').placeholder = ph[role];
-                document.getElementById('loginError').classList.add('d-none');
-            });
-        });
-
-        function doLogin() {
-            var email = document.getElementById('loginEmail').value.trim();
-            var pwd   = document.getElementById('loginPassword').value.trim();
-            var role  = document.getElementById('selectedRole').value;
-            var errEl = document.getElementById('loginError');
-            errEl.classList.add('d-none');
-
-            if (!email || !pwd) { errEl.textContent = 'Email and password are required.'; errEl.classList.remove('d-none'); return; }
-
-            var requiredDomain = roleDomains[role];
-            if (!email.includes(requiredDomain)) {
-                errEl.textContent = 'Invalid email for ' + role + '. Email must contain "' + requiredDomain + '".';
-                errEl.classList.remove('d-none');
-                return;
-            }
-
-            document.getElementById('loginBtnText').textContent = 'Signing in...';
-            document.getElementById('loginBtnSpinner').classList.remove('d-none');
-            document.getElementById('loginBtn').disabled = true;
-
-            fetch('/Login/Authenticate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password: pwd, role })
-            })
-            .then(res => res.json().then(data => ({ ok: res.ok, data })))
-            .then(({ ok, data }) => {
-                if (ok) {
-                    if (data.role === 'teacher') window.location.href = '/Teacher/Dashboard';
-                    else if (data.role === 'student') window.location.href = '/Student/Profile';
-                    else window.location.href = '/Admin/Dashboard';
-                } else {
-                    errEl.textContent = data.message || 'Invalid email or password.';
-                    errEl.classList.remove('d-none');
-                    document.getElementById('loginBtnText').textContent = 'Login';
-                    document.getElementById('loginBtnSpinner').classList.add('d-none');
-                    document.getElementById('loginBtn').disabled = false;
-                }
-            })
-            .catch(() => {
-                errEl.textContent = 'Connection error. Please try again.';
-                errEl.classList.remove('d-none');
-                document.getElementById('loginBtnText').textContent = 'Login';
-                document.getElementById('loginBtnSpinner').classList.add('d-none');
-                document.getElementById('loginBtn').disabled = false;
-            });
-        }
-
-        document.getElementById('loginBtn').addEventListener('click', doLogin);
-        document.getElementById('loginPassword').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
-    </script>
+    <script src="~/js/login.js"></script>
 }

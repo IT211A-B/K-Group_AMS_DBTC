@@ -43,16 +43,10 @@
     <div class="card-header flex-wrap gap-2">
         <div class="card-header-title"><i class="bi bi-table"></i> Population List</div>
         <div class="d-flex flex-wrap gap-2 ms-auto align-items-center">
-            <select class="form-select form-select-sm" id="filterRole" style="width:120px;">
+            <select class="form-select form-select-sm" id="filterRole" style="width:130px;">
                 <option value="">All Roles</option>
-                <option value="admin">Admin</option>
                 <option value="teacher">Teachers</option>
                 <option value="student">Students</option>
-            </select>
-            <select class="form-select form-select-sm" id="filterStatus" style="width:130px;">
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
             </select>
             <select class="form-select form-select-sm" id="sortBy" style="width:140px;">
                 <option value="">Sort by…</option>
@@ -68,18 +62,15 @@
     <div class="table-wrapper">
         <table class="table table-striped">
             <thead>
-                <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Gender</th><th>Program / Dept</th><th>Status</th><th>Actions</th></tr>
+                <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Gender</th><th>Program / Dept</th><th>Courses</th><th>Actions</th></tr>
             </thead>
             <tbody id="studentTableBody"></tbody>
         </table>
     </div>
-    <div class="pagination-wrapper">
-        <div class="pagination-info" id="studentInfo"></div>
-        <div id="studentPagination"></div>
-    </div>
+    <div class="pagination-wrapper"><div id="studentPagination"></div></div>
 </div>
 
-<!-- Enroll New Account Modal -->
+<!-- Add Account Modal -->
 <div class="modal fade" id="addAccountModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -100,14 +91,15 @@
                 <hr>
                 <h6 class="text-muted mb-3"><i class="bi bi-person-fill"></i> User Account</h6>
                 <div class="row g-2">
-                    <div class="col-md-6"><label class="form-label">Full Name <span class="text-danger">*</span></label><input type="text" class="form-control" id="addFullName" placeholder="e.g. Juan Dela Cruz"></div>
-                    <div class="col-md-6"><label class="form-label">Email <span class="text-danger">*</span></label><input type="email" class="form-control" id="addEmail" placeholder="user@domain.dbtc-cebu"></div>
-                    <div class="col-md-6"><label class="form-label">Password <span class="text-danger">*</span></label><input type="password" class="form-control" id="addPassword"></div>
-                    <div class="col-md-6"><label class="form-label">Phone</label><input type="text" class="form-control" id="addPhone" placeholder="09xxxxxxxxx"></div>
-                    <div class="col-md-4">
-                        <label class="form-label">Gender</label>
-                        <select class="form-select" id="addGender"><option value="M">Male</option><option value="F">Female</option></select>
+                    <div class="col-md-6"><label class="form-label">Full Name <span class="text-danger">*</span></label><input type="text" class="form-control" id="addFullName"></div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="addEmail" placeholder="user@domain.dbtc-cebu">
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="addEmailHint"></div>
                     </div>
+                    <div class="col-md-6"><label class="form-label">Password <span class="text-danger">*</span></label><input type="password" class="form-control" id="addPassword"></div>
+                    <div class="col-md-6"><label class="form-label">Phone</label><input type="text" class="form-control" id="addPhone"></div>
+                    <div class="col-md-4"><label class="form-label">Gender</label><select class="form-select" id="addGender"><option value="M">Male</option><option value="F">Female</option></select></div>
                     <div class="col-md-4"><label class="form-label">Birth Date</label><input type="date" class="form-control" id="addBirthDate"></div>
                     <div class="col-md-4"><label class="form-label">Address</label><input type="text" class="form-control" id="addAddress"></div>
                 </div>
@@ -115,289 +107,82 @@
                 <div id="studentFields">
                     <h6 class="text-muted mb-3"><i class="bi bi-mortarboard"></i> Student Info</h6>
                     <div class="row g-2">
-                        <div class="col-md-4">
-                            <label class="form-label">Program <span class="text-danger">*</span></label>
-                            <select class="form-select" id="addProgramId"><option value="">Loading…</option></select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Department <span class="text-danger">*</span></label>
-                            <select class="form-select" id="addDeptId"><option value="">Loading…</option></select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Year Level <span class="text-danger">*</span></label>
-                            <select class="form-select" id="addYearLevel">
-                                <option value="1st Year">1st Year</option>
-                                <option value="2nd Year">2nd Year</option>
-                                <option value="3rd Year">3rd Year</option>
-                                <option value="4th Year">4th Year</option>
-                            </select>
-                        </div>
+                        <div class="col-md-4"><label class="form-label">Program</label><select class="form-select" id="addProgramId"></select></div>
+                        <div class="col-md-4"><label class="form-label">Department</label><select class="form-select" id="addDeptId"></select></div>
+                        <div class="col-md-4"><label class="form-label">Year Level</label><select class="form-select" id="addYearLevel"><option value="1st Year">1st Year</option><option value="2nd Year">2nd Year</option><option value="3rd Year">3rd Year</option><option value="4th Year">4th Year</option></select></div>
+                        <div class="col-md-12"><label class="form-label">Enroll in Course(s)</label><div id="addStudentCourses" style="max-height:120px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;padding:8px;"></div></div>
                     </div>
                 </div>
                 <div id="teacherFields" style="display:none;">
                     <h6 class="text-muted mb-3"><i class="bi bi-briefcase"></i> Teacher Info</h6>
                     <div class="row g-2">
-                        <div class="col-md-12">
-                            <label class="form-label">Department <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="addTeacherDept" placeholder="e.g. College of Computing Studies">
-                        </div>
+                        <div class="col-md-12"><label class="form-label">Department</label><input type="text" class="form-control" id="addTeacherDept"></div>
+                        <div class="col-md-12"><label class="form-label">Assign Course(s)</label><div id="addTeacherCourses" style="max-height:120px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;padding:8px;"></div></div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn btn-primary" id="saveAccountBtn"><i class="bi bi-check-lg"></i> Save Account</button>
+                <button class="btn btn-primary" id="saveAccountBtn">Save Account</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Edit Student Modal -->
+<!-- Edit Modal -->
 <div class="modal fade" id="editStudentModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Student</h5>
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Account</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editUserId">
                 <input type="hidden" id="editStudentId">
+                <input type="hidden" id="editTeacherId">
                 <input type="hidden" id="editUserGroupId">
-                <h6 class="text-muted mb-3"><i class="bi bi-person-fill"></i> User Account</h6>
+                <h6 class="text-muted mb-3">User Account</h6>
                 <div class="row g-2">
                     <div class="col-md-6"><label class="form-label">Full Name</label><input type="text" class="form-control" id="editFullName"></div>
                     <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" id="editEmail"></div>
                     <div class="col-md-6"><label class="form-label">Phone</label><input type="text" class="form-control" id="editPhone"></div>
-                    <div class="col-md-3">
-                        <label class="form-label">Gender</label>
-                        <select class="form-select" id="editGender"><option value="M">Male</option><option value="F">Female</option></select>
-                    </div>
+                    <div class="col-md-3"><label class="form-label">Gender</label><select class="form-select" id="editGender"><option value="M">Male</option><option value="F">Female</option></select></div>
                     <div class="col-md-3"><label class="form-label">Birth Date</label><input type="date" class="form-control" id="editBirthDate"></div>
                     <div class="col-md-6"><label class="form-label">Address</label><input type="text" class="form-control" id="editAddress"></div>
                 </div>
                 <hr>
-                <h6 class="text-muted mb-3"><i class="bi bi-mortarboard"></i> Student Info</h6>
-                <div class="row g-2">
-                    <div class="col-md-4">
-                        <label class="form-label">Program</label>
-                        <select class="form-select" id="editProgramId"><option value="">Loading…</option></select>
+                <div id="editStudentSection">
+                    <h6 class="text-muted mb-3">Student Info</h6>
+                    <div class="row g-2">
+                        <div class="col-md-4"><label class="form-label">Program</label><select class="form-select" id="editProgramId"></select></div>
+                        <div class="col-md-4"><label class="form-label">Department</label><select class="form-select" id="editDeptId"></select></div>
+                        <div class="col-md-4"><label class="form-label">Year Level</label><select class="form-select" id="editYearLevel"><option value="1st Year">1st Year</option><option value="2nd Year">2nd Year</option><option value="3rd Year">3rd Year</option><option value="4th Year">4th Year</option></select></div>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Department</label>
-                        <select class="form-select" id="editDeptId"><option value="">Loading…</option></select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Year Level</label>
-                        <select class="form-select" id="editYearLevel">
-                            <option value="1st Year">1st Year</option>
-                            <option value="2nd Year">2nd Year</option>
-                            <option value="3rd Year">3rd Year</option>
-                            <option value="4th Year">4th Year</option>
-                        </select>
+                </div>
+                <div id="editTeacherSection" style="display:none;">
+                    <h6 class="text-muted mb-3">Teacher Info</h6>
+                    <div class="row g-2">
+                        <div class="col-md-12"><label class="form-label">Department</label><input type="text" class="form-control" id="editTeacherDept"></div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn btn-primary" id="updateStudentBtn"><i class="bi bi-check-lg"></i> Update</button>
+                <button class="btn btn-primary" id="updateStudentBtn">Update</button>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
+    <script src="~/js/ajax/dashboard.js"></script>
+    <script src="~/js/admin-dashboard.js"></script>
     <script>
-        // userGroup_ID: 1=admin, 2=teacher, 3=student (adjust if different in your DB)
-        var STUDENT_GID=3, TEACHER_GID=2, ADMIN_GID=1;
-        var allAccounts=[], allStudents=[], allTeachers=[], allUsers=[], allPrograms=[], allDepts=[], allAtt=[], pg;
-
-        function toUtcIso(v){ return v?new Date(v).toISOString():new Date().toISOString(); }
-        function nameOf(a){ return (a._name||'').toLowerCase(); }
-
-        function roleLabel(gid){
-            if(gid==ADMIN_GID) return '<span style="background:#FEE2E2;color:#B91C1C;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Admin</span>';
-            if(gid==TEACHER_GID) return '<span style="background:#EDE9FE;color:#6D28D9;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Teacher</span>';
-            return '<span style="background:#DBEAFE;color:var(--accent);font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Student</span>';
-        }
-        function roleColor(gid){
-            if(gid==ADMIN_GID) return '#B91C1C';
-            if(gid==TEACHER_GID) return '#7C3AED';
-            return 'var(--accent)';
-        }
-
-        function renderRow(a,i){
-            var init=(a._name[0]||'?').toUpperCase();
-            var roleBadge=roleLabel(a._ugid);
-            var statusBadge=a._inactive
-                ?'<span style="background:#F1F5F9;color:#64748B;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Inactive</span>'
-                :'<span style="background:#DCFCE7;color:#166534;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Active</span>';
-            var rowStyle=a._inactive?'style="opacity:.65;"':'';
-            var actions='';
-            if(a._ugid===STUDENT_GID){
-                actions='<button class="btn btn-sm btn-outline-primary btn-icon edit-btn" data-sid="'+a._sid+'" data-uid="'+a._uid+'" data-ugid="'+a._ugid+'" title="Edit"><i class="bi bi-pencil"></i></button>'
-                       +'<a href="/Admin/ViewStudentProfile?userId='+a._uid+'" class="btn btn-sm btn-outline-info btn-icon" title="View Profile"><i class="bi bi-person-lines-fill"></i></a>'
-                       +'<button class="btn btn-sm btn-outline-danger btn-icon del-btn" data-sid="'+a._sid+'" data-uid="'+a._uid+'" data-name="'+a._name+'" title="Delete"><i class="bi bi-trash3"></i></button>';
-            } else if(a._ugid===TEACHER_GID){
-                actions='<a href="/Admin/ViewTeacherProfile?userId='+a._uid+'" class="btn btn-sm btn-outline-info btn-icon" title="View Profile"><i class="bi bi-person-lines-fill"></i></a>';
-            } else {
-                actions='<span class="text-muted" style="font-size:12px;">Admin</span>';
-            }
-            return '<tr '+rowStyle+'>'
-                +'<td>'+(i+1)+'</td>'
-                +'<td><div class="d-flex align-items-center gap-2">'
-                +'<div style="width:32px;height:32px;border-radius:50%;background:'+roleColor(a._ugid)+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;">'+init+'</div>'
-                +a._name+'</div></td>'
-                +'<td>'+a._email+'</td>'
-                +'<td>'+roleBadge+'</td>'
-                +'<td>'+(a._gender==='M'?'Male':a._gender==='F'?'Female':(a._gender||'—'))+'</td>'
-                +'<td>'+a._dept+'</td>'
-                +'<td>'+statusBadge+'</td>'
-                +'<td class="d-flex gap-1">'+actions+'</td></tr>';
-        }
-
-        function applyFilter(){
-            var q=$('#searchStudent').val().toLowerCase();
-            var role=$('#filterRole').val();
-            var status=$('#filterStatus').val();
-            var sort=$('#sortBy').val();
-            var result=allAccounts.filter(function(a){
-                if(role==='admin'&&a._ugid!==ADMIN_GID) return false;
-                if(role==='teacher'&&a._ugid!==TEACHER_GID) return false;
-                if(role==='student'&&a._ugid!==STUDENT_GID) return false;
-                if(status==='inactive'&&!a._inactive) return false;
-                if(status==='active'&&a._inactive) return false;
-                if(q&&!a._name.toLowerCase().includes(q)&&!a._email.toLowerCase().includes(q)) return false;
-                return true;
-            });
-            if(sort==='name-asc')  result.sort(function(a,b){ return nameOf(a).localeCompare(nameOf(b)); });
-            if(sort==='name-desc') result.sort(function(a,b){ return nameOf(b).localeCompare(nameOf(a)); });
-            if(pg) pg.refresh(result);
-            else pg=paginate({data:result,pageSize:15,containerId:'studentTableBody',paginationId:'studentPagination',colSpan:8,emptyMsg:'No accounts found.',renderRow:renderRow});
-        }
-
-        function buildAccounts(){
-            allAccounts=[];
-            // Build from allUsers — every account in the system
-            allUsers.forEach(function(u){
-                var gid = u.userGroup_ID || u.userGroupId || 0;
-                var sid=null, dept='—';
-                if(gid===STUDENT_GID){
-                    var s=allStudents.find(function(x){ return String(x.user_ID||x.userId)===String(u.user_ID); });
-                    if(s){
-                        sid=s.student_ID||s.id;
-                        var p=allPrograms.find(function(x){ return String(x.id)===String(s.program_ID); });
-                        dept=p?(p.name||p.program_Name||p.title||''):(s.program_ID?'Program #'+s.program_ID:'—');
-                    }
-                } else if(gid===TEACHER_GID){
-                    var t=allTeachers.find(function(x){ return String(x.user_ID||x.userId)===String(u.user_ID); });
-                    dept = t&&t.department ? t.department : '—';
-                } else if(gid===ADMIN_GID){
-                    dept = 'Administration';
-                }
-                allAccounts.push({_ugid:gid,_sid:sid,_uid:u.user_ID,_name:u.full_Name||'—',_email:u.email||'—',_gender:u.gender||'',_dept:dept,_inactive:false});
-            });
-            applyFilter();
-        }
-
-        function loadDropdowns(progSel,deptSel,selProg,selDept){
-            getPrograms(function(p){
-                allPrograms=p;
-                var o='<option value="">Select Program</option>';
-                p.forEach(function(x){ var n=x.name||x.program_Name||x.title||'Program '+x.id; o+='<option value="'+x.id+'"'+(x.id==selProg?' selected':'')+'>'+n+'</option>'; });
-                $(progSel).html(o);
-            });
-            getDepartments(function(d){
-                var o='<option value="">Select Department</option>';
-                d.forEach(function(x){ var n=x.name||x.department_Name||'Dept '+x.id; o+='<option value="'+x.id+'"'+(x.id==selDept?' selected':'')+'>'+n+'</option>'; });
-                $(deptSel).html(o);
-            });
-        }
-
-        function loadAll(){
-            $.when(
-                $.ajax({url:'/api/Student',dataType:'json'}),
-                $.ajax({url:'/api/Teacher',dataType:'json'}),
-                $.ajax({url:'/api/User',dataType:'json'}),
-                $.ajax({url:'/AttendanceManagement/Attendance',dataType:'json'}),
-                $.ajax({url:'/AttendanceManagement/Program',dataType:'json'})
-            ).done(function(sR,tR,uR,aR,pR){
-                allStudents=Array.isArray(sR[0])?sR[0]:[];
-                allTeachers=Array.isArray(tR[0])?tR[0]:[];
-                allUsers=Array.isArray(uR[0])?uR[0]:[];
-                allAtt=Array.isArray(aR[0])?aR[0]:[];
-                allPrograms=Array.isArray(pR[0])?pR[0]:[];
-                buildAccounts();
-                $('#statStudents').text(allStudents.length);
-                $('#statTeachers').text(allTeachers.length);
-            }).fail(function(){ showToast('Failed to load data.','error'); });
-        }
-
-        $(function(){
-            loadAll();
+        $(function() {
+            // Force refresh of dashboard stats and accounts
             getDashboardStats();
-
-            $('input[name="acctType"]').on('change',function(){
-                var s=$(this).val()==='student';
-                $('#studentFields').toggle(s); $('#teacherFields').toggle(!s);
-            });
-
-            $('#addAccountModal').on('show.bs.modal',function(){ loadDropdowns('#addProgramId','#addDeptId',null,null); });
-
-            $('#searchStudent,#filterRole,#filterStatus,#sortBy').on('input change',applyFilter);
-
-            $('#saveAccountBtn').on('click',function(){
-                var type=$('input[name="acctType"]:checked').val();
-                var name=$('#addFullName').val().trim(), email=$('#addEmail').val().trim(), pass=$('#addPassword').val().trim();
-                if(!name){showToast('Full name is required.','warning');return;}
-                if(!email){showToast('Email is required.','warning');return;}
-                if(!pass){showToast('Password is required.','warning');return;}
-                var ud={full_Name:name,email:email,password:pass,phone_Number:$('#addPhone').val().trim(),gender:$('#addGender').val(),birth_Date:toUtcIso($('#addBirthDate').val()),address:$('#addAddress').val().trim(),userGroup_ID:type==='student'?STUDENT_GID:TEACHER_GID,createdBy:'admin',lastUpdatedBy:'admin'};
-                if(type==='student'){
-                    var dept=$('#addDeptId').val();
-                    if(!dept){showToast('Department is required.','warning');return;}
-                    addStudent(ud,{program_ID:parseInt($('#addProgramId').val())||0,department_ID:parseInt(dept),year_Level:$('#addYearLevel').val(),lastUpdatedBy:'admin'},function(){
-                        $('#addAccountModal').modal('hide');
-                        $('#addFullName,#addEmail,#addPassword,#addPhone,#addAddress').val('');
-                        loadAll();
-                        pushNotification('New Student Enrolled',name+' has been enrolled.','info','admin');
-                    });
-                } else {
-                    var dept2=$('#addTeacherDept').val().trim();
-                    if(!dept2){showToast('Department is required.','warning');return;}
-                    addTeacher(ud,{department:dept2,lastUpdatedBy:'admin'},function(){
-                        $('#addAccountModal').modal('hide');
-                        $('#addFullName,#addEmail,#addPassword,#addPhone,#addAddress,#addTeacherDept').val('');
-                        loadAll();
-                        pushNotification('New Teacher Added',name+' added as teacher.','info','admin');
-                    });
-                }
-            });
-
-            $(document).on('click','.edit-btn',function(){
-                var sid=$(this).data('sid'),uid=$(this).data('uid'),ugid=$(this).data('ugid');
-                var s=allStudents.find(function(x){ return String(x.student_ID||x.id)===String(sid); })||{};
-                var u=allUsers.find(function(x){ return String(x.user_ID)===String(uid); })||{};
-                $('#editStudentId').val(sid);$('#editUserId').val(uid);$('#editUserGroupId').val(ugid||STUDENT_GID);
-                $('#editFullName').val(u.full_Name||'');$('#editEmail').val(u.email||'');$('#editPhone').val(u.phone_Number||'');
-                $('#editGender').val(u.gender||'M');$('#editBirthDate').val((u.birth_Date||'').substring(0,10));
-                $('#editAddress').val(u.address||'');$('#editYearLevel').val(s.year_Level||'1st Year');
-                loadDropdowns('#editProgramId','#editDeptId',s.program_ID,s.department_ID);
-                $('#editStudentModal').modal('show');
-            });
-
-            $('#updateStudentBtn').on('click',function(){
-                var uid=$('#editUserId').val(),sid=$('#editStudentId').val(),ugid=parseInt($('#editUserGroupId').val())||STUDENT_GID;
-                if(!$('#editFullName').val().trim()){showToast('Full name is required.','warning');return;}
-                var ud={user_ID:parseInt(uid),full_Name:$('#editFullName').val().trim(),email:$('#editEmail').val().trim(),password:'unchanged',phone_Number:$('#editPhone').val().trim(),gender:$('#editGender').val(),birth_Date:toUtcIso($('#editBirthDate').val()),address:$('#editAddress').val().trim(),userGroup_ID:ugid,lastUpdatedBy:'admin'};
-                var sd={program_ID:parseInt($('#editProgramId').val())||0,department_ID:parseInt($('#editDeptId').val())||0,year_Level:$('#editYearLevel').val(),lastUpdatedBy:'admin'};
-                updateStudent(uid,ud,sid,sd,function(){ $('#editStudentModal').modal('hide'); loadAll(); });
-            });
-
-            $(document).on('click','.del-btn',function(){
-                var sid=$(this).data('sid'),uid=$(this).data('uid'),name=$(this).data('name');
-                confirmDelete(name,function(){ deleteStudent(uid,sid,loadAll); });
-            });
+            loadAll();
         });
     </script>
 }

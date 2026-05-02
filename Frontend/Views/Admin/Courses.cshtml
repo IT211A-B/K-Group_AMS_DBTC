@@ -9,59 +9,49 @@
     </div>
     <button class="btn btn-primary" id="openAddCourse"><i class="bi bi-plus-circle"></i> Add Course</button>
 </div>
-<div class="alert alert-info d-flex align-items-center gap-2 mb-3" style="font-size:13px;">
-    <i class="bi bi-info-circle-fill"></i>
-    Courses cannot be deleted. You may edit or reassign the teacher at any time.
-</div>
+
 <div class="card">
     <div class="card-header flex-wrap gap-2">
         <div class="card-header-title"><i class="bi bi-list-ul"></i> Course List</div>
         <div class="d-flex flex-wrap gap-2 ms-auto">
-            <select class="form-select form-select-sm" id="filterCourseTeacher" style="width:180px;">
-                <option value="">All Teachers</option>
-            </select>
             <div class="search-bar">
                 <i class="bi bi-search"></i>
-                <input type="text" class="form-control" id="searchCourse" placeholder="Search title or code…">
+                <input type="text" class="form-control" id="searchCourse" placeholder="Search courses...">
             </div>
         </div>
     </div>
     <div class="table-wrapper">
         <table class="table table-striped">
-            <thead><tr><th>ID</th><th>Title</th><th>Code</th><th>Description</th><th>Assigned Teacher</th><th>Actions</th></tr></thead>
+            <thead>
+                <tr><th>ID</th><th>Code</th><th>Title</th><th>Description</th><th>Assigned Teacher</th><th>Actions</th></tr>
+            </thead>
             <tbody id="courseTableBody"></tbody>
         </table>
     </div>
     <div class="pagination-wrapper"><div id="coursePagination"></div></div>
 </div>
 
-<!-- Add/Edit Course Modal -->
+<!-- ADD COURSE MODAL - NO TEACHER FIELD -->
 <div class="modal fade" id="courseModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="courseModalTitle"><i class="bi bi-plus-circle"></i> Add Course</h5>
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add Course</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="courseId">
-                <div class="row g-2">
-                    <div class="col-md-8">
-                        <label class="form-label">Title <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="courseTitle" placeholder="e.g. Web Development">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Code <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="courseCode" placeholder="e.g. WEB101">
-                    </div>
-                    <div class="col-md-12">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" id="courseDesc" rows="2" placeholder="Optional…"></textarea>
-                    </div>
-                    <div class="col-md-12">
-                        <label class="form-label">Assigned Teacher <span class="text-danger">*</span></label>
-                        <select class="form-select" id="courseTeacherId"></select>
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label">Course Code <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="courseCode" placeholder="e.g. CS101">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Course Title <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="courseTitle" placeholder="e.g. Introduction to Programming">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" id="courseDesc" rows="3" placeholder="Optional course description"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -71,94 +61,207 @@
         </div>
     </div>
 </div>
+<!-- EDIT COURSE MODAL - WITH TEACHER ASSIGNMENT -->
+<div class="modal fade" id="editCourseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Course</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editCourseId">
+                <div class="mb-3">
+                    <label class="form-label">Course Code <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="editCourseCode">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Course Title <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="editCourseTitle">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" id="editCourseDesc" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Assign Teacher</label>
+                    <select class="form-select" id="editCourseTeacher">
+                        <option value="">Unassigned</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updateCourseBtn"><i class="bi bi-check-lg"></i> Update Course</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script>
-        var allCourses=[],allTeachers=[],allUsers=[],coursePaginator;
+        var allCourses = [], allTeachers = [], allUsers = [], coursePaginator;
 
-        function tName(tid){
-            var t=allTeachers.find(function(x){ return String(x.teacher_ID||x.id)===String(tid); });
-            var u=t?allUsers.find(function(x){ return String(x.user_ID)===String(t.user_ID||t.userId); }):null;
-            return u?u.full_Name:(tid?'Teacher #'+tid:'Unassigned');
+        function loadTeacherDropdown() {
+            $.ajax({ url: '/api/Teacher', dataType: 'json',
+                success: function(t) {
+                    allTeachers = Array.isArray(t) ? t : [];
+                    $.ajax({ url: '/api/User', dataType: 'json',
+                        success: function(u) {
+                            allUsers = Array.isArray(u) ? u : [];
+                            var html = '<option value="">Unassigned</option>';
+                            allTeachers.forEach(function(teacher) {
+                                var user = allUsers.find(function(x) { return String(x.user_ID) === String(teacher.user_ID); });
+                                var name = user ? user.full_Name : 'Teacher #' + (teacher.teacher_ID || teacher.id);
+                                html += '<option value="' + (teacher.teacher_ID || teacher.id) + '">' + name + '</option>';
+                            });
+                            $('#editCourseTeacher').html(html);
+                        }
+                    });
+                }
+            });
         }
 
-        function renderCourseRow(c,idx){
-            var cid=c.course_ID||c.id,title=c.title||'',code=c.code||'',tn=tName(c.teacher_ID);
-            var init=(tn[0]||'T').toUpperCase();
-            return '<tr>'
-                +'<td>'+cid+'</td>'
-                +'<td><strong>'+title+'</strong></td>'
-                +'<td><span style="background:#DBEAFE;color:var(--accent);padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">'+code+'</span></td>'
-                +'<td>'+(c.description||'—')+'</td>'
-                +'<td><div class="d-flex align-items-center gap-2">'
-                +'<div style="width:28px;height:28px;border-radius:50%;background:#16A34A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">'+init+'</div>'
-                +tn+'</div></td>'
-                +'<td><button class="btn btn-sm btn-outline-primary btn-icon edit-course" data-id="'+cid+'" title="Edit"><i class="bi bi-pencil"></i></button></td>'
-                +'</tr>';
+        function renderCourseRow(c, idx) {
+            var cid = c.course_ID || c.id;
+            var code = c.code || '—';
+            var title = c.title || '—';
+            var desc = c.description || '—';
+            var teacherId = c.teacher_ID;
+            var teacher = allTeachers.find(function(t) { return String(t.teacher_ID || t.id) === String(teacherId); });
+            var teacherUser = teacher ? allUsers.find(function(u) { return String(u.user_ID) === String(teacher.user_ID); }) : null;
+            var teacherName = teacherUser ? teacherUser.full_Name : (teacherId ? 'Assigned' : 'Unassigned');
+            var init = (title[0] || 'C').toUpperCase();
+            return '<tr>' +
+                '<td>' + cid + '</td>' +
+                '<td><span style="background:#DBEAFE;color:var(--accent);padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + code + '</span></td>' +
+                '<td><div class="d-flex align-items-center gap-2"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">' + init + '</div>' + title + '</div></td>' +
+                '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">' + desc + '</td>' +
+                '<td>' + teacherName + '</td>' +
+                '<td><button class="btn btn-sm btn-outline-primary btn-icon edit-course" data-id="' + cid + '" title="Edit"><i class="bi bi-pencil"></i></button></td>' +
+                '</tr>';
         }
 
-        function buildTeacherDropdown(selId){
-            var o='<option value="">Select Teacher</option>';
-            allTeachers.forEach(function(t){ var u=allUsers.find(function(x){ return String(x.user_ID)===String(t.user_ID||t.userId); })||{}; var n=u.full_Name||'Teacher #'+(t.teacher_ID||t.id); var tid=t.teacher_ID||t.id; o+='<option value="'+tid+'"'+(String(tid)===String(selId)?' selected':'')+'>'+n+'</option>'; });
-            return o;
+        function loadCourses() {
+            $('#page-loader').fadeIn(150);
+            console.log("Loading courses...");
+
+            $.ajax({
+                url: '/AttendanceManagement/Course',
+                dataType: 'json',
+                success: function(c) {
+                    console.log("Courses loaded:", c);
+                    allCourses = Array.isArray(c) ? c : [];
+                    if (coursePaginator) {
+                        coursePaginator.refresh(allCourses);
+                    } else {
+                        coursePaginator = paginate({
+                            data: allCourses, pageSize: 15,
+                            containerId: 'courseTableBody', paginationId: 'coursePagination',
+                            colSpan: 6, emptyMsg: 'No courses found.',
+                            renderRow: renderCourseRow
+                        });
+                    }
+                    $('#page-loader').fadeOut(200);
+                },
+                error: function(xhr, status, error) {
+                    $('#page-loader').fadeOut(200);
+                    console.error("AJAX Error:", status, error);
+                    console.error("Response:", xhr.responseText);
+                    showToast('Failed to load courses. Check console for details.', 'error');
+                }
+            });
         }
 
-        function buildTeacherFilter(){
-            var o='<option value="">All Teachers</option>';
-            allTeachers.forEach(function(t){ var u=allUsers.find(function(x){ return String(x.user_ID)===String(t.user_ID||t.userId); })||{}; var n=u.full_Name||'Teacher #'+(t.teacher_ID||t.id); var tid=t.teacher_ID||t.id; o+='<option value="'+tid+'">'+n+'</option>'; });
-            $('#filterCourseTeacher').html(o);
-        }
-
-        function filterCourses(){
-            var q=$('#searchCourse').val().toLowerCase();
-            var tid=$('#filterCourseTeacher').val();
-            var res=allCourses.filter(function(c){ return(!q||(c.title||'').toLowerCase().includes(q)||(c.code||'').toLowerCase().includes(q))&&(!tid||String(c.teacher_ID)===String(tid)); });
-            if(coursePaginator) coursePaginator.refresh(res);
-        }
-
-        function loadCourses(){
-            $.when(
-                $.ajax({url:'/AttendanceManagement/Course',dataType:'json'}),
-                $.ajax({url:'/api/Teacher',dataType:'json'}),
-                $.ajax({url:'/api/User',dataType:'json'})
-            ).done(function(cR,tR,uR){
-                allCourses=Array.isArray(cR[0])?cR[0]:[];
-                allTeachers=Array.isArray(tR[0])?tR[0]:[];
-                allUsers=Array.isArray(uR[0])?uR[0]:[];
-                buildTeacherFilter();
-                if(coursePaginator) coursePaginator.refresh(allCourses);
-                else coursePaginator=paginate({data:allCourses,pageSize:10,containerId:'courseTableBody',paginationId:'coursePagination',renderRow:renderCourseRow,emptyMsg:'No courses found.',colSpan:6});
-            }).fail(function(){ showToast('Failed to load courses.','error'); });
-        }
-
-        $(function(){
+        $(function() {
+            loadTeacherDropdown();
             loadCourses();
-            $('#searchCourse,#filterCourseTeacher').on('input change',filterCourses);
 
-            $('#openAddCourse').click(function(){
+            $('#searchCourse').on('input', function() {
+                var q = $(this).val().toLowerCase();
+                var filtered = allCourses.filter(function(c) {
+                    return (c.code || '').toLowerCase().includes(q) ||
+                           (c.title || '').toLowerCase().includes(q);
+                });
+                coursePaginator.refresh(filtered);
+            });
+
+            $('#openAddCourse').click(function() {
                 $('#courseModalTitle').html('<i class="bi bi-plus-circle"></i> Add Course');
-                $('#courseId,#courseTitle,#courseCode,#courseDesc').val('');
-                $('#courseTeacherId').html(buildTeacherDropdown(null));
+                $('#courseId, #courseCode, #courseTitle, #courseDesc').val('');
                 $('#courseModal').modal('show');
             });
 
-            $('#saveCourseBtn').click(function(){
-                var id=$('#courseId').val(),title=$('#courseTitle').val().trim(),code=$('#courseCode').val().trim(),tid=$('#courseTeacherId').val();
-                if(!title){showToast('Title is required.','warning');return;}
-                if(!code){showToast('Code is required.','warning');return;}
-                if(!tid){showToast('Please select a teacher.','warning');return;}
-                var data={title:title,code:code,description:$('#courseDesc').val().trim(),teacher_ID:parseInt(tid),lastUpdatedBy:'admin'};
-                if(id){ updateCourse(id,data,function(){ $('#courseModal').modal('hide'); loadCourses(); }); }
-                else  { addCourse(data,function(){ $('#courseModal').modal('hide'); loadCourses(); pushNotification('Course Added','"'+title+'" assigned to '+tName(tid),'info','all'); }); }
+            $('#saveCourseBtn').click(function() {
+                var code = $('#courseCode').val().trim();
+                var title = $('#courseTitle').val().trim();
+                var desc = $('#courseDesc').val().trim();
+
+                if (!code) { showToast('Course code is required.', 'warning'); return; }
+                if (!title) { showToast('Course title is required.', 'warning'); return; }
+
+                var data = { code: code, title: title, description: desc || null, lastUpdatedBy: 'admin' };
+                $.ajax({
+                    type: 'POST', url: '/AttendanceManagement/Course',
+                    contentType: 'application/json', data: JSON.stringify(data),
+                    beforeSend: function() { $('#page-loader').fadeIn(150); },
+                    success: function() {
+                        $('#page-loader').fadeOut(200);
+                        $('#courseModal').modal('hide');
+                        loadCourses();
+                        showToast('Course added successfully.', 'success');
+                    },
+                    error: function(x) {
+                        $('#page-loader').fadeOut(200);
+                        showToast('Add failed: ' + (x.responseJSON && x.responseJSON.message || 'error'), 'error');
+                    }
+                });
             });
 
-            $(document).on('click','.edit-course',function(){
-                var id=$(this).data('id');
-                var c=allCourses.find(function(x){ return String(x.course_ID||x.id)===String(id); })||{};
-                $('#courseModalTitle').html('<i class="bi bi-pencil"></i> Edit Course');
-                $('#courseId').val(id);$('#courseTitle').val(c.title||'');$('#courseCode').val(c.code||'');$('#courseDesc').val(c.description||'');
-                $('#courseTeacherId').html(buildTeacherDropdown(c.teacher_ID));
-                $('#courseModal').modal('show');
+            $(document).on('click', '.edit-course', function() {
+                var cid = $(this).data('id');
+                var course = allCourses.find(function(c) { return String(c.course_ID || c.id) === String(cid); });
+                if (course) {
+                    $('#editCourseId').val(cid);
+                    $('#editCourseCode').val(course.code || '');
+                    $('#editCourseTitle').val(course.title || '');
+                    $('#editCourseDesc').val(course.description || '');
+                    $('#editCourseTeacher').val(course.teacher_ID || '');
+                    $('#editCourseModal').modal('show');
+                }
+            });
+
+            $('#updateCourseBtn').click(function() {
+                var cid = $('#editCourseId').val();
+                var code = $('#editCourseCode').val().trim();
+                var title = $('#editCourseTitle').val().trim();
+                var desc = $('#editCourseDesc').val().trim();
+                var teacherId = $('#editCourseTeacher').val();
+
+                if (!code) { showToast('Course code is required.', 'warning'); return; }
+                if (!title) { showToast('Course title is required.', 'warning'); return; }
+
+                var data = {
+                    course_ID: parseInt(cid),
+                    code: code, title: title, description: desc || null,
+                    teacher_ID: teacherId ? parseInt(teacherId) : null,
+                    lastUpdatedBy: 'admin'
+                };
+                $.ajax({
+                    type: 'PUT', url: '/AttendanceManagement/Course/' + cid,
+                    contentType: 'application/json', data: JSON.stringify(data),
+                    beforeSend: function() { $('#page-loader').fadeIn(150); },
+                    success: function() {
+                        $('#page-loader').fadeOut(200);
+                        $('#editCourseModal').modal('hide');
+                        loadCourses();
+                        showToast('Course updated successfully.', 'success');
+                    },
+                    error: function(x) {
+                        $('#page-loader').fadeOut(200);
+                        showToast('Update failed: ' + (x.responseJSON && x.responseJSON.message || 'error'), 'error');
+                    }
+                });
             });
         });
     </script>

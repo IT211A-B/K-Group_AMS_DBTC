@@ -1,4 +1,6 @@
-﻿function _eS(xhr) {
+﻿// students.js - Fixed for String IDs (ULID)
+
+function _eS(xhr) {
     var m = 'Something went wrong.';
     try {
         if (xhr.responseJSON) {
@@ -30,7 +32,12 @@ function addStudent(userData, studentData, cb) {
         data: JSON.stringify(userData),
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (user) {
-            studentData.user_ID = user.user_ID || user.id;
+            studentData.user_ID = user.user_ID || user.documentSeries || null;
+            if (!studentData.user_ID) {
+                $('#page-loader').fadeOut(200);
+                showToast('Failed to obtain user ID from backend.', 'error');
+                return;
+            }
             $.ajax({
                 type: 'POST', url: '/api/Student', contentType: 'application/json', dataType: 'json',
                 data: JSON.stringify(studentData),
@@ -48,12 +55,11 @@ function addStudent(userData, studentData, cb) {
 
 function updateStudent(userId, userData, studentId, studentData, cb) {
     $('#page-loader').fadeIn(150);
-
     $.ajax({
-        type: 'GET', url: '/api/User/' + userId, dataType: 'json',
+        type: 'GET', url: '/api/User/' + encodeURIComponent(userId), dataType: 'json',
         success: function (currentUser) {
             var updateUserData = {
-                user_ID: parseInt(userId),
+                user_ID: userId,
                 full_Name: userData.full_Name,
                 email: userData.email,
                 password: currentUser.passHash || currentUser.PassHash || 'unchanged',
@@ -64,16 +70,13 @@ function updateStudent(userId, userData, studentId, studentData, cb) {
                 userGroup_ID: userData.userGroup_ID || 3,
                 lastUpdatedBy: userData.lastUpdatedBy || 'admin'
             };
-
-            // Step 2: Update user
             $.ajax({
-                type: 'PUT', url: '/api/User/' + userId, contentType: 'application/json', dataType: 'json',
+                type: 'PUT', url: '/api/User/' + encodeURIComponent(userId), contentType: 'application/json', dataType: 'json',
                 data: JSON.stringify(updateUserData),
                 success: function () {
-                    // Step 3: Update student record
                     if (studentId) {
                         $.ajax({
-                            type: 'PUT', url: '/api/Student/' + studentId, contentType: 'application/json', dataType: 'json',
+                            type: 'PUT', url: '/api/Student/' + encodeURIComponent(studentId), contentType: 'application/json', dataType: 'json',
                             data: JSON.stringify({
                                 program_ID: studentData.program_ID,
                                 department_ID: studentData.department_ID,
@@ -102,11 +105,11 @@ function updateStudent(userId, userData, studentId, studentData, cb) {
 
 function deleteStudent(userId, studentId, cb) {
     $.ajax({
-        type: 'DELETE', url: '/api/Student/' + studentId, dataType: 'json',
+        type: 'DELETE', url: '/api/Student/' + encodeURIComponent(studentId), dataType: 'json',
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function () {
             $.ajax({
-                type: 'DELETE', url: '/api/User/' + userId, dataType: 'json',
+                type: 'DELETE', url: '/api/User/' + encodeURIComponent(userId), dataType: 'json',
                 success: function () {
                     $('#page-loader').fadeOut(200);
                     showToast('Student deleted successfully.', 'success');

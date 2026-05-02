@@ -155,9 +155,10 @@
                         var d = (a.date || a.attendanceDate || '').substring(0, 10);
                         if (d) records[d] = (a.status || '').toLowerCase();
                     });
-                    renderMiniCalendar('miniCalendar', new Date().getFullYear(), new Date().getMonth(), records);
+                    if (typeof renderMiniCalendar === 'function')
+                        renderMiniCalendar('miniCalendar', new Date().getFullYear(), new Date().getMonth(), records);
                 },
-                error: function() { renderMiniCalendar('miniCalendar'); }
+                error: function() { if (typeof renderMiniCalendar === 'function') renderMiniCalendar('miniCalendar'); }
             });
         }
 
@@ -212,7 +213,7 @@
                     return;
                 }
                 var data = {
-                    user_ID: parseInt(uid),
+                    user_ID: uid,
                     full_Name: $('#epFullName').val().trim(),
                     email: $('#epEmail').val().trim(),
                     phone_Number: $('#epPhone').val().trim(),

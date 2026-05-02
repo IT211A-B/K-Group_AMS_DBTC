@@ -1,5 +1,7 @@
 ﻿@{
+    Layout = "_Layout";
     ViewData["Title"] = "Take Attendance";
+    var userId = Context.Session.GetString("UserId") ?? "";
 }
 <div class="page-header flex-wrap gap-2">
     <div>
@@ -20,15 +22,13 @@
     <div class="col-4"><div class="stat-card"><div class="stat-icon orange"><i class="bi bi-clock"></i></div><div><div class="stat-label">Late</div><div class="stat-value" id="lateCount">0</div></div></div></div>
 </div>
 
-<div id="absenceAlert" class="alert alert-danger d-none mb-3">
-    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-    <span id="absenceAlertMsg"></span>
-</div>
-
 <div class="card">
     <div class="card-header flex-wrap gap-2">
         <div class="card-header-title"><i class="bi bi-table"></i> Student Attendance</div>
-        <div class="d-flex gap-2 ms-auto">
+        <div class="d-flex gap-2 ms-auto align-items-center">
+            <select class="form-select form-select-sm" id="courseDropdown" style="width:200px;">
+                <option value="">Select Course…</option>
+            </select>
             <select class="form-select form-select-sm" id="filterStatus" style="width:130px;">
                 <option value="">All Status</option>
                 <option value="Present">Present</option>
@@ -36,12 +36,11 @@
                 <option value="Late">Late</option>
                 <option value="unmarked">Unmarked</option>
             </select>
-            <div class="search-bar"><i class="bi bi-search"></i><input type="text" class="form-control" id="searchStudent" placeholder="Search student…"></div>
         </div>
     </div>
     <div class="table-wrapper">
         <table class="table table-striped">
-            <thead><tr><th>#</th><th>Student</th><th>Enrollment ID</th><th>Status</th><th>Action</th></tr></thead>
+            <thead><tr><th>#</th><th>Student</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="attendanceTableBody"></tbody>
         </table>
     </div>
@@ -57,21 +56,24 @@
 
 @section Scripts {
     <script>
-        var attPag,allEnrollments=[],allStudents=[],allUsers=[],allAttRec=[],displayData=[],currentDate='';
+        var attPag, allEnrollments=[], allStudents=[], allUsers=[], allTeachers=[], allCourses=[], allAttRec=[], displayData=[], currentDate='';
+        var currentUserId='@userId';
 
-        function renderAttRow(r,idx){
-            var eid=r.enrollment_ID,name=r._name||'Student #'+r._sid,status=r.status||'',attId=r._attId||'';
+        function getMyTeacherId(){
+            var t=allTeachers.find(function(x){ return String(x.user_ID||x.userId)===String(currentUserId); });
+            return t?(t.teacher_ID||t.id):null;
+        }
+
+        function renderAttRow(r, idx){
+            var name=r._name, status=r.status||'', attId=r._attId||'';
             var cls=status.toLowerCase()==='present'?'badge-present':status.toLowerCase()==='absent'?'badge-absent':status.toLowerCase()==='late'?'badge-late':'';
             var badge=status?'<span class="badge '+cls+'">'+status+'</span>':'<span class="text-muted" style="font-size:12px;">Unmarked</span>';
             var init=(name[0]||'?').toUpperCase();
             return '<tr>'
                 +'<td>'+(idx+1)+'</td>'
-                +'<td><div class="d-flex align-items-center gap-2">'
-                +'<div style="width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">'+init+'</div>'
-                +name+'</div></td>'
-                +'<td>'+eid+'</td>'
+                +'<td><div class="d-flex align-items-center gap-2"><div style="width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">'+init+'</div>'+name+'</div></td>'
                 +'<td>'+badge+'</td>'
-                +'<td><button class="btn btn-sm btn-outline-primary mark-att-btn" data-eid="'+eid+'" data-attid="'+attId+'" data-name="'+name+'" data-status="'+status+'"><i class="bi bi-pencil-square"></i> Mark</button></td>'
+                +'<td><button class="btn btn-sm btn-outline-primary mark-att-btn" data-eid="'+r.enrollment_ID+'" data-attid="'+attId+'" data-name="'+name+'" data-status="'+status+'"><i class="bi bi-pencil-square"></i> Mark</button></td>'
                 +'</tr>';
         }
 
@@ -82,25 +84,26 @@
             var u=data.filter(function(r){ return !r.status; }).length;
             $('#presentCount').text(p);$('#absentCount').text(a);$('#lateCount').text(l);
             $('#sumTotal').text(data.length);$('#sumPresent').text(p);$('#sumAbsent').text(a);$('#sumLate').text(l);$('#sumUnmarked').text(u);
-            var absMap={};
-            allAttRec.forEach(function(x){ if((x.status||'').toLowerCase()==='absent'){ absMap[x.enrollment_ID]=(absMap[x.enrollment_ID]||0)+1; } });
-            var high=Object.keys(absMap).filter(function(eid){ return absMap[eid]>=5; });
-            if(high.length){
-                var names=high.map(function(eid){
-                    var e=allEnrollments.find(function(x){ return String(x.enrollment_ID||x.id)===String(eid); });
-                    var s=e?allStudents.find(function(x){ return String(x.student_ID||x.id)===String(e.student_ID); }):null;
-                    var u2=s?allUsers.find(function(x){ return String(x.user_ID)===String(s.user_ID||s.userId); }):null;
-                    return u2?u2.full_Name:'Enrollment #'+eid;
-                });
-                $('#absenceAlertMsg').text(names.length+' student(s) have 5+ absences: '+names.slice(0,3).join(', ')+(names.length>3?'…':'')+'. Consider allowing a drop request.');
-                $('#absenceAlert').removeClass('d-none');
-            } else { $('#absenceAlert').addClass('d-none'); }
         }
 
-        function applyFilter(src){
-            var q=$('#searchStudent').val().toLowerCase();
+        function buildDisplay(cid, date){
+            if(!cid) return [];
+            var enrs=allEnrollments.filter(function(e){ return String(e.course_ID)===String(cid); });
+            return enrs.map(function(enr){
+                var s=allStudents.find(function(x){ return String(x.student_ID||x.id)===String(enr.student_ID); });
+                var u=s?allUsers.find(function(x){ return String(x.user_ID)===String(s.user_ID||s.userId); }):null;
+                var name=u?u.full_Name:'Student #'+enr.student_ID;
+                var att=allAttRec.find(function(a){ return String(a.enrollment_ID)===String(enr.enrollment_ID||enr.id) && (a.date||a.attendanceDate||'').substring(0,10)===date; });
+                return {enrollment_ID:enr.enrollment_ID||enr.id,_name:name,status:att?(att.status||''):'',_attId:att?(att.attendance_ID||att.id):''};
+            });
+        }
+
+        function applyFilter(){
             var f=$('#filterStatus').val().toLowerCase();
-            return src.filter(function(r){ if(q&&!(r._name||'').toLowerCase().includes(q)) return false; if(f==='unmarked') return !r.status; if(f&&(r.status||'').toLowerCase()!==f) return false; return true; });
+            var result=displayData.filter(function(r){ if(f==='unmarked') return !r.status; if(f&&(r.status||'').toLowerCase()!==f) return false; return true; });
+            if(attPag) attPag.refresh(result);
+            else attPag=paginate({data:result,pageSize:15,containerId:'attendanceTableBody',paginationId:'attendancePagination',colSpan:4,emptyMsg:'No students in this course.',renderRow:renderAttRow});
+            updateSummary(displayData);
         }
 
         function loadAttendance(date){
@@ -110,26 +113,32 @@
                 $.ajax({url:'/AttendanceManagement/Attendance',dataType:'json'}),
                 $.ajax({url:'/AttendanceManagement/Enrollment',dataType:'json'}),
                 $.ajax({url:'/api/Student',dataType:'json'}),
-                $.ajax({url:'/api/User',dataType:'json'})
-            ).done(function(aR,eR,sR,uR){
+                $.ajax({url:'/api/User',dataType:'json'}),
+                $.ajax({url:'/api/Teacher',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Course',dataType:'json'})
+            ).done(function(aR,eR,sR,uR,tR,cR){
                 allAttRec=Array.isArray(aR[0])?aR[0]:[];
                 allEnrollments=Array.isArray(eR[0])?eR[0]:[];
                 allStudents=Array.isArray(sR[0])?sR[0]:[];
                 allUsers=Array.isArray(uR[0])?uR[0]:[];
-                var todayAtt=allAttRec.filter(function(a){ return (a.date||a.attendanceDate||'').substring(0,10)===date; });
-                displayData=allEnrollments.map(function(enr){
-                    var eid=enr.enrollment_ID||enr.id;
-                    var att=todayAtt.find(function(a){ return String(a.enrollment_ID)===String(eid); });
-                    var s=allStudents.find(function(x){ return String(x.student_ID||x.id)===String(enr.student_ID); });
-                    var u=s?allUsers.find(function(x){ return String(x.user_ID)===String(s.user_ID||s.userId); }):null;
-                    return {enrollment_ID:eid,_sid:enr.student_ID,_name:u?u.full_Name:'Student #'+enr.student_ID,status:att?att.status:'',_attId:att?(att.attendance_ID||att.id):''};
-                });
-                var filtered=applyFilter(displayData);
-                if(attPag) attPag.refresh(filtered);
-                else attPag=paginate({data:filtered,pageSize:15,containerId:'attendanceTableBody',paginationId:'attendancePagination',renderRow:renderAttRow,emptyMsg:'No enrollments found.',colSpan:5});
-                updateSummary(displayData);
+                allTeachers=Array.isArray(tR[0])?tR[0]:[];
+                allCourses=Array.isArray(cR[0])?cR[0]:[];
+
+                var tid=getMyTeacherId();
+                var myCourses=allCourses.filter(function(c){ return String(c.teacher_ID)===String(tid); });
+
+                if(!$('#courseDropdown option[value!=""]').length){
+                    var o='<option value="">Select Course…</option>';
+                    myCourses.forEach(function(c){ o+='<option value="'+(c.course_ID||c.id)+'">'+( c.title||c.code||'Course '+(c.course_ID||c.id))+'</option>'; });
+                    $('#courseDropdown').html(o);
+                    if(myCourses.length===1) $('#courseDropdown').val(myCourses[0].course_ID||myCourses[0].id);
+                }
+
+                attPag=null;
+                displayData=buildDisplay($('#courseDropdown').val(),date);
+                applyFilter();
                 $('#page-loader').fadeOut(200);
-            }).fail(function(){ $('#page-loader').fadeOut(200); showToast('Failed to load attendance.','error'); });
+            }).fail(function(){ $('#page-loader').fadeOut(200); showToast('Failed to load.','error'); });
         }
 
         $(function(){
@@ -137,28 +146,31 @@
             $('#attendanceDate').val(today);
             loadAttendance(today);
 
-            $('#attendanceDate').on('change',function(){ loadAttendance($(this).val()); });
-            $('#todayBtn').on('click',function(){ var t=new Date().toISOString().slice(0,10); $('#attendanceDate').val(t); loadAttendance(t); });
-            $('#prevDayBtn').on('click',function(){ var d=new Date($('#attendanceDate').val()); d.setDate(d.getDate()-1); var v=d.toISOString().slice(0,10); $('#attendanceDate').val(v); loadAttendance(v); });
-            $('#nextDayBtn').on('click',function(){ var d=new Date($('#attendanceDate').val()); d.setDate(d.getDate()+1); var v=d.toISOString().slice(0,10); $('#attendanceDate').val(v); loadAttendance(v); });
+            $('#attendanceDate').change(function(){ attPag=null; loadAttendance($(this).val()); });
+            $('#courseDropdown').on('change',function(){ attPag=null; displayData=buildDisplay($(this).val(),currentDate); applyFilter(); });
+            $('#filterStatus').on('change',applyFilter);
 
-            $('#searchStudent,#filterStatus').on('input change',function(){ if(attPag) attPag.refresh(applyFilter(displayData)); });
+            $('#prevDayBtn').click(function(){ var d=new Date($('#attendanceDate').val()); d.setDate(d.getDate()-1); var ds=d.toISOString().slice(0,10); $('#attendanceDate').val(ds); attPag=null; loadAttendance(ds); });
+            $('#nextDayBtn').click(function(){ var d=new Date($('#attendanceDate').val()); d.setDate(d.getDate()+1); var ds=d.toISOString().slice(0,10); $('#attendanceDate').val(ds); attPag=null; loadAttendance(ds); });
+            $('#todayBtn').click(function(){ var ds=new Date().toISOString().slice(0,10); $('#attendanceDate').val(ds); attPag=null; loadAttendance(ds); });
 
             $(document).on('click','.mark-att-btn',function(){
-                var eid=$(this).data('eid'),attId=$(this).data('attid'),name=$(this).data('name'),status=$(this).data('status');
-                $('#attPopupName').text(name);
-                $('#attPopupModal').data('eid',eid).data('attid',attId).modal('show');
-                $('.att-status-btn').css('outline','none');
-                if(status) $('.att-status-btn[data-status="'+status+'"]').css('outline','3px solid var(--primary)');
+                var eid=$(this).data('eid'), attId=$(this).data('attid'), name=$(this).data('name'), status=$(this).data('status');
+                $('#attPopupName').text('Mark attendance for: '+name);
+                $('#attPopupModal').modal('show');
+                $('#attPopupModal').data({eid:eid,attId:attId,date:currentDate});
             });
 
             $(document).on('click','.att-status-btn',function(){
-                var status=$(this).data('status');
-                var modal=$('#attPopupModal');
-                var eid=modal.data('eid'),attId=modal.data('attid');
-                var payload={enrollment_ID:parseInt(eid),date:new Date(currentDate+'T00:00:00').toISOString(),status:status,lastUpdatedBy:'teacher'};
-                var done=function(){ modal.modal('hide'); loadAttendance(currentDate); };
-                if(attId){ updateAttendance(attId,payload,done); } else { markAttendance(payload,done); }
+                var s=$(this).data('status');
+                var d=$('#attPopupModal').data();
+                var payload={enrollment_ID:parseInt(d.eid),date:new Date(d.date).toISOString(),status:s,lastUpdatedBy:'teacher'};
+                var url='/AttendanceManagement/Attendance', method='POST';
+                if(d.attId){ url+='/'+d.attId; method='PUT'; }
+                $.ajax({ type:method, url:url, contentType:'application/json', data:JSON.stringify(payload),
+                    success:function(){ $('#attPopupModal').modal('hide'); loadAttendance(currentDate); showToast('Marked: '+s,'success'); },
+                    error:function(x){ $('#attPopupModal').modal('hide'); showToast('Failed: '+(x.responseJSON&&x.responseJSON.message||'error'),'error'); }
+                });
             });
         });
     </script>

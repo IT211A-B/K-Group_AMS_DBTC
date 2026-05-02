@@ -5,59 +5,82 @@ namespace Frontend.Services
 {
     public class ApiService
     {
-        private readonly IHttpClientFactory _http;
-        private const string BackendBase = "http://localhost:5096";
+        private const string BackendBase = "https://k-group-ams-dbtc-11f4.onrender.com";
 
-        public ApiService(IHttpClientFactory http) => _http = http;
-
-        private HttpClient Client() => _http.CreateClient("backend");
+        public ApiService() { }
 
         public async Task<(bool Ok, string Body, int Status)> GetAsync(string path)
         {
             try
             {
-                var res = await Client().GetAsync($"{BackendBase}{path}");
+                var url = $"{BackendBase}{path}";
+                Console.WriteLine($"[GET] {url}");
+                using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(30);
+                var res = await client.GetAsync(url);
                 var body = await res.Content.ReadAsStringAsync();
-                return (res.IsSuccessStatusCode, body, (int)res.StatusCode);
+                return (res.IsSuccessStatusCode, body ?? "[]", (int)res.StatusCode);
             }
-            catch (Exception ex) { return (false, ex.Message, 503); }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GET] Error: {ex.Message}");
+                return (false, "[]", 503);
+            }
         }
 
         public async Task<(bool Ok, string Body, int Status)> PostAsync(string path, object dto)
         {
             try
             {
+                var url = $"{BackendBase}{path}";
                 var json = JsonSerializer.Serialize(dto);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var res = await Client().PostAsync($"{BackendBase}{path}", content);
+                using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(30);
+                var res = await client.PostAsync(url, content);
                 var body = await res.Content.ReadAsStringAsync();
-                return (res.IsSuccessStatusCode, body, (int)res.StatusCode);
+                return (res.IsSuccessStatusCode, body ?? "{}", (int)res.StatusCode);
             }
-            catch (Exception ex) { return (false, ex.Message, 503); }
+            catch (Exception ex)
+            {
+                return (false, "{}", 503);
+            }
         }
 
         public async Task<(bool Ok, string Body, int Status)> PutAsync(string path, object dto)
         {
             try
             {
+                var url = $"{BackendBase}{path}";
                 var json = JsonSerializer.Serialize(dto);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var res = await Client().PutAsync($"{BackendBase}{path}", content);
+                using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(30);
+                var res = await client.PutAsync(url, content);
                 var body = await res.Content.ReadAsStringAsync();
-                return (res.IsSuccessStatusCode, body, (int)res.StatusCode);
+                return (res.IsSuccessStatusCode, body ?? "{}", (int)res.StatusCode);
             }
-            catch (Exception ex) { return (false, ex.Message, 503); }
+            catch (Exception ex)
+            {
+                return (false, "{}", 503);
+            }
         }
 
         public async Task<(bool Ok, string Body, int Status)> DeleteAsync(string path)
         {
             try
             {
-                var res = await Client().DeleteAsync($"{BackendBase}{path}");
+                var url = $"{BackendBase}{path}";
+                using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(30);
+                var res = await client.DeleteAsync(url);
                 var body = await res.Content.ReadAsStringAsync();
-                return (res.IsSuccessStatusCode, body, (int)res.StatusCode);
+                return (res.IsSuccessStatusCode, body ?? "{}", (int)res.StatusCode);
             }
-            catch (Exception ex) { return (false, ex.Message, 503); }
+            catch (Exception ex)
+            {
+                return (false, "{}", 503);
+            }
         }
     }
 }

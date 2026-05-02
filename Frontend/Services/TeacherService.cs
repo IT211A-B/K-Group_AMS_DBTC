@@ -7,9 +7,9 @@
             return !string.IsNullOrEmpty(role);
         }
 
-        public bool IsAdmin(string? role)
+        public bool IsTeacher(string? role)
         {
-            return role == "admin";
+            return role == "teacher";
         }
     }
 }

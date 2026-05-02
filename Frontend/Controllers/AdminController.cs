@@ -63,20 +63,20 @@ namespace Frontend.Controllers
             return View(vm);
         }
 
-        public IActionResult ViewTeacherProfile(string userId)
-        {
-            var check = CheckSession(); if (check != null) return check;
-            ViewData["TargetUserId"] = userId;
-            ViewData["IsAdminView"] = true;
-            return View("~/Views/Teacher/Profile.cshtml", new AdminViewModel { CurrentPage = "Dashboard" });
-        }
-
         public IActionResult ViewStudentProfile(string userId)
         {
             var check = CheckSession(); if (check != null) return check;
             ViewData["TargetUserId"] = userId;
             ViewData["IsAdminView"] = true;
             return View("~/Views/Student/Profile.cshtml", new AdminViewModel { CurrentPage = "Dashboard" });
+        }
+
+        public IActionResult ViewTeacherProfile(string userId)
+        {
+            var check = CheckSession(); if (check != null) return check;
+            ViewData["TargetUserId"] = userId;
+            ViewData["IsAdminView"] = true;
+            return View("~/Views/Teacher/Profile.cshtml", new AdminViewModel { CurrentPage = "Dashboard" });
         }
     }
 }

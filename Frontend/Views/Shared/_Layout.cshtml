@@ -24,8 +24,11 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <div class="app-wrapper">
+    <!-- Hidden fields for session values (used by auth.js and other scripts) -->
+    <input type="hidden" id="sessionUserId" value="@Context.Session.GetString("UserId")" />
+    <input type="hidden" id="sessionRole" value="@Context.Session.GetString("UserRole")" />
 
+    <div class="app-wrapper">
         <aside class="sidebar" id="sidebar">
             <a class="sidebar-brand" href="@homeUrl">
                 <img src="~/favicon.ico" alt="Logo" />
@@ -34,20 +37,12 @@
                     <small style="font-size:9px;opacity:.7;">Attendance Management</small>
                 </div>
             </a>
-
             <div class="sidebar-nav">
-
                 @if (isAdmin)
                 {
                     <div class="sidebar-label">MAIN</div>
                     <a class="sidebar-link @(currentController == "Admin" && currentAction == "Dashboard" ? "active" : "")" href="/Admin/Dashboard">
                         <i class="bi bi-speedometer2"></i> Dashboard
-                    </a>
-                    <a class="sidebar-link @(currentController == "Student" && currentAction == "Index" ? "active" : "")" href="/Student/Index">
-                        <i class="bi bi-people"></i> Students
-                    </a>
-                    <a class="sidebar-link @(currentController == "Teacher" && currentAction == "Index" ? "active" : "")" href="/Teacher/Index">
-                        <i class="bi bi-person-badge"></i> Teachers
                     </a>
                     <a class="sidebar-link @(currentController == "Admin" && currentAction == "Courses" ? "active" : "")" href="/Admin/Courses">
                         <i class="bi bi-journal-bookmark-fill"></i> Courses
@@ -60,7 +55,6 @@
                     </a>
                     <a class="sidebar-link @(currentController == "Admin" && currentAction == "Mail" ? "active" : "")" href="/Admin/Mail">
                         <i class="bi bi-envelope"></i> Mail
-                        <span class="badge-dot ms-auto" id="sidebarMailDot" style="display:none;background:#EF4444;width:8px;height:8px;border-radius:50%;"></span>
                     </a>
                     <div class="sidebar-label">ACCOUNT</div>
                     <a class="sidebar-link @(currentAction == "Profile" ? "active" : "")" href="/Admin/Profile">
@@ -76,15 +70,11 @@
                     <a class="sidebar-link @(currentAction == "Dashboard" ? "active" : "")" href="/Teacher/Dashboard">
                         <i class="bi bi-speedometer2"></i> Dashboard
                     </a>
-                    <a class="sidebar-link @(currentController == "Student" && currentAction == "Index" ? "active" : "")" href="/Student/Index">
-                        <i class="bi bi-people"></i> My Students
-                    </a>
                     <a class="sidebar-link @(currentAction == "Attendance" ? "active" : "")" href="/Teacher/Attendance">
                         <i class="bi bi-calendar-check"></i> Take Attendance
                     </a>
                     <a class="sidebar-link @(currentController == "Teacher" && currentAction == "Mail" ? "active" : "")" href="/Teacher/Mail">
                         <i class="bi bi-envelope"></i> Mail
-                        <span class="badge-dot ms-auto" id="sidebarMailDot" style="display:none;background:#EF4444;width:8px;height:8px;border-radius:50%;"></span>
                     </a>
                     <div class="sidebar-label">ACCOUNT</div>
                     <a class="sidebar-link @(currentAction == "Profile" ? "active" : "")" href="/Teacher/Profile">
@@ -105,23 +95,18 @@
                     </a>
                     <a class="sidebar-link @(currentController == "Student" && currentAction == "Mail" ? "active" : "")" href="/Student/Mail">
                         <i class="bi bi-envelope"></i> Mail
-                        <span class="badge-dot ms-auto" id="sidebarMailDot" style="display:none;background:#EF4444;width:8px;height:8px;border-radius:50%;"></span>
                     </a>
                     <div class="sidebar-label">ACCOUNT</div>
                     <a class="sidebar-link" href="/Login/Logout">
                         <i class="bi bi-box-arrow-right"></i> Logout
                     </a>
                 }
-
             </div>
-
             <div class="sidebar-footer">
                 <a href="#"><i class="bi bi-question-circle"></i> Help &amp; Support</a>
             </div>
         </aside>
-
         <div class="sidebar-overlay"></div>
-
         <div class="main-content">
             <header class="topbar">
                 <div class="topbar-left">
@@ -129,8 +114,6 @@
                     <div class="topbar-title">@ViewData["Title"]</div>
                 </div>
                 <div class="topbar-right">
-
-                    @* Notification bell — all roles *@
                     <div class="dropdown">
                         <button class="topbar-icon" data-bs-toggle="dropdown" id="notifBellBtn" style="position:relative;">
                             <i class="bi bi-bell"></i>
@@ -149,8 +132,6 @@
                             </div>
                         </div>
                     </div>
-
-                    @* User dropdown — shows full name *@
                     <div class="dropdown">
                         <a class="topbar-user" data-bs-toggle="dropdown" style="cursor:pointer;">
                             <div class="topbar-avatar">@userInitial</div>
@@ -167,16 +148,14 @@
                     </div>
                 </div>
             </header>
-
             <main class="page-body">@RenderBody()</main>
-
             <footer class="site-footer">
                 &copy; @DateTime.Now.Year Don Bosco Technical College Cebu - Attendance Management System
             </footer>
         </div>
     </div>
 
-    @* Attendance popup — Present / Absent / Late *@
+    <!-- Modals -->
     <div class="modal fade" id="attPopupModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered" style="max-width:340px;">
             <div class="modal-content">
@@ -187,16 +166,13 @@
                 <div class="modal-body text-center pb-4">
                     <p class="fw-semibold mb-4" id="attPopupName" style="font-size:15px;"></p>
                     <div class="d-flex justify-content-center gap-3">
-                        <button class="btn btn-success att-status-btn" data-status="Present"
-                                style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
+                        <button class="btn btn-success att-status-btn" data-status="Present" style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
                             <i class="bi bi-check-circle-fill" style="font-size:22px;"></i>Present
                         </button>
-                        <button class="btn btn-danger att-status-btn" data-status="Absent"
-                                style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
+                        <button class="btn btn-danger att-status-btn" data-status="Absent" style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
                             <i class="bi bi-x-circle-fill" style="font-size:22px;"></i>Absent
                         </button>
-                        <button class="btn btn-warning att-status-btn" data-status="Late"
-                                style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
+                        <button class="btn btn-warning att-status-btn" data-status="Late" style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
                             <i class="bi bi-clock-fill" style="font-size:22px;"></i>Late
                         </button>
                     </div>
@@ -205,7 +181,6 @@
         </div>
     </div>
 
-    @* Delete confirm modal *@
     <div class="modal fade" id="deleteModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -224,7 +199,6 @@
         </div>
     </div>
 
-    @* Warning modal *@
     <div class="modal fade" id="warningModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -241,7 +215,6 @@
         </div>
     </div>
 
-    @* Error modal *@
     <div class="modal fade" id="errorModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -274,30 +247,8 @@
     <script src="~/js/ajax/attendance.js"></script>
     <script src="~/js/ajax/courses.js"></script>
     <script src="~/js/ajax/dashboard.js"></script>
-    <script>
-        // Update header full name from API on page load
-        (function(){
-            var userId = '@Context.Session.GetString("UserId")';
-            if(userId){
-                fetch('/api/User/'+userId)
-                    .then(function(r){ return r.ok ? r.json() : null; })
-                    .then(function(u){ if(u && u.full_Name){ document.getElementById('headerFullName').textContent = u.full_Name; } })
-                    .catch(function(){});
-            }
-            // Sidebar mail dot — poll for unread
-            function checkMailDot(){
-                fetch('/api/Notifications')
-                    .then(function(r){ return r.json(); })
-                    .then(function(msgs){
-                        var unread = (Array.isArray(msgs)?msgs:[]).filter(function(m){ return !m.isRead; }).length;
-                        var dot = document.getElementById('sidebarMailDot');
-                        if(dot) dot.style.display = unread > 0 ? 'inline-block' : 'none';
-                    }).catch(function(){});
-            }
-            checkMailDot();
-            setInterval(checkMailDot, 30000);
-        })();
-    </script>
+    <script src="~/js/auth.js"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
