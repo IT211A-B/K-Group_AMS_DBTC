@@ -1,12 +1,21 @@
-using Backend.Backend;
+﻿using Backend.Backend;
+using Backend.Backend.Configuration;
+using Backend.Backend.Interface.ConfigureInterface;
 using Backend.Backend.Interface.RepositoryInterface;
 using Backend.Backend.Interface.ServiceInterface;
+using Backend.Backend.Model;
 using Backend.Backend.Repository;
 using Backend.Backend.Service;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using System.Text;
+using Microsoft.OpenApi.Models;
+
 using SeedRole = Backend.Backend.Seeder.RolePermissionandPermission;
-using Backend.Backend.Configuration;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,9 +30,35 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DatabaseLibrary>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("AttendanceDBString")));
 
+//  enable authorize (authorization services)
+builder.Services.AddAuthorization();
+
 builder.Services.AddSwaggerGen(options =>
 {
-	var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+{
+    {
+        new OpenApiSecurityScheme
+        {
+            Reference = new OpenApiReference
+            {
+                Type = ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            }
+        },
+        new string[] {}
+    }
+    });
+    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
 	options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
@@ -67,7 +102,89 @@ builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<IProgramService, ProgramService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Adding DI for the custom authorization system
+// singleton as it does not rely on each request but once and dies if app closes
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+//  evaluates user claims compared to those policies per request
+builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
+builder.Services.AddScoped<IClaimService,ClaimService>();
+builder.Services.AddScoped<IJwtService,JwtService>();
+
+builder.Services
+    .AddIdentity<User, IdentityRole>()
+    .AddEntityFrameworkStores<DatabaseLibrary>()
+    .AddDefaultTokenProviders();
+
+var jwtSection = builder.Configuration.GetSection("Jwt"); //get all hwt section, use to grab the key:value pair of the config, which is not hardcoded but in environment
+
+var jwtKey = jwtSection["Key"]!; // gimme value for key
+var issuer = jwtSection["Issuer"]; // for issuer
+var audience = jwtSection["Audience"];  // and for audience 
+
+// will add environment validation for https enforcement
+var env = builder.Environment;
+
+// helps to get config once
+builder.Services
+    .AddAuthentication(options => // this will check if the controller has Authorized or such to check for validity
+    {   
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; // Get the string bearer
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme; // Give Status Code of 401 if not authorized (when authentication fails)
+    })
+    .AddJwtBearer(options => // Validate the authentication token
+    {
+        if (env.IsStaging()) // if app is staged / deployed, use https
+        {
+            options.RequireHttpsMetadata = true; // enforce HTTPS, for production. Also easy access when i put logic later
+        }
+        options.SaveToken = true;            // optional: keeps token in HttpContext
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true, 
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)), // check signature if its valid by recalculating it again
+
+            ValidateIssuer = true,
+            ValidIssuer = issuer, // check issuer
+
+            ValidateAudience = true,
+            ValidAudience = audience, // check audience
+
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero // strict expiration
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // Authorization Header even if its default, we make it directly insure correct handling
+                // * Main priority
+                // Valid check bearer and extract the token from it
+                var authHeader = context.Request.Headers["Authorization"].FirstOrDefault(); // Get Headers
+                if (!string.IsNullOrWhiteSpace(authHeader) &&
+                    authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) // Insure bearer 
+                {
+                    context.Token = authHeader.Substring("Bearer ".Length).Trim();
+                    return Task.CompletedTask;
+                }
+
+                // (for browser clients)
+                // if saved from cookie, it will extract it in the cookie
+                var cookieToken = context.Request.Cookies["accessToken"];
+                if (!string.IsNullOrWhiteSpace(cookieToken))
+                {
+                    context.Token = cookieToken;
+                    return Task.CompletedTask;
+                }
+
+                //No token found, let pipeline handle Unauthorized
+                return Task.CompletedTask;
+            }
+        };
+    });
 
 var app = builder.Build();
 
@@ -82,20 +199,22 @@ using (var scope = app.Services.CreateScope())
     await SeedRole.SeedRolePermissionNPermissionAsync(roleManager, context);
 }
 
-if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
-{
-	// Allow the use og swagger both in production and Local dev
-	app.UseSwagger();
-	app.UseSwaggerUI();
-}
-
 // Local Dev
 if (app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection(); // Authomatically redirect Http request to Https
 }
 
-app.UseAuthorization();
+// Pre Middleware hooks that asks before every transactions
+app.UseAuthentication();  // Authenticate user
+app.UseAuthorization();   // after authenticate enforce authorize rule in the controller, to open the controller if authenticated
+
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
+{
+    // Allow the use og swagger both in production and Local dev
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.MapControllers();
 
