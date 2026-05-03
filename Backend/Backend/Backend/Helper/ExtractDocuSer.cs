@@ -12,13 +12,19 @@ namespace Backend.Backend.Helper
         /// <returns></returns>
         public static (int? ExtractedId, PosEnum.PosStatus ExtractedPosition, int? ExtractedDate ,int statusCode) ExtractDataFromDocumentSeries(this string DocumentSeries)
         {
+
+            if (string.IsNullOrWhiteSpace(DocumentSeries))
+                return (null, PosEnum.PosStatus.STU, null, 400); // Bad Request
+
             PosEnum.PosStatus posStatus = PosEnum.PosStatus.STU; //initializer
 
             string[] Data = DocumentSeries.Split('-');
+            if (Data.Length < 3)
+                return (null, PosEnum.PosStatus.STU, null, 422);
 
-            for (int position = 0; Data.Length > 0; position++)
+            for (int position = 0; position < 3; position++)
             {
-                if (string.IsNullOrEmpty(Data[position - 1]))
+                if (string.IsNullOrEmpty(Data[position]))
                     return (null, posStatus, null, 404); // Null or Empty ID
             }
 

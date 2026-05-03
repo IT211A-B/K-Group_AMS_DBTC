@@ -141,6 +141,17 @@ namespace Backend.Backend.Service
 
             var result = await _userManager.CreateAsync(user, userDto.Password);
 
+            // Add Role Base on Email
+
+            // Extract Role from Document Series
+            var extractedRole = ExtractDocuSer.ExtractDataFromDocumentSeries(DocSer);
+
+            // Convert it into string
+            var convertedRole = EnumRoletoStringRole.ConvertEnumRoletoStringRole(extractedRole.ExtractedPosition);
+
+            // Give Role
+            await _userManager.AddToRoleAsync(user, convertedRole);
+
             if (!result.Succeeded)
             {
                 return new RegisterDTO
@@ -151,17 +162,21 @@ namespace Backend.Backend.Service
                     Detail = string.Join(", ", result.Errors.Select(e => e.Description))
                 };
             }
+            var userDisplay = await _userRepository.GetByEmailAsync(userDto.Email);
 
-            GetUserDTO show = new GetUserDTO()
+            GetUserDTO? show = userDisplay != null ? 
+                new GetUserDTO
             {
-                DocumentSeries = user.DocumentSeries,
-                Full_Name = user.Full_Name,
-                Email = user.Email,
-                Phone_Number = user.Phone_Number,
-                Sex = user.Sex,
-                Birth_Date = user.Birth_Date,
-                Address = user.Address,
-            };
+                DocumentSeries = userDisplay.DocumentSeries,
+                Full_Name = userDisplay.Full_Name,
+                Email = userDisplay.Email!,
+                Phone_Number = userDisplay.Phone_Number,
+                Sex = userDisplay.Sex,
+                Birth_Date = userDisplay.Birth_Date,
+                Address = userDisplay.Address,
+            }
+            : null;
+
 
             // collect user's identity
             var claims = await _claimService.GetClaimsAsync(user);

@@ -68,12 +68,27 @@ namespace Backend.Backend.Configuration
             // Collection that will store all generated claims.
             var claims = new List<Claim>();
 
+            // Validation for username's value
+            if (string.IsNullOrEmpty(user.UserName))
+            {
+                throw new Exception("UserName is null. Cannot create claim.");
+            }
+
+            // Unique id Happi Life
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id));
+
             // Adds the user's username as a claim.
             // ClaimTypes.Name represents the user's identity name.
-            claims.Add(new Claim(ClaimTypes.Name, user.Full_Name));
+            claims.Add(new Claim(ClaimTypes.Name, user.UserName));
 
             // Retrieves all roles assigned to the user.
             var roles = await _userManager.GetRolesAsync(user);
+
+            // check if no assign role
+            if (!roles.Any())
+            {
+                throw new Exception("User has no assigned roles.");
+            }
 
             // Iterates through each role assigned to the user.
             foreach (var role in roles)
