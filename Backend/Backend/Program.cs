@@ -198,21 +198,21 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Local Dev
-if (app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection(); // Authomatically redirect Http request to Https
-}
+    //app.UseHttpsRedirection(); // Authomatically redirect Http request to Https
 
 // Pre Middleware hooks that asks before every transactions
 app.UseAuthentication();  // Authenticate user
 app.UseAuthorization();   // after authenticate enforce authorize rule in the controller, to open the controller if authenticated
 
-if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
-{
+
     // Allow the use og swagger both in production and Local dev
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "API V1");
+    c.RoutePrefix = "swagger";
+});
+
 
 app.MapControllers();
 
