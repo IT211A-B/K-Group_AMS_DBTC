@@ -135,10 +135,8 @@ builder.Services
     })
     .AddJwtBearer(options => // Validate the authentication token
     {
-        if (env.IsStaging()) // if app is staged / deployed, use https
-        {
-            options.RequireHttpsMetadata = true; // enforce HTTPS, for production. Also easy access when i put logic later
-        }
+        options.RequireHttpsMetadata = !env.IsDevelopment(); // Will false if run locally but available at prod
+
         options.SaveToken = true;            // optional: keeps token in HttpContext
 
         options.TokenValidationParameters = new TokenValidationParameters
