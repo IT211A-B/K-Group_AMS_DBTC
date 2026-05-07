@@ -22,7 +22,7 @@ namespace Backend.Backend.Model
 
         [Required]
         public required int User_ID { get; set; }
-        public required User User { get; set; }
+        public User User { get; set; } = null!;
 
         [Required]
         [MaxLength(20)]
@@ -30,15 +30,15 @@ namespace Backend.Backend.Model
 
         [Required]
         public int Program_ID { get; set; }
-        public required Program_ Program { get; set; }
+        public Program_ Program { get; set; } = null!;
 
         [Required]
         public required int Department_ID { get; set; }
-        public required Department Department { get; set; }
+        public Department Department { get; set; } = null!;
 
         [Required]
         public required int SectionID { get; set; } 
-        public required Section Section { get; set; }
+        public Section Section { get; set; } = null!;
 
         public ICollection<AttendanceStudent> AttendanceStudents { get; set; } = new List<AttendanceStudent>();
 

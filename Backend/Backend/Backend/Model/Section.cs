@@ -6,7 +6,7 @@ namespace Backend.Backend.Model
 {
     public class Section
     {
-        [Required]
+        [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Section_Id { get; set; }
 

@@ -23,11 +23,11 @@ namespace Backend.Backend.Model
 
         [Required]
         public required int User_ID { get; set; }
-        public required User User { get; set; }
+        public User User { get; set; } = null!;
 
         [Required]
         public required int DepartmentId { get; set; }
-        public required Department Department { get; set; }
+        public Department Department { get; set; } = null!;
 
         public ICollection<Course> Courses { get; set; } = new List<Course>();
 

@@ -11,7 +11,7 @@ namespace Backend.Backend.Model
         public required Attendance Attendance { get; set; }
 
         [Required]
-        public required int Student_Id { get; set; }
+        public required string Student_Id { get; set; }
         public required Student Student { get; set; }
 
         [Required]

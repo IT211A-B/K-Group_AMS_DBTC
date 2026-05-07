@@ -13,12 +13,12 @@ namespace Backend.Backend.Model
 
         [Required]
         public required int Course_ID { get; set; }
-        public required Course Course { get; set; }
+        public Course Course { get; set; } = null!;
 
 
         [Required]
         public required int Section_ID {  get; set; }
-        public required Section Section { get; set; }
+        public Section Section { get; set; } = null!;
 
 
         public ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
