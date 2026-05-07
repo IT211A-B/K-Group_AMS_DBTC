@@ -15,6 +15,8 @@ namespace Backend.Backend.Model
     */
     public class Student
     {
+        private int _yearlevel;
+
         [Key]
         public string Student_ID { get; set; } = Ulid.NewUlid().ToString();
 
@@ -41,7 +43,16 @@ namespace Backend.Backend.Model
         public ICollection<AttendanceStudent> AttendanceStudents { get; set; } = new List<AttendanceStudent>();
 
         [Required]
-        public required int Year_Level { get; set; }
+        public required int Year_Level {
+            get => _yearlevel;
+            set
+            {
+                if (value < 1)
+                    throw new ArgumentOutOfRangeException(nameof(Year_Level),
+                "Year level must be at least 1.");
+                _yearlevel = value;
+            }
+        }
 
         public DateTime CreatedAt { get; set; }
 
