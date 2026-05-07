@@ -22,6 +22,12 @@ namespace Backend.Backend.Repository
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<User?> GetByUUIDAsync(string id)
+        {
+            return await _db.Users
+                .FindAsync(id);
+        }
+
         public async Task<User?> GetByEmailAsync(string email)
         {
             return await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
