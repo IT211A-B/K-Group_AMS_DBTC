@@ -6,25 +6,25 @@ using Backend.Backend.Interface.ServiceInterface;
 namespace Backend.Backend.Controllers
 {
     /// <summary>
-    /// Handles all operations related to Enrollment management.
+    /// Handles all operations related to Section management.
     /// </summary>
     [Route("AttendanceManagement/[controller]")]
     [ApiController]
-    public class EnrollmentController : ControllerBase
+    public class SectionController : ControllerBase
     {
-        private readonly IEnrollmentService _enrollmentService;
+        private readonly ISectionService _sectionService;
 
-        public EnrollmentController(IEnrollmentService enrollmentService)
+        public SectionController(ISectionService sectionService)
         {
-            _enrollmentService = enrollmentService;
+            _sectionService = sectionService;
         }
 
 		/// <summary>
-		/// Retrieve all enrollments
+		/// Retrieve all sections
 		/// </summary>
 		/// <remarks>
 		/// <para><b>Description:</b></para>
-		/// <para>Fetches all enrollment records in the system.</para>
+		/// <para>Fetches all section records in the system.</para>
 		///
 		/// <para><b>Inputs:</b></para>
 		/// <list type="bullet">
@@ -33,26 +33,26 @@ namespace Backend.Backend.Controllers
 		///
 		/// <para><b>Behavior:</b></para>
 		/// <list type="bullet">
-		///     <item><description>Returns all enrollment records</description></item>
-		///     <item><description>Returns 404 if no enrollments exist</description></item>
+		///     <item><description>Returns all section records</description></item>
+		///     <item><description>Returns 404 if no sections exist</description></item>
 		/// </list>
 		///
 		/// <para><b>Example:</b></para>
 		/// <code>
-		/// GET /AttendanceManagement/Enrollment
+		/// GET /AttendanceManagement/Section
 		/// </code>
 		/// </remarks>
-		/// <returns>List of enrollments</returns>
+		/// <returns>List of sections</returns>
 		[Authorize(Roles = "Admin,Student")]
 		[HttpGet]
-        public async Task<IActionResult> GetAllEnrollments()
+        public async Task<IActionResult> GetAllSections()
         {
             try { 
-                var enrollments = await _enrollmentService.GetAllAsync();
-                if (!(enrollments?.Data?.Any() ?? false))
-                    return NotFound("No Enrollments Found");
+                var sections = await _sectionService.GetAllAsync();
+                if (!(sections?.Data?.Any() ?? false))
+                    return NotFound("No Sections Found");
 
-                return Ok(enrollments);
+                return Ok(sections);
             }
             catch (Exception x)
             {
@@ -62,40 +62,40 @@ namespace Backend.Backend.Controllers
         }
 
         /// <summary>
-        /// Retrieve an enrollment by ID
+        /// Retrieve an section by ID
         /// </summary>
         /// <remarks>
         /// <para><b>Description:</b></para>
-        /// <para>Fetches a specific enrollment record using its unique ID.</para>
+        /// <para>Fetches a specific section record using its unique ID.</para>
         ///
         /// <para><b>Inputs:</b></para>
         /// <list type="bullet">
-        ///     <item><description><b>id</b> - Enrollment ID</description></item>
+        ///     <item><description><b>id</b> - Section ID</description></item>
         /// </list>
         ///
         /// <para><b>Behavior:</b></para>
         /// <list type="bullet">
-        ///     <item><description>Returns the enrollment if found</description></item>
+        ///     <item><description>Returns the section if found</description></item>
         ///     <item><description>Returns 404 if the record does not exist</description></item>
         /// </list>
         ///
         /// <para><b>Example:</b></para>
         /// <code>
-        /// GET /AttendanceManagement/Enrollment/1
+        /// GET /AttendanceManagement/Section/1
         /// </code>
         /// </remarks>
-        /// <param name="id">Enrollment ID</param>
-        /// <returns>Enrollment record</returns>
+        /// <param name="id">Section ID</param>
+        /// <returns>Section record</returns>
         [HttpGet("{id:int}")]
 		[Authorize(Roles = "Admin")]
-		public async Task<IActionResult> GetEnrollmentById(int id)
+		public async Task<IActionResult> GetSectionById(int id)
         {
             try { 
-                var enrollment = await _enrollmentService.GetByIdAsync(id);
-                if (enrollment == null)
-                    return NotFound($"#404! Enrollment with ID {id} not found");
+                var section = await _sectionService.GetByIdAsync(id);
+                if (section == null)
+                    return NotFound($"#404! Section with ID {id} not found");
 
-                return Ok(enrollment);
+                return Ok(section);
             }
             catch (Exception x)
             {
@@ -105,11 +105,11 @@ namespace Backend.Backend.Controllers
         }
 
         /// <summary>
-        /// Create a new enrollment
+        /// Create a new section
         /// </summary>
         /// <remarks>
         /// <para><b>Description:</b></para>
-        /// <para>Creates a new enrollment linking a student to a schedule.</para>
+        /// <para>Creates a new section linking a student to a schedule.</para>
         ///
         /// <para><b>Inputs:</b></para>
         /// <list type="bullet">
@@ -119,27 +119,27 @@ namespace Backend.Backend.Controllers
         ///
         /// <para><b>Behavior:</b></para>
         /// <list type="bullet">
-        ///     <item><description>Creates a new enrollment record</description></item>
+        ///     <item><description>Creates a new section record</description></item>
         /// </list>
         ///
         /// <para><b>Example:</b></para>
         /// <code>
-        /// POST /AttendanceManagement/Enrollment
+        /// POST /AttendanceManagement/Section
         /// {
         ///   "student_ID": 1,
         ///   "schedule_ID": 5
         /// }
         /// </code>
         /// </remarks>
-        /// <param name="dto">Enrollment data</param>
-        /// <returns>Created enrollment</returns>
+        /// <param name="dto">Section data</param>
+        /// <returns>Created section</returns>
         [HttpPost]
 		[Authorize(Roles = "Admin")]
-		public async Task<IActionResult> AddEnrollment(AddEnrollmentDTO dto)
+		public async Task<IActionResult> AddSection(AddSectionDTO dto)
         {
             try { 
-                var enrollment = await _enrollmentService.AddAsync(dto);
-                return Ok(enrollment);
+                var section = await _sectionService.AddAsync(dto);
+                return Ok(section);
             }
             catch (Exception x)
             {
@@ -149,38 +149,38 @@ namespace Backend.Backend.Controllers
         }
 
         /// <summary>
-        /// Update an existing enrollment
+        /// Update an existing section
         /// </summary>
         /// <remarks>
         /// <para><b>Description:</b></para>
-        /// <para>Updates an enrollment record using its ID.</para>
+        /// <para>Updates an section record using its ID.</para>
         ///
         /// <para><b>Inputs:</b></para>
         /// <list type="bullet">
-        ///     <item><description><b>id</b> - Enrollment ID</description></item>
+        ///     <item><description><b>id</b> - Section ID</description></item>
         ///     <item><description><b>Student_ID</b> - Updated student ID</description></item>
         ///     <item><description><b>Schedule_ID</b> - Updated schedule ID</description></item>
         /// </list>
         ///
         /// <para><b>Behavior:</b></para>
         /// <list type="bullet">
-        ///     <item><description>Updates the enrollment if it exists</description></item>
+        ///     <item><description>Updates the section if it exists</description></item>
         ///     <item><description>Returns 404 if not found</description></item>
         /// </list>
         /// </remarks>
-        /// <param name="id">Enrollment ID</param>
-        /// <param name="dto">Updated enrollment data</param>
-        /// <returns>Updated enrollment</returns>
+        /// <param name="id">Section ID</param>
+        /// <param name="dto">Updated section data</param>
+        /// <returns>Updated section</returns>
         [HttpPut("{id:int}")]
 		[Authorize(Roles = "Admin")]
-		public async Task<IActionResult> UpdateEnrollment(int id, AddEnrollmentDTO dto)
+		public async Task<IActionResult> UpdateSection(int id, AddSectionDTO dto)
         {
             try { 
-                var updatedEnrollment = await _enrollmentService.UpdateAsync(id, dto);
-                if (updatedEnrollment == null)
-                    return NotFound($"#404! Enrollment with ID {id} not found");
+                var updatedSection = await _sectionService.UpdateAsync(id, dto);
+                if (updatedSection == null)
+                    return NotFound($"#404! Section with ID {id} not found");
 
-                return Ok(updatedEnrollment);
+                return Ok(updatedSection);
             }
             catch (Exception x)
             {
@@ -190,15 +190,15 @@ namespace Backend.Backend.Controllers
         }
 
         /// <summary>
-        /// Delete an enrollment
+        /// Delete an section
         /// </summary>
         /// <remarks>
         /// <para><b>Description:</b></para>
-        /// <para>Deletes an enrollment record from the system.</para>
+        /// <para>Deletes an section record from the system.</para>
         ///
         /// <para><b>Inputs:</b></para>
         /// <list type="bullet">
-        ///     <item><description><b>id</b> - Enrollment ID to delete</description></item>
+        ///     <item><description><b>id</b> - Section ID to delete</description></item>
         /// </list>
         ///
         /// <para><b>Behavior:</b></para>
@@ -207,18 +207,18 @@ namespace Backend.Backend.Controllers
         ///     <item><description>Returns 404 if not found</description></item>
         /// </list>
         /// </remarks>
-        /// <param name="id">Enrollment ID</param>
+        /// <param name="id">Section ID</param>
         /// <returns>Status message</returns>
         [HttpDelete("{id:int}")]
 		[Authorize(Roles = "Admin")]
-		public async Task<IActionResult> DeleteEnrollment(int id)
+		public async Task<IActionResult> DeleteSection(int id)
         {
             try { 
-                var success = await _enrollmentService.DeleteAsync(id);
+                var success = await _sectionService.DeleteAsync(id);
                 if (!success)
-                    return NotFound($"#404! Enrollment with ID {id} not found");
+                    return NotFound($"#404! Section with ID {id} not found");
 
-                return Ok($"Enrollment with ID {id} deleted successfully");
+                return Ok($"Section with ID {id} deleted successfully");
             }
             catch (Exception x)
             {
