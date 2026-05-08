@@ -28,13 +28,13 @@ namespace Backend.Backend.Service
             var data = schedule.Select(s => new GetScheduleDTO
             {
                 Schedule_Id = s.Schedule_Id,
+                Section_ID = s.Section_ID,
                 Course_ID  = s.Course_ID,
-                Course_Year = s.Course_Year,
-                Department_ID = s.Department_ID,
-                Program_ID = s.Program_ID,
                 DayOfWeek  = s.DayOfWeek,
                 StartTime = s.StartTime,
                 EndTime = s.EndTime,
+                AcademicYear = s.AcademicYear,
+                Semester = s.Semester,
             });
 
             return new ResponseDTO<IEnumerable<GetScheduleDTO>>
@@ -57,13 +57,13 @@ namespace Backend.Backend.Service
             var data = new GetScheduleDTO
             {
                 Schedule_Id = schedule.Schedule_Id,
+                Section_ID = schedule.Section_ID,
                 Course_ID  = schedule.Course_ID,
-                Course_Year = schedule.Course_Year,
-                Department_ID = schedule.Department_ID,
-                Program_ID = schedule.Program_ID,
                 DayOfWeek  = schedule.DayOfWeek,
                 StartTime = schedule.StartTime,
                 EndTime = schedule.EndTime,
+                AcademicYear = schedule.AcademicYear,
+                Semester = schedule.Semester,
             };
 
             return new ResponseDTO<GetScheduleDTO>
@@ -86,13 +86,13 @@ namespace Backend.Backend.Service
 
             var sched = new Schedule
             {
-                Course_ID = schedule.Course_ID,
-                Course_Year= schedule.Course_Year,
-                Department_ID = schedule.Department_ID,
-                Program_ID = schedule.Program_ID,
-                DayOfWeek = schedule.DayOfWeek,
+                Section_ID = schedule.Section_ID,
+                Course_ID  = schedule.Course_ID,
+                DayOfWeek  = schedule.DayOfWeek,
                 StartTime = schedule.StartTime,
                 EndTime = schedule.EndTime,
+                AcademicYear = schedule.AcademicYear,
+                Semester = schedule.Semester,
             };
 
 
@@ -101,13 +101,13 @@ namespace Backend.Backend.Service
             var data = new GetScheduleDTO
             {
                 Schedule_Id = sched.Schedule_Id,
-                Course_ID = sched.Course_ID,
-                Course_Year = sched.Course_Year,
-                Department_ID = sched.Department_ID,
-                Program_ID = sched.Program_ID,
-                DayOfWeek = sched.DayOfWeek,
+                Section_ID = sched.Section_ID,
+                Course_ID  = sched.Course_ID,
+                DayOfWeek  = sched.DayOfWeek,
                 StartTime = sched.StartTime,
                 EndTime = sched.EndTime,
+                AcademicYear = sched.AcademicYear,
+                Semester = sched.Semester,
             };
 
             return new ResponseDTO<GetScheduleDTO>
@@ -128,9 +128,9 @@ namespace Backend.Backend.Service
                 };
 
             existing.Course_ID = schedule.Course_ID;
-            existing.Course_Year = schedule.Course_Year;
-            existing.Department_ID = schedule.Department_ID;
-            existing.Program_ID = schedule.Program_ID;
+            existing.Section_ID = schedule.Section_ID;
+            existing.AcademicYear = schedule.AcademicYear;
+            existing.Semester = schedule.Semester;
             existing.DayOfWeek = schedule.DayOfWeek;
             existing.StartTime = schedule.StartTime;
             existing.EndTime = schedule.EndTime;
@@ -140,9 +140,9 @@ namespace Backend.Backend.Service
             var data = new GetScheduleDTO
             {
                 Course_ID = existing.Course_ID,
-                Course_Year = existing.Course_Year,
-                Department_ID = existing.Department_ID,
-                Program_ID = existing.Program_ID,
+                Section_ID = existing.Section_ID,
+                AcademicYear = existing.AcademicYear,
+                Semester = existing.Semester,
                 DayOfWeek = existing.DayOfWeek,
                 StartTime = existing.StartTime,
                 EndTime = existing.EndTime,

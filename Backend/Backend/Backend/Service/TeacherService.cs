@@ -8,10 +8,12 @@ namespace Backend.Backend.Service
     public class TeacherService : ITeacherService
     {
         private readonly ITeacherRepository _teacherRepository;
+        private readonly IUserRepository _userRepository;
 
-        public TeacherService(ITeacherRepository teacherRepository)
+        public TeacherService(ITeacherRepository teacherRepository, IUserRepository userRepository)
         {
             _teacherRepository = teacherRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<ResponseDTO<IEnumerable<GetTeacherDTO>>> GetAllAsync()
@@ -25,9 +27,13 @@ namespace Backend.Backend.Service
                 };
             var data = teachers.Select(t => new GetTeacherDTO
             {
-                User_ID = t.User_ID,
+                UserDocumentSeries = t.DocumentSeries,
                 DocumentSeries = t.DocumentSeries,
                 DepartmentId = t.DepartmentId,
+                CreatedAt = t.CreatedAt,
+                CreatedBy = t.CreatedBy,
+                LastUpdatedAt = t.LastUpdatedAt,
+                LastUpdatedBy = t.LastUpdatedBy,
             });
             return new ResponseDTO<IEnumerable<GetTeacherDTO>>
             {
@@ -48,9 +54,13 @@ namespace Backend.Backend.Service
 
             var data = new GetTeacherDTO
             {
-                User_ID = t.User_ID,
+                UserDocumentSeries = t.DocumentSeries,
                 DocumentSeries = t.DocumentSeries,
                 DepartmentId = t.DepartmentId,
+                CreatedAt = t.CreatedAt,
+                CreatedBy = t.CreatedBy,
+                LastUpdatedAt = t.LastUpdatedAt,
+                LastUpdatedBy = t.LastUpdatedBy,
             };
 
             return new ResponseDTO<GetTeacherDTO>
@@ -60,7 +70,7 @@ namespace Backend.Backend.Service
             };
         }
 
-        public async Task<ResponseDTO<GetTeacherDTO>> AddAsync(AddTeacherDTO dto)
+        public async Task<ResponseDTO<GetTeacherDTO>> AddAsync(AddTeacherDTO dto, string uuid)
         {
             // Get Department
             var getDepartment = await _teacherRepository.GetDepartmentById(dto.DepartmentId);
@@ -74,22 +84,36 @@ namespace Backend.Backend.Service
             // Generate Document Series
             string docSer = $"{getAcronym}-{Year}-{getId}";
 
+            //Get Operator
+            var getOperator = await _userRepository.GetByUUIDAsync(uuid);
+
+            // Get User
+            var getUser = await _userRepository.GetByIdAsync(dto.User_ID);
+            if (getUser == null)
+                throw new Exception($"User No.{dto.User_ID} Does Not Exist");
+
             var teacher = new Teacher
             {
-                User_ID=dto.User_ID,
+                User_ID = getUser.Id,
                 DocumentSeries = docSer,
                 DepartmentId = dto.DepartmentId,
                 CreatedAt = DateTime.UtcNow,
+                CreatedBy = getOperator?.Full_Name ?? "Admin",
                 LastUpdatedAt = DateTime.UtcNow,
+                LastUpdatedBy = getOperator?.Full_Name ?? "Admin",
             };
 
             await _teacherRepository.AddAsync(teacher);
 
            var data = new GetTeacherDTO
             {
-                User_ID = teacher.User_ID,
-                DocumentSeries = teacher.DocumentSeries,
-                DepartmentId = teacher.DepartmentId,
+               UserDocumentSeries = teacher.User.DocumentSeries,
+               DocumentSeries = teacher.DocumentSeries,
+               DepartmentId = teacher.DepartmentId,
+               CreatedAt = teacher.CreatedAt,
+               CreatedBy = teacher.CreatedBy,
+               LastUpdatedBy = teacher.LastUpdatedBy,
+               LastUpdatedAt = teacher.LastUpdatedAt,
             };
 
             return new ResponseDTO<GetTeacherDTO>
@@ -99,7 +123,7 @@ namespace Backend.Backend.Service
             };
         }
 
-        public async Task<ResponseDTO<GetTeacherDTO>> UpdateAsync(int id, AddTeacherDTO dto)
+        public async Task<ResponseDTO<GetTeacherDTO>> UpdateAsync(int id, AddTeacherDTO dto, string uuid)
         {
             var existing = await _teacherRepository.GetByIdAsync(id);
             if (existing == null)
@@ -109,14 +133,30 @@ namespace Backend.Backend.Service
                     Data = null
                 };
 
+            //Get Operator
+            var getOperator = await _userRepository.GetByUUIDAsync(uuid);
+
+            // Get User
+            var getUser = await _userRepository.GetByIdAsync(dto.User_ID);
+            if (getUser == null)
+                throw new Exception($"User Id {dto.User_ID} Does not Exist");
+
             existing.DepartmentId = dto.DepartmentId;
             existing.LastUpdatedAt = DateTime.UtcNow;
+            existing.LastUpdatedBy = getOperator?.Full_Name ?? "Admin";
+
             await _teacherRepository.UpdateAsync(existing);
 
             var data = new GetTeacherDTO
             {
-                User_ID = existing.User_ID,
+                UserDocumentSeries = existing.User.DocumentSeries,
+                DocumentSeries = existing.DocumentSeries,
                 DepartmentId = existing.DepartmentId,
+                CreatedAt = existing.CreatedAt,
+                CreatedBy = existing.CreatedBy,
+                LastUpdatedBy = existing.LastUpdatedBy,
+                LastUpdatedAt = existing.LastUpdatedAt,
+
             };
 
             return new ResponseDTO<GetTeacherDTO>

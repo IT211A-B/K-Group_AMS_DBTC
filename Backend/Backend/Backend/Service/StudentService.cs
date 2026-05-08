@@ -2,16 +2,19 @@
 using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
 using Backend.Backend.Interface.RepositoryInterface;
+using System.ComponentModel;
 
 namespace Backend.Backend.Service
 {
     public class StudentService : IStudentService
     {
         private readonly IStudentRepository _studentRepository;
+        private readonly IUserRepository _userRepository;
 
-        public StudentService(IStudentRepository studentRepository)
+        public StudentService(IStudentRepository studentRepository, IUserRepository userRepository)
         {
             _studentRepository = studentRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<ResponseDTO<IEnumerable<GetStudentDTO>>> GetAllAsync()
@@ -26,11 +29,16 @@ namespace Backend.Backend.Service
 
             var data = students.Select(s => new GetStudentDTO
             {
-                User_ID = s.User_ID,
+                UserDocumentSeries = s.User.DocumentSeries,
+                SectionID = s.SectionID,
                 DocumentSeries = s.DocumentSeries,
                 Program_ID = s.Program_ID,
                 Department_ID = s.Department_ID,
                 Year_Level = s.Year_Level,
+                CreatedAt = s.CreatedAt,
+                CreatedBy = s.CreatedBy,
+                LastUpdatedAt = s.LastUpdatedAt,
+                LastUpdatedBy = s.LastUpdatedBy,
             });
 
             return new ResponseDTO<IEnumerable<GetStudentDTO>>
@@ -52,11 +60,16 @@ namespace Backend.Backend.Service
 
             var data = new GetStudentDTO
             {
-                User_ID = s.User_ID,
+                UserDocumentSeries = s.User.DocumentSeries,
+                SectionID = s.SectionID,
                 DocumentSeries = s.DocumentSeries,
                 Program_ID = s.Program_ID,
                 Department_ID = s.Department_ID,
                 Year_Level = s.Year_Level,
+                CreatedAt = s.CreatedAt,
+                CreatedBy = s.CreatedBy,
+                LastUpdatedAt = s.LastUpdatedAt,
+                LastUpdatedBy = s.LastUpdatedBy,
             };
 
             return new ResponseDTO<GetStudentDTO>
@@ -66,13 +79,19 @@ namespace Backend.Backend.Service
             };
         }
 
-        public async Task<ResponseDTO<GetStudentDTO>> AddAsync(AddStudentDTO dto)
+        public async Task<ResponseDTO<GetStudentDTO>> AddAsync(AddStudentDTO dto, string uuid)
         {
+
+            // Get User Doc Series not UUID
+            var getUser = await _userRepository.GetByIdAsync(dto.User_ID);
+            if (getUser is null)
+                throw new Exception($"Id {dto.User_ID} Does not exist");
+
             // Get Program
             var get_program = await _studentRepository.GetProgramByIdAsync(dto.Program_ID);
 
             // Check if User is Taken
-            if (await _studentRepository.CheckUserIfTaken(dto.User_ID))
+            if (await _studentRepository.CheckUserIfTaken(getUser.Id))
                 return new ResponseDTO<GetStudentDTO>
                 { 
                     Status_code = 409,
@@ -97,26 +116,37 @@ namespace Backend.Backend.Service
             // Generate Document Series
             string DocSer = $"{getStudentProgram}-{getYear}-{getId}";
 
+            //Get Operator
+            var getOperator = await _userRepository.GetByUUIDAsync(uuid);
+
             var student = new Student
             {
-                User_ID = dto.User_ID,
+                SectionID = dto.SectionID,
+                User_ID = getUser.Id,
                 DocumentSeries = DocSer,
                 Program_ID = dto.Program_ID,
                 Department_ID = dto.Department_ID,
                 Year_Level = dto.Year_Level,
                 CreatedAt = DateTime.UtcNow,
+                CreatedBy = getOperator?.Full_Name ?? "Admin",
                 LastUpdatedAt = DateTime.UtcNow,
+                LastUpdatedBy = getOperator?.Full_Name ?? "Admin",
             };
 
             await _studentRepository.AddAsync(student);
 
             var data = new GetStudentDTO
             {
-                User_ID = student.User_ID,
+                UserDocumentSeries = student.User.DocumentSeries,
+                SectionID = student.SectionID,
                 DocumentSeries = student.DocumentSeries,
                 Program_ID = student.Program_ID,
                 Department_ID = student.Department_ID,
                 Year_Level = student.Year_Level,
+                CreatedAt= student.CreatedAt,
+                CreatedBy = student.CreatedBy,
+                LastUpdatedAt = student.LastUpdatedAt,
+                LastUpdatedBy = student.LastUpdatedBy,
             };
 
             return new ResponseDTO<GetStudentDTO>
@@ -126,7 +156,7 @@ namespace Backend.Backend.Service
             };
         }
 
-        public async Task<ResponseDTO<GetStudentDTO>> UpdateAsync(int id, AddStudentDTO dto)
+        public async Task<ResponseDTO<GetStudentDTO>> UpdateAsync(int id, AddStudentDTO dto, string uuid)
         {
             var existing = await _studentRepository.GetByIdAsync(id);
             if (existing == null)
@@ -134,22 +164,35 @@ namespace Backend.Backend.Service
                 {
                     Status_code = 404,
                     Data = null
-                }
-                ;
+                };
+
+            // Get Operator
+            var userOperator = await _userRepository.GetByUUIDAsync(uuid);
+
+            // Get User
+            var userStudent = await _userRepository.GetByIdAsync(dto.User_ID);
+            if (userStudent == null)
+                throw new Exception($"Id {dto.User_ID} does not Exist");
+
             existing.Program_ID = dto.Program_ID;
+            existing.User_ID = userStudent.DocumentSeries;
             existing.Department_ID = dto.Department_ID;
             existing.Year_Level = dto.Year_Level;
             existing.LastUpdatedAt = DateTime.UtcNow;
+            existing.LastUpdatedBy = userOperator?.Full_Name ?? "Admin";
 
             await _studentRepository.UpdateAsync(existing);
 
             var data = new GetStudentDTO
             {
-                User_ID = existing.User_ID,
+                UserDocumentSeries = existing.User.DocumentSeries,
+                SectionID = existing.SectionID,
                 DocumentSeries = existing.DocumentSeries,
                 Program_ID = existing.Program_ID,
                 Department_ID = existing.Department_ID,
                 Year_Level = existing.Year_Level,
+                LastUpdatedAt = existing.LastUpdatedAt,
+                LastUpdatedBy = existing.LastUpdatedBy,
             };
 
             return new ResponseDTO<GetStudentDTO>

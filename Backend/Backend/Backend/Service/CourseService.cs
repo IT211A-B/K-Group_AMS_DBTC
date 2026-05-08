@@ -2,16 +2,19 @@
 using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
 using Backend.Backend.Interface.RepositoryInterface;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Backend.Backend.Service
 {
     public class CourseService : ICourseService
     {
         private readonly ICourseRepository _courseRepository;
+        private readonly ITeacherRepository _teacherRepository;
 
-        public CourseService(ICourseRepository courseRepository)
+        public CourseService(ICourseRepository courseRepository, ITeacherRepository teacherRepository)
         {
             _courseRepository = courseRepository;
+            _teacherRepository=teacherRepository;
         }
 
         public async Task<ResponseDTO<IEnumerable<GetCourseDTO>>> GetAllAsync()
@@ -29,7 +32,7 @@ namespace Backend.Backend.Service
                 Title = c.Title,
                 Code = c.Code,
                 Description = c.Description,
-                Teacher_ID = c.Teacher_ID,
+                TeacherDocumentSeries = c.Teacher.DocumentSeries
             });
 
             return new ResponseDTO<IEnumerable<GetCourseDTO>>()
@@ -55,7 +58,7 @@ namespace Backend.Backend.Service
                 Title = c.Title,
                 Code = c.Code,
                 Description = c.Description,
-                Teacher_ID = c.Teacher_ID,
+                TeacherDocumentSeries = c.Teacher.DocumentSeries
             };
 
             return new ResponseDTO<GetCourseDTO>()
@@ -64,12 +67,16 @@ namespace Backend.Backend.Service
 
         public async Task<ResponseDTO<GetCourseDTO>> AddAsync(AddCourseDTO dto)
         {
+            //get Teacher
+            var getTeacher = await _teacherRepository.GetByIdAsync(dto.Teacher_ID);
+            if (getTeacher == null)
+                throw new Exception($"Teacher Id {dto.Teacher_ID} does not Exist");
             var course = new Course
             {
                 Title = dto.Title,
                 Code = dto.Code,
                 Description = dto.Description,
-                Teacher_ID = dto.Teacher_ID,
+                Teacher_ID = getTeacher.Teacher_ID,
                 CreatedAt = DateTime.UtcNow,
                 LastUpdatedAt = DateTime.UtcNow,
             };
@@ -82,7 +89,7 @@ namespace Backend.Backend.Service
                 Title = course.Title,
                 Code = course.Code,
                 Description = course.Description,
-                Teacher_ID = course.Teacher_ID,
+                TeacherDocumentSeries = course.Teacher.DocumentSeries,
             };
 
             return new ResponseDTO<GetCourseDTO>()
@@ -97,10 +104,15 @@ namespace Backend.Backend.Service
             var existing = await _courseRepository.GetByIdAsync(id);
             if (existing == null) return new ResponseDTO<GetCourseDTO>() { Status_code = 404, Data = null };
 
+            //get Teacher
+            var getTeacher = await _teacherRepository.GetByIdAsync(dto.Teacher_ID);
+            if (getTeacher == null)
+                throw new Exception($"Teacher Id {dto.Teacher_ID} does not Exist");
+
             existing.Title = dto.Title;
             existing.Code = dto.Code;
             existing.Description = dto.Description;
-            existing.Teacher_ID = dto.Teacher_ID;
+            existing.Teacher_ID = getTeacher.Teacher_ID;
             existing.LastUpdatedAt = DateTime.UtcNow;
 
             await _courseRepository.UpdateAsync(existing);
@@ -111,7 +123,7 @@ namespace Backend.Backend.Service
                 Title = existing.Title,
                 Code = existing.Code,
                 Description = existing.Description,
-                Teacher_ID = existing.Teacher_ID,
+                TeacherDocumentSeries = existing.Teacher.DocumentSeries,
             };
 
             return new ResponseDTO<GetCourseDTO>()

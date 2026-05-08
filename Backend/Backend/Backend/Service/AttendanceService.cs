@@ -1,17 +1,19 @@
-﻿using Backend.Backend.Model;
-using Backend.Backend.DTOs;
-using Backend.Backend.Interface.ServiceInterface;
+﻿using Backend.Backend.DTOs;
 using Backend.Backend.Interface.RepositoryInterface;
+using Backend.Backend.Interface.ServiceInterface;
+using Backend.Backend.Model;
 
 namespace Backend.Backend.Service
 {
     public class AttendanceService : IAttendanceService
     {
         private readonly IAttendanceRepository _attendanceRepository;
+        private readonly IUserRepository _userRepository;
 
-        public AttendanceService(IAttendanceRepository attendanceRepository)
+        public AttendanceService(IAttendanceRepository attendanceRepository, IUserRepository userRepository)
         {
             _attendanceRepository = attendanceRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<ResponseDTO<IEnumerable<GetAttendanceDTO>>> GetAllAsync()
@@ -25,10 +27,11 @@ namespace Backend.Backend.Service
                 };
             var data = attendances.Select(a => new GetAttendanceDTO
             {
-                Attendance_ID = a.Attendance_ID,
-                Enrollment_ID = a.Enrollment_ID,
+                Schedule_ID = a.Schedule_ID,
+                TeacherStatus = a.TeacherStatus,
                 Date = a.Date,
-                Status = a.Status,
+                CreatedAt = a.CreatedAt,
+                CreatedBy = a.CreatedBy,
             });
 
             return new ResponseDTO<IEnumerable<GetAttendanceDTO>>
@@ -50,10 +53,11 @@ namespace Backend.Backend.Service
 
             var data = new GetAttendanceDTO
             {
-                Attendance_ID = a.Attendance_ID,
-                Enrollment_ID = a.Enrollment_ID,
+                Schedule_ID = a.Schedule_ID,
+                TeacherStatus = a.TeacherStatus,
                 Date = a.Date,
-                Status = a.Status,
+                CreatedAt = a.CreatedAt,
+                CreatedBy = a.CreatedBy,
             };
 
             return new ResponseDTO<GetAttendanceDTO>
@@ -63,25 +67,27 @@ namespace Backend.Backend.Service
             };
         }
 
-        public async Task<ResponseDTO<GetAttendanceDTO>> AddAsync(AddAttendanceDTO dto)
+        public async Task<ResponseDTO<GetAttendanceDTO>> AddAsync(AddAttendanceDTO dto, string currentUserId)
         {
+            var getOperator = await _userRepository.GetByUUIDAsync(currentUserId);
             var attendance = new Attendance
             {
-                Enrollment_ID = dto.Enrollment_ID,
-                Date = dto.Date,
-                Status = dto.Status,
+                Schedule_ID = dto.Schedule_ID,
+                TeacherStatus = dto.TeacherStatus,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow),
                 CreatedAt = DateTime.UtcNow,
-                LastUpdatedAt = DateTime.UtcNow,
+                CreatedBy = getOperator?.Full_Name ?? "Admin"
             };
 
             await _attendanceRepository.AddAsync(attendance);
 
             var data = new GetAttendanceDTO
             {
-                Attendance_ID = attendance.Attendance_ID,
-                Enrollment_ID = attendance.Enrollment_ID,
+                Schedule_ID = attendance.Schedule_ID,
+                TeacherStatus = attendance.TeacherStatus,
                 Date = attendance.Date,
-                Status = attendance.Status,
+                CreatedAt = attendance.CreatedAt,
+                CreatedBy = attendance.CreatedBy,
             };
 
             return new ResponseDTO<GetAttendanceDTO>
@@ -101,19 +107,18 @@ namespace Backend.Backend.Service
                     Data = null
                 };
 
-            existing.Enrollment_ID = dto.Enrollment_ID;
-            existing.Date = dto.Date;
-            existing.Status = dto.Status;
-            existing.LastUpdatedAt = DateTime.UtcNow;
+            existing.Schedule_ID = dto.Schedule_ID;
+            existing.TeacherStatus = dto.TeacherStatus;
 
             await _attendanceRepository.UpdateAsync(existing);
 
             var data = new GetAttendanceDTO
             {
-                Attendance_ID = existing.Attendance_ID,
-                Enrollment_ID = existing.Enrollment_ID,
+                Schedule_ID = existing.Schedule_ID,
+                TeacherStatus = existing.TeacherStatus,
                 Date = existing.Date,
-                Status = existing.Status,
+                CreatedAt = existing.CreatedAt,
+                CreatedBy = existing.CreatedBy,
             };
 
             return new ResponseDTO<GetAttendanceDTO>
