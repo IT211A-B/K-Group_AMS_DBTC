@@ -25,6 +25,7 @@ namespace Backend.Backend.Service
                 };
             var data = sections.Select(e => new GetSectionDTO
             {
+                Section_Id = e.Section_Id,
                 Section_Code = e.Section_Code
             });
 
@@ -44,6 +45,7 @@ namespace Backend.Backend.Service
 
             var data = new GetSectionDTO
             {
+                Section_Id = e.Section_Id,
                 Section_Code = e.Section_Code
             };
 
