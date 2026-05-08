@@ -21,7 +21,7 @@ namespace Backend.Backend.Model
         public string Student_ID { get; set; } = Ulid.NewUlid().ToString();
 
         [Required]
-        public required int User_ID { get; set; }
+        public required string User_ID { get; set; }
         public User User { get; set; } = null!;
 
         [Required]
