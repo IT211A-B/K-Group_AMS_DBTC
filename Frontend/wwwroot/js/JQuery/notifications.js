@@ -1,4 +1,5 @@
 ﻿var _notifData = [];
+var _notifInterval = null;
 
 function _escN(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -45,9 +46,19 @@ function renderNotifList() {
 
 function loadNotifications() {
     $.ajax({
-        url: '/api/Notifications', dataType: 'json',
-        success: function (data) { _notifData = Array.isArray(data) ? data : []; renderNotifList(); },
-        error: function () { }
+        url: '/api/Notifications',
+        dataType: 'json',
+        global: false,
+        success: function (data) {
+            _notifData = Array.isArray(data) ? data : [];
+            renderNotifList();
+        },
+        error: function (xhr) {
+            if (xhr.status === 401 && _notifInterval) {
+                clearInterval(_notifInterval);
+                _notifInterval = null;
+            }
+        }
     });
 }
 
@@ -60,8 +71,11 @@ function pushNotification(title, message, type, recipientId) {
 }
 
 $(function () {
-    loadNotifications();
-    setInterval(loadNotifications, 30000);
+    var role = (document.getElementById('sessionRole') || {}).value || '';
+    if (role) {
+        loadNotifications();
+        _notifInterval = setInterval(loadNotifications, 30000);
+    }
 
     $('#notifBellBtn').closest('.dropdown').on('show.bs.dropdown', function () { loadNotifications(); });
 
@@ -71,14 +85,18 @@ $(function () {
         var n = _notifData.find(function (x) { return x.id == id; });
         if (n) n.isRead = true;
         if (!_notifData.filter(function (x) { return !x.isRead; }).length) $('#notifDot').hide();
-        $.ajax({ type: 'PUT', url: '/api/Notifications/' + id + '/read' });
+        $.ajax({ type: 'PUT', url: '/api/Notifications/' + id + '/read', global: false });
     });
 
     $(document).on('click', '#clearNotif', function (e) {
         e.preventDefault();
         $.ajax({
-            type: 'DELETE', url: '/api/Notifications',
-            success: function () { _notifData = []; renderNotifList(); if (typeof showToast === 'function') showToast('Notifications cleared.', 'info'); }
+            type: 'DELETE', url: '/api/Notifications', global: false,
+            success: function () {
+                _notifData = [];
+                renderNotifList();
+                if (typeof showToast === 'function') showToast('Notifications cleared.', 'info');
+            }
         });
     });
 
@@ -101,8 +119,14 @@ $(function () {
         $.ajax({
             type: 'POST', url: '/api/Notifications', contentType: 'application/json',
             data: JSON.stringify({ title: '[' + typeLabel + '] ' + subject, message: body, type: type, recipientId: to, senderName: senderName, senderRole: senderRole }),
-            success: function () { $('#sendMsgModal').modal('hide'); $('#msgSubject').val(''); $('#msgBody').val(''); if (typeof showToast === 'function') showToast('Message sent successfully.', 'success'); },
-            error: function () { if (typeof showToast === 'function') showToast('Failed to send. Please try again.', 'error'); },
+            success: function () {
+                $('#sendMsgModal').modal('hide');
+                $('#msgSubject').val(''); $('#msgBody').val('');
+                if (typeof showToast === 'function') showToast('Message sent successfully.', 'success');
+            },
+            error: function () {
+                if (typeof showToast === 'function') showToast('Failed to send. Please try again.', 'error');
+            },
             complete: function () { $('#sendMsgBtn').prop('disabled', false).html('<i class="bi bi-send"></i> Send'); }
         });
     });

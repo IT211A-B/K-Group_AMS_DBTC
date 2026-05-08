@@ -49,17 +49,14 @@
         }
 
         function buildStudentList(courseId){
-            // Get enrollments for the selected course(s)
             var relevantEnrollments;
             if(courseId){
                 relevantEnrollments=allEnrollments.filter(function(e){ return String(e.course_ID)===String(courseId); });
             } else {
-                // All my courses
                 var tid=getMyTeacherId();
                 var myCourseIds=getMyCourses(tid).map(function(c){ return String(c.course_ID||c.id); });
                 relevantEnrollments=allEnrollments.filter(function(e){ return myCourseIds.includes(String(e.course_ID)); });
             }
-            // Unique students
             var seenSids={};
             var rows=[];
             relevantEnrollments.forEach(function(enr){
@@ -111,14 +108,12 @@
                 var myCourses=getMyCourses(tid);
                 $('#statCourses').text(myCourses.length);
 
-                // Build course dropdown
                 var o='<option value="">All My Courses</option>';
                 myCourses.forEach(function(c){ o+='<option value="'+(c.course_ID||c.id)+'">'+( c.title||c.code||'Course '+(c.course_ID||c.id))+'</option>'; });
                 $('#courseDropdown').html(o);
 
                 refreshTable();
 
-                // Today stats
                 var today=new Date().toISOString().slice(0,10);
                 var myCourseIds=myCourses.map(function(c){ return String(c.course_ID||c.id); });
                 var myEnrollIds=allEnrollments.filter(function(e){ return myCourseIds.includes(String(e.course_ID)); }).map(function(e){ return String(e.enrollment_ID||e.id); });

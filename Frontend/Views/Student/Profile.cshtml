@@ -1,44 +1,26 @@
 ﻿@{
     Layout = "_Layout";
     ViewData["Title"] = "Student Profile";
-    var isAdminView = ViewData["IsAdminView"] as bool? ?? false;
-    var targetUserId = ViewData["TargetUserId"]?.ToString() ?? "";
-    var sessionUserId = Context.Session.GetString("UserId") ?? "";
-    var resolvedUserId = isAdminView && !string.IsNullOrEmpty(targetUserId) ? targetUserId : sessionUserId;
+    var userName = Context.Session.GetString("UserName") ?? "Student";
+    var userEmail = Context.Session.GetString("UserEmail") ?? "";
+    var userId = Context.Session.GetString("UserId") ?? "";
+    var userInit = userName.Length > 0 ? userName[0].ToString().ToUpper() : "S";
 }
-
-<input type="hidden" id="targetUserId" value="@resolvedUserId" />
-<input type="hidden" id="isAdminView" value="@(isAdminView ? "1" : "0")" />
-
 <div class="page-header">
     <div>
-        <h4><i class="bi bi-person-circle"></i> @(isAdminView ? "Student Profile (Admin View)" : "My Profile")</h4>
-        <ol class="breadcrumb">
-            @if (isAdminView)
-            {
-                <li class="breadcrumb-item"><a href="/Admin/Dashboard">Dashboard</a></li>
-            }
-            <li class="breadcrumb-item active">Profile</li>
-        </ol>
+        <h4><i class="bi bi-person-circle"></i> My Profile</h4>
+        <ol class="breadcrumb"><li class="breadcrumb-item active">Profile</li></ol>
     </div>
-    @if (isAdminView)
-    {
-        <a href="/Admin/Dashboard" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
-    }
 </div>
-
 <div class="row g-3">
     <div class="col-md-5">
         <div class="card">
             <div class="profile-header">
-                <div class="profile-avatar" id="profileInitial">S</div>
-                <div>
-                    <div class="profile-name" id="profileName">Loading...</div>
-                    <div class="profile-role" id="profileRole">Student</div>
-                </div>
+                <div class="profile-avatar" id="profileInitial">@userInit</div>
+                <div><div class="profile-name" id="profileName">@userName</div><div class="profile-role" id="profileRole">Student</div></div>
             </div>
             <div class="card-body">
-                <div class="info-row"><i class="bi bi-envelope-fill"></i> <strong>Email:</strong> <span id="profileEmail">—</span></div>
+                <div class="info-row"><i class="bi bi-envelope-fill"></i> <strong>Email:</strong> <span id="profileEmail">@userEmail</span></div>
                 <div class="info-row"><i class="bi bi-telephone-fill"></i> <strong>Phone:</strong> <span id="profilePhone">—</span></div>
                 <div class="info-row"><i class="bi bi-geo-alt-fill"></i> <strong>Address:</strong> <span id="profileAddress">—</span></div>
                 <div class="info-row"><i class="bi bi-gender-ambiguous"></i> <strong>Gender:</strong> <span id="profileGender">—</span></div>
@@ -48,11 +30,16 @@
                 <div class="info-row"><i class="bi bi-layers-fill"></i> <strong>Year Level:</strong> <span id="profileYear">—</span></div>
                 <div class="info-row"><i class="bi bi-person-badge-fill"></i> <strong>Student ID:</strong> <span id="profileStudentId">—</span></div>
                 <div class="info-row"><i class="bi bi-clock-fill"></i> <strong>Member Since:</strong> <span id="profileJoined">—</span></div>
+
+                <!-- QR Code Section -->
+                <div class="info-row mt-3"><i class="bi bi-qr-code"></i> <strong>QR Code:</strong></div>
+                <div id="qrCodeContainer" class="text-center my-2">
+                    <img id="userQrCode" src="" alt="QR Code" style="max-width:150px; display:none;">
+                    <div class="spinner-border spinner-border-sm text-primary" id="qrLoader" style="display:none;" role="status"></div>
+                </div>
+
                 <hr />
-                @if (!isAdminView)
-                {
-                    <a href="/Login/Logout" class="btn btn-outline-danger w-100"><i class="bi bi-box-arrow-right"></i> Logout</a>
-                }
+                <a href="/Login/Logout" class="btn btn-outline-danger w-100"><i class="bi bi-box-arrow-right"></i> Logout</a>
             </div>
         </div>
     </div>
@@ -76,8 +63,7 @@
 
 @section Scripts {
     <script>
-        var userId = document.getElementById('targetUserId').value;
-        var isAdmin = document.getElementById('isAdminView').value === '1';
+        var userId = '@userId';
 
         function loadStudentProfile() {
             if (!userId) return;
@@ -91,8 +77,7 @@
                 var students = Array.isArray(sRes[0]) ? sRes[0] : [];
                 var programs = Array.isArray(pRes[0]) ? pRes[0] : [];
                 var depts = Array.isArray(dRes[0]) ? dRes[0] : [];
-
-                var student = students.find(function(s) { return String(s.user_ID) === String(userId); }) || {};
+                var student = students.find(s => String(s.user_ID) === String(userId)) || {};
 
                 $('#profileName').text(user.full_Name || '—');
                 $('#profileInitial').text((user.full_Name || 'S')[0].toUpperCase());
@@ -105,11 +90,30 @@
                 $('#profileJoined').text(user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—');
                 $('#profileYear').text(student.year_Level || '—');
 
-                var program = programs.find(function(p) { return String(p.program_Id) === String(student.program_ID); });
-                $('#profileProgram').text(program ? (program.name || '—') : (student.program_ID ? 'Program #' + student.program_ID : '—'));
+                var prog = programs.find(p => String(p.program_Id) === String(student.program_ID));
+                $('#profileProgram').text(prog ? (prog.name || '—') : (student.program_ID ? 'Program #' + student.program_ID : '—'));
 
-                var dept = depts.find(function(d) { return String(d.department_Id) === String(student.department_ID); });
+                var dept = depts.find(d => String(d.department_Id) === String(student.department_ID));
                 $('#profileDept').text(dept ? (dept.name || '—') : (student.department_ID ? 'Dept #' + student.department_ID : '—'));
+            });
+        }
+
+        function loadQrCode(userId) {
+            $('#qrLoader').show();
+            $('#userQrCode').hide();
+            $.ajax({
+                url: '/api/User/' + userId + '/qrcode',
+                method: 'GET',
+                xhrFields: { responseType: 'blob' },
+                success: function(blob) {
+                    var url = URL.createObjectURL(blob);
+                    $('#userQrCode').attr('src', url).show();
+                    $('#qrLoader').hide();
+                },
+                error: function() {
+                    $('#qrLoader').hide();
+                    $('#qrCodeContainer').append('<div class="text-danger small">QR code not available</div>');
+                }
             });
         }
 
@@ -120,19 +124,19 @@
                     $.ajax({ url: '/api/Student', dataType: 'json',
                         success: function(students) {
                             var allStudents = Array.isArray(students) ? students : [];
-                            var student = allStudents.find(function(s) { return String(s.user_ID) === String(userId); });
+                            var student = allStudents.find(s => String(s.user_ID) === String(userId));
                             if (!student) return;
-                            var myEnrollments = allEnr.filter(function(e) { return String(e.student_ID) === String(student.student_ID); });
-                            var eids = myEnrollments.map(function(e) { return e.enrollment_ID; });
+                            var myEnrollments = allEnr.filter(e => String(e.student_ID) === String(student.student_ID));
+                            var eids = myEnrollments.map(e => e.enrollment_ID);
                             $.ajax({ url: '/AttendanceManagement/Attendance', dataType: 'json',
                                 success: function(attData) {
                                     var allAtt = Array.isArray(attData) ? attData : [];
-                                    var myAtt = allAtt.filter(function(a) { return eids.includes(a.enrollment_ID); });
-                                    $('#sumPresent').text(myAtt.filter(a => (a.status || '').toLowerCase() === 'present').length);
-                                    $('#sumAbsent').text(myAtt.filter(a => (a.status || '').toLowerCase() === 'absent').length);
-                                    $('#sumLate').text(myAtt.filter(a => (a.status || '').toLowerCase() === 'late').length);
+                                    var myAtt = allAtt.filter(a => eids.includes(a.enrollment_ID));
+                                    $('#sumPresent').text(myAtt.filter(a => (a.status||'').toLowerCase() === 'present').length);
+                                    $('#sumAbsent').text(myAtt.filter(a => (a.status||'').toLowerCase() === 'absent').length);
+                                    $('#sumLate').text(myAtt.filter(a => (a.status||'').toLowerCase() === 'late').length);
                                     var records = {};
-                                    myAtt.forEach(function(a) { var d = (a.date || '').substring(0, 10); if (d) records[d] = (a.status || '').toLowerCase(); });
+                                    myAtt.forEach(a => { var d = (a.date || '').substring(0,10); if (d) records[d] = (a.status || '').toLowerCase(); });
                                     if (typeof renderMiniCalendar === 'function')
                                         renderMiniCalendar('miniCalendar', new Date().getFullYear(), new Date().getMonth(), records);
                                 }
@@ -143,6 +147,10 @@
             });
         }
 
-        $(function() { loadStudentProfile(); loadAttendance(); });
+        $(function() {
+            loadStudentProfile();
+            loadAttendance();
+            loadQrCode(userId);
+        });
     </script>
 }

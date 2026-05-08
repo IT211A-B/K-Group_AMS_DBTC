@@ -6,13 +6,48 @@
 <div class="page-header flex-wrap gap-2">
     <div>
         <h4><i class="bi bi-calendar-check"></i> Take Attendance</h4>
-        <ol class="breadcrumb"><li class="breadcrumb-item"><a href="/Teacher/Dashboard">Home</a></li><li class="breadcrumb-item active">Attendance</li></ol>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/Teacher/Dashboard">Home</a></li>
+            <li class="breadcrumb-item active">Attendance</li>
+        </ol>
     </div>
-    <div class="d-flex align-items-center gap-2 ms-auto">
+    <div class="d-flex align-items-center gap-2 ms-auto flex-wrap">
+        <button class="btn btn-success btn-sm" id="scanQrBtn" title="Scan QR Code">
+            <i class="bi bi-qr-code-scan"></i> Scan QR
+        </button>
         <button class="btn btn-outline-secondary btn-sm" id="prevDayBtn"><i class="bi bi-chevron-left"></i></button>
         <input type="date" id="attendanceDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" style="width:150px;">
         <button class="btn btn-outline-secondary btn-sm" id="nextDayBtn"><i class="bi bi-chevron-right"></i></button>
         <button class="btn btn-primary btn-sm" id="todayBtn"><i class="bi bi-calendar-day"></i> Today</button>
+    </div>
+</div>
+
+<div class="modal fade" id="qrScanModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-qr-code-scan"></i> Scan Student QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="qrReaderWrapper" style="max-width:400px;margin:0 auto;">
+                    <div id="qrReader" style="width:100%;"></div>
+                </div>
+                <div id="qrScanResult" class="mt-3" style="display:none;">
+                    <div class="alert alert-success" id="qrResultMsg"></div>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button class="btn btn-success" id="markPresentBtn"><i class="bi bi-check-circle"></i> Present</button>
+                        <button class="btn btn-warning" id="markLateBtn"><i class="bi bi-clock"></i> Late</button>
+                        <button class="btn btn-danger" id="markAbsentBtn"><i class="bi bi-x-circle"></i> Absent</button>
+                    </div>
+                </div>
+                <div id="qrScanError" class="alert alert-danger mt-2" style="display:none;"></div>
+                <p class="text-muted small mt-2">Point camera at the student's QR code.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -55,122 +90,315 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <script>
-        var attPag, allEnrollments=[], allStudents=[], allUsers=[], allTeachers=[], allCourses=[], allAttRec=[], displayData=[], currentDate='';
-        var currentUserId='@userId';
+        var attPag, allEnrollments = [], allStudents = [], allUsers = [], allTeachers = [], allCourses = [], allAttRec = [], displayData = [], currentDate = '';
+        var currentUserId = '@userId';
+        var qrScanner = null;
+        var scannedStudentData = null;
 
-        function getMyTeacherId(){
-            var t=allTeachers.find(function(x){ return String(x.user_ID||x.userId)===String(currentUserId); });
-            return t?(t.teacher_ID||t.id):null;
-        }
-
-        function renderAttRow(r, idx){
-            var name=r._name, status=r.status||'', attId=r._attId||'';
-            var cls=status.toLowerCase()==='present'?'badge-present':status.toLowerCase()==='absent'?'badge-absent':status.toLowerCase()==='late'?'badge-late':'';
-            var badge=status?'<span class="badge '+cls+'">'+status+'</span>':'<span class="text-muted" style="font-size:12px;">Unmarked</span>';
-            var init=(name[0]||'?').toUpperCase();
-            return '<tr>'
-                +'<td>'+(idx+1)+'</td>'
-                +'<td><div class="d-flex align-items-center gap-2"><div style="width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">'+init+'</div>'+name+'</div></td>'
-                +'<td>'+badge+'</td>'
-                +'<td><button class="btn btn-sm btn-outline-primary mark-att-btn" data-eid="'+r.enrollment_ID+'" data-attid="'+attId+'" data-name="'+name+'" data-status="'+status+'"><i class="bi bi-pencil-square"></i> Mark</button></td>'
-                +'</tr>';
-        }
-
-        function updateSummary(data){
-            var p=data.filter(function(r){ return (r.status||'').toLowerCase()==='present'; }).length;
-            var a=data.filter(function(r){ return (r.status||'').toLowerCase()==='absent'; }).length;
-            var l=data.filter(function(r){ return (r.status||'').toLowerCase()==='late'; }).length;
-            var u=data.filter(function(r){ return !r.status; }).length;
-            $('#presentCount').text(p);$('#absentCount').text(a);$('#lateCount').text(l);
-            $('#sumTotal').text(data.length);$('#sumPresent').text(p);$('#sumAbsent').text(a);$('#sumLate').text(l);$('#sumUnmarked').text(u);
-        }
-
-        function buildDisplay(cid, date){
-            if(!cid) return [];
-            var enrs=allEnrollments.filter(function(e){ return String(e.course_ID)===String(cid); });
-            return enrs.map(function(enr){
-                var s=allStudents.find(function(x){ return String(x.student_ID||x.id)===String(enr.student_ID); });
-                var u=s?allUsers.find(function(x){ return String(x.user_ID)===String(s.user_ID||s.userId); }):null;
-                var name=u?u.full_Name:'Student #'+enr.student_ID;
-                var att=allAttRec.find(function(a){ return String(a.enrollment_ID)===String(enr.enrollment_ID||enr.id) && (a.date||a.attendanceDate||'').substring(0,10)===date; });
-                return {enrollment_ID:enr.enrollment_ID||enr.id,_name:name,status:att?(att.status||''):'',_attId:att?(att.attendance_ID||att.id):''};
+        function updateCounts() {
+            var p = 0, a = 0, l = 0, u = 0;
+            displayData.forEach(function (r) {
+                var s = (r.status || '').toLowerCase();
+                if (s === 'present') p++;
+                else if (s === 'absent') a++;
+                else if (s === 'late') l++;
+                else u++;
             });
+            $('#presentCount, #sumPresent').text(p);
+            $('#absentCount, #sumAbsent').text(a);
+            $('#lateCount, #sumLate').text(l);
+            $('#sumUnmarked').text(u);
+            $('#sumTotal').text(displayData.length);
         }
 
-        function applyFilter(){
-            var f=$('#filterStatus').val().toLowerCase();
-            var result=displayData.filter(function(r){ if(f==='unmarked') return !r.status; if(f&&(r.status||'').toLowerCase()!==f) return false; return true; });
-            if(attPag) attPag.refresh(result);
-            else attPag=paginate({data:result,pageSize:15,containerId:'attendanceTableBody',paginationId:'attendancePagination',colSpan:4,emptyMsg:'No students in this course.',renderRow:renderAttRow});
-            updateSummary(displayData);
+        function renderAttRow(r, idx) {
+            var name = r._name, status = r.status || '', attId = r._attId || '', eid = r._eid || '';
+            var cls = status.toLowerCase() === 'present' ? 'badge-present' : status.toLowerCase() === 'absent' ? 'badge-absent' : status.toLowerCase() === 'late' ? 'badge-late' : '';
+            var badge = status ? '<span class="badge ' + cls + '">' + status + '</span>' : '<span class="text-muted" style="font-size:12px;">Unmarked</span>';
+            var init = (name[0] || '?').toUpperCase();
+            return '<tr>' +
+                '<td>' + (idx + 1) + '</td>' +
+                '<td><div class="d-flex align-items-center gap-2">' +
+                '<div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;">' + init + '</div>' +
+                name + '</div></td>' +
+                '<td>' + badge + '</td>' +
+                '<td><div class="d-flex gap-1">' +
+                '<button class="btn btn-xs att-mark" style="background:#DCFCE7;color:#16A34A;border:none;padding:3px 8px;border-radius:5px;font-size:11px;" data-eid="' + eid + '" data-attid="' + attId + '" data-status="Present">P</button>' +
+                '<button class="btn btn-xs att-mark" style="background:#FEE2E2;color:#DC2626;border:none;padding:3px 8px;border-radius:5px;font-size:11px;" data-eid="' + eid + '" data-attid="' + attId + '" data-status="Absent">A</button>' +
+                '<button class="btn btn-xs att-mark" style="background:#FEF3C7;color:#D97706;border:none;padding:3px 8px;border-radius:5px;font-size:11px;" data-eid="' + eid + '" data-attid="' + attId + '" data-status="Late">L</button>' +
+                '</div></td>' +
+                '</tr>';
         }
 
-        function loadAttendance(date){
-            currentDate=date;
+        function loadAttendance() {
+            currentDate = $('#attendanceDate').val();
+            var courseId = $('#courseDropdown').val();
+            if (!courseId) {
+                displayData = [];
+                if (attPag) attPag.refresh([]);
+                updateCounts();
+                return;
+            }
+
             $('#page-loader').fadeIn(150);
             $.when(
-                $.ajax({url:'/AttendanceManagement/Attendance',dataType:'json'}),
-                $.ajax({url:'/AttendanceManagement/Enrollment',dataType:'json'}),
-                $.ajax({url:'/api/Student',dataType:'json'}),
-                $.ajax({url:'/api/User',dataType:'json'}),
-                $.ajax({url:'/api/Teacher',dataType:'json'}),
-                $.ajax({url:'/AttendanceManagement/Course',dataType:'json'})
-            ).done(function(aR,eR,sR,uR,tR,cR){
-                allAttRec=Array.isArray(aR[0])?aR[0]:[];
-                allEnrollments=Array.isArray(eR[0])?eR[0]:[];
-                allStudents=Array.isArray(sR[0])?sR[0]:[];
-                allUsers=Array.isArray(uR[0])?uR[0]:[];
-                allTeachers=Array.isArray(tR[0])?tR[0]:[];
-                allCourses=Array.isArray(cR[0])?cR[0]:[];
+                $.ajax({ url: '/api/Student', dataType: 'json' }),
+                $.ajax({ url: '/api/User', dataType: 'json' }),
+                $.ajax({ url: '/AttendanceManagement/Enrollment', dataType: 'json' }),
+                $.ajax({ url: '/AttendanceManagement/Attendance', dataType: 'json' })
+            ).done(function (sR, uR, eR, aR) {
+                allStudents = Array.isArray(sR[0]) ? sR[0] : [];
+                allUsers = Array.isArray(uR[0]) ? uR[0] : [];
+                allEnrollments = Array.isArray(eR[0]) ? eR[0] : [];
+                allAttRec = Array.isArray(aR[0]) ? aR[0] : [];
 
-                var tid=getMyTeacherId();
-                var myCourses=allCourses.filter(function(c){ return String(c.teacher_ID)===String(tid); });
+                var courseEnrollments = allEnrollments.filter(function (e) {
+                    return String(e.course_ID) === String(courseId);
+                });
 
-                if(!$('#courseDropdown option[value!=""]').length){
-                    var o='<option value="">Select Course…</option>';
-                    myCourses.forEach(function(c){ o+='<option value="'+(c.course_ID||c.id)+'">'+( c.title||c.code||'Course '+(c.course_ID||c.id))+'</option>'; });
-                    $('#courseDropdown').html(o);
-                    if(myCourses.length===1) $('#courseDropdown').val(myCourses[0].course_ID||myCourses[0].id);
+                displayData = courseEnrollments.map(function (e) {
+                    var student = allStudents.find(function (s) { return String(s.student_ID || s.id) === String(e.student_ID); });
+                    var user = student ? allUsers.find(function (u) { return String(u.user_ID) === String(student.user_ID); }) : null;
+                    var attRecord = allAttRec.find(function (a) {
+                        return String(a.enrollment_ID) === String(e.enrollment_ID) &&
+                            (a.date || a.attendanceDate || '').substring(0, 10) === currentDate;
+                    });
+                    return {
+                        _name: user ? (user.full_Name || user.email) : 'Student #' + e.student_ID,
+                        _eid: e.enrollment_ID,
+                        _attId: attRecord ? (attRecord.attendance_ID || attRecord.id) : '',
+                        status: attRecord ? attRecord.status : '',
+                        _userId: student ? student.user_ID : ''
+                    };
+                });
+
+                var statusF = $('#filterStatus').val();
+                var filtered = statusF
+                    ? displayData.filter(function (r) {
+                        if (statusF === 'unmarked') return !r.status;
+                        return (r.status || '').toLowerCase() === statusF.toLowerCase();
+                    })
+                    : displayData;
+
+                if (attPag) {
+                    attPag.refresh(filtered);
+                } else {
+                    attPag = paginate({
+                        data: filtered, pageSize: 20,
+                        containerId: 'attendanceTableBody',
+                        paginationId: 'attendancePagination',
+                        colSpan: 4, emptyMsg: 'No students enrolled in this course.',
+                        renderRow: renderAttRow
+                    });
                 }
-
-                attPag=null;
-                displayData=buildDisplay($('#courseDropdown').val(),date);
-                applyFilter();
+                updateCounts();
                 $('#page-loader').fadeOut(200);
-            }).fail(function(){ $('#page-loader').fadeOut(200); showToast('Failed to load.','error'); });
+            }).fail(function () {
+                $('#page-loader').fadeOut(200);
+                showToast('Failed to load attendance data.', 'error');
+            });
         }
 
-        $(function(){
-            var today=new Date().toISOString().slice(0,10);
-            $('#attendanceDate').val(today);
-            loadAttendance(today);
+        function markStatus(eid, attId, status, callback) {
+            var date = currentDate;
+            if (attId) {
+                $.ajax({
+                    type: 'PUT', url: '/AttendanceManagement/Attendance/' + attId,
+                    contentType: 'application/json',
+                    data: JSON.stringify({ attendance_ID: parseInt(attId), enrollment_ID: parseInt(eid), status: status, date: date + 'T00:00:00Z', lastUpdatedBy: 'teacher' }),
+                    success: function () { if (callback) callback(); else loadAttendance(); },
+                    error: function (x) { showToast('Update failed: ' + (x.responseJSON && x.responseJSON.message || 'error'), 'error'); }
+                });
+            } else {
+                $.ajax({
+                    type: 'POST', url: '/AttendanceManagement/Attendance',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ enrollment_ID: parseInt(eid), status: status, date: date + 'T00:00:00Z', lastUpdatedBy: 'teacher' }),
+                    success: function () { if (callback) callback(); else loadAttendance(); },
+                    error: function (x) { showToast('Mark failed: ' + (x.responseJSON && x.responseJSON.message || 'error'), 'error'); }
+                });
+            }
+        }
 
-            $('#attendanceDate').change(function(){ attPag=null; loadAttendance($(this).val()); });
-            $('#courseDropdown').on('change',function(){ attPag=null; displayData=buildDisplay($(this).val(),currentDate); applyFilter(); });
-            $('#filterStatus').on('change',applyFilter);
+        function loadCourses() {
+            $('#page-loader').fadeIn(150);
+            $.ajax({
+                url: '/api/Teacher', dataType: 'json',
+                success: function (teachers) {
+                    var teacher = teachers.find(function (t) { return String(t.user_ID) === String(currentUserId); });
+                    $.ajax({
+                        url: '/AttendanceManagement/Course', dataType: 'json',
+                        success: function (courses) {
+                            allCourses = Array.isArray(courses) ? courses : [];
+                            var myCourses = teacher
+                                ? allCourses.filter(function (c) { return String(c.teacher_ID) === String(teacher.teacher_ID || teacher.id); })
+                                : allCourses;
+                            var html = '<option value="">Select Course…</option>';
+                            myCourses.forEach(function (c) {
+                                html += '<option value="' + (c.course_ID || c.id) + '">' + (c.code || '') + ' — ' + (c.title || '') + '</option>';
+                            });
+                            $('#courseDropdown').html(html);
+                            $('#page-loader').fadeOut(200);
+                        },
+                        error: function () { $('#page-loader').fadeOut(200); }
+                    });
+                },
+                error: function () { $('#page-loader').fadeOut(200); }
+            });
+        }
 
-            $('#prevDayBtn').click(function(){ var d=new Date($('#attendanceDate').val()); d.setDate(d.getDate()-1); var ds=d.toISOString().slice(0,10); $('#attendanceDate').val(ds); attPag=null; loadAttendance(ds); });
-            $('#nextDayBtn').click(function(){ var d=new Date($('#attendanceDate').val()); d.setDate(d.getDate()+1); var ds=d.toISOString().slice(0,10); $('#attendanceDate').val(ds); attPag=null; loadAttendance(ds); });
-            $('#todayBtn').click(function(){ var ds=new Date().toISOString().slice(0,10); $('#attendanceDate').val(ds); attPag=null; loadAttendance(ds); });
+        function startQrScanner() {
+            $('#qrScanResult').hide();
+            $('#qrScanError').hide();
+            scannedStudentData = null;
 
-            $(document).on('click','.mark-att-btn',function(){
-                var eid=$(this).data('eid'), attId=$(this).data('attid'), name=$(this).data('name'), status=$(this).data('status');
-                $('#attPopupName').text('Mark attendance for: '+name);
-                $('#attPopupModal').modal('show');
-                $('#attPopupModal').data({eid:eid,attId:attId,date:currentDate});
+            if (!qrScanner) {
+                qrScanner = new Html5Qrcode("qrReader");
+            }
+
+            qrScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                function (decodedText) {
+                    qrScanner.stop().catch(function () {});
+
+                    var userId = decodedText.trim();
+                    if (userId.startsWith('{')) {
+                        try { var obj = JSON.parse(userId); userId = obj.userId || obj.user_ID || obj.id || userId; } catch (e) {}
+                    }
+                    if (userId.startsWith('user:')) userId = userId.substring(5);
+
+                    var student = allStudents.find(function (s) { return String(s.user_ID) === String(userId); });
+                    var courseId = $('#courseDropdown').val();
+
+                    if (!courseId) {
+                        $('#qrScanError').text('Please select a course first.').show();
+                        return;
+                    }
+
+                    if (!student) {
+                        $('#qrScanError').text('Student not found for QR: ' + userId).show();
+                        return;
+                    }
+
+                    var sid = student.student_ID || student.id;
+                    var enrollment = allEnrollments.find(function (e) {
+                        return String(e.student_ID) === String(sid) && String(e.course_ID) === String(courseId);
+                    });
+
+                    if (!enrollment) {
+                        $('#qrScanError').text('Student is not enrolled in the selected course.').show();
+                        return;
+                    }
+
+                    var user = allUsers.find(function (u) { return String(u.user_ID) === String(userId); });
+                    var name = user ? (user.full_Name || user.email) : 'Student';
+                    var attRecord = allAttRec.find(function (a) {
+                        return String(a.enrollment_ID) === String(enrollment.enrollment_ID) &&
+                            (a.date || a.attendanceDate || '').substring(0, 10) === currentDate;
+                    });
+
+                    scannedStudentData = {
+                        eid: enrollment.enrollment_ID,
+                        attId: attRecord ? (attRecord.attendance_ID || attRecord.id) : '',
+                        name: name
+                    };
+
+                    $('#qrResultMsg').text('Scanned: ' + name + (attRecord ? ' — Current: ' + attRecord.status : ' — Not yet marked'));
+                    $('#qrScanResult').show();
+                },
+                function () {}
+            ).catch(function (err) {
+                $('#qrScanError').text('Camera error: ' + err).show();
+            });
+        }
+
+        function stopQrScanner() {
+            if (qrScanner) {
+                qrScanner.stop().catch(function () {});
+            }
+        }
+
+        $(function () {
+            loadCourses();
+
+            $('#scanQrBtn').on('click', function () {
+                $('#qrScanModal').modal('show');
             });
 
-            $(document).on('click','.att-status-btn',function(){
-                var s=$(this).data('status');
-                var d=$('#attPopupModal').data();
-                var payload={enrollment_ID:parseInt(d.eid),date:new Date(d.date).toISOString(),status:s,lastUpdatedBy:'teacher'};
-                var url='/AttendanceManagement/Attendance', method='POST';
-                if(d.attId){ url+='/'+d.attId; method='PUT'; }
-                $.ajax({ type:method, url:url, contentType:'application/json', data:JSON.stringify(payload),
-                    success:function(){ $('#attPopupModal').modal('hide'); loadAttendance(currentDate); showToast('Marked: '+s,'success'); },
-                    error:function(x){ $('#attPopupModal').modal('hide'); showToast('Failed: '+(x.responseJSON&&x.responseJSON.message||'error'),'error'); }
+            $('#qrScanModal').on('shown.bs.modal', function () {
+                $.when(
+                    $.ajax({ url: '/api/Student', dataType: 'json' }),
+                    $.ajax({ url: '/api/User', dataType: 'json' }),
+                    $.ajax({ url: '/AttendanceManagement/Enrollment', dataType: 'json' }),
+                    $.ajax({ url: '/AttendanceManagement/Attendance', dataType: 'json' })
+                ).done(function (sR, uR, eR, aR) {
+                    allStudents = Array.isArray(sR[0]) ? sR[0] : [];
+                    allUsers = Array.isArray(uR[0]) ? uR[0] : [];
+                    allEnrollments = Array.isArray(eR[0]) ? eR[0] : [];
+                    allAttRec = Array.isArray(aR[0]) ? aR[0] : [];
+                    startQrScanner();
+                }).fail(function () {
+                    startQrScanner();
                 });
+            });
+
+            $('#qrScanModal').on('hidden.bs.modal', function () {
+                stopQrScanner();
+            });
+
+            function markScannedStudent(status) {
+                if (!scannedStudentData) return;
+                var d = scannedStudentData;
+                markStatus(d.eid, d.attId, status, function () {
+                    showToast(d.name + ' marked as ' + status, 'success');
+                    $('#qrScanResult').hide();
+                    scannedStudentData = null;
+                    loadAttendance();
+                    setTimeout(function () { startQrScanner(); }, 800);
+                });
+            }
+
+            $('#markPresentBtn').on('click', function () { markScannedStudent('Present'); });
+            $('#markLateBtn').on('click', function () { markScannedStudent('Late'); });
+            $('#markAbsentBtn').on('click', function () { markScannedStudent('Absent'); });
+
+            $('#attendanceDate').on('change', loadAttendance);
+            $('#prevDayBtn').on('click', function () {
+                var d = new Date($('#attendanceDate').val());
+                d.setDate(d.getDate() - 1);
+                $('#attendanceDate').val(d.toISOString().substring(0, 10));
+                loadAttendance();
+            });
+            $('#nextDayBtn').on('click', function () {
+                var d = new Date($('#attendanceDate').val());
+                d.setDate(d.getDate() + 1);
+                $('#attendanceDate').val(d.toISOString().substring(0, 10));
+                loadAttendance();
+            });
+            $('#todayBtn').on('click', function () {
+                $('#attendanceDate').val(new Date().toISOString().substring(0, 10));
+                loadAttendance();
+            });
+            $('#courseDropdown').on('change', loadAttendance);
+            $('#filterStatus').on('change', function () {
+                var statusF = $(this).val();
+                var filtered = statusF
+                    ? displayData.filter(function (r) {
+                        if (statusF === 'unmarked') return !r.status;
+                        return (r.status || '').toLowerCase() === statusF.toLowerCase();
+                    })
+                    : displayData;
+                if (attPag) attPag.refresh(filtered);
+            });
+
+            $(document).on('click', '.att-mark', function () {
+                var eid = $(this).data('eid');
+                var attId = $(this).data('attid');
+                var status = $(this).data('status');
+                markStatus(eid, attId, status);
             });
         });
     </script>

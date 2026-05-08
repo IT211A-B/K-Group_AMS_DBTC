@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using Frontend.Models;
 
@@ -8,66 +9,99 @@ namespace Frontend.Services
     {
         private const string BackendBase = "https://k-group-ams-dbtc-11f4.onrender.com";
 
-        public async Task<(bool Success, string Role, string Name, string UserId, string UserGroupId, string ErrorMessage)> AuthenticateAsync(LoginViewModel model)
+        private HttpClient CreateClient(string? token = null)
+        {
+            var client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(60);
+            client.DefaultRequestHeaders.Add("Origin", BackendBase);
+            client.DefaultRequestHeaders.Add("Referer", BackendBase + "/");
+            client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+            if (!string.IsNullOrEmpty(token))
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+            return client;
+        }
+
+        public async Task<(bool Success, string Role, string Name, string UserId, string Token, string ErrorMessage)>
+            AuthenticateAsync(LoginViewModel model)
         {
             try
             {
-                using var client = new HttpClient();
+                using var client = CreateClient();
                 var payload = JsonSerializer.Serialize(new { email = model.Email, password = model.Password });
                 var content = new StringContent(payload, Encoding.UTF8, "application/json");
                 var response = await client.PostAsync($"{BackendBase}/LogIn", content);
 
-                if (response.IsSuccessStatusCode)
+                if (!response.IsSuccessStatusCode)
                 {
-                    // Determine role from email domain (matches backend logic)
-                    var emailLower = model.Email.ToLower();
-                    string role;
-                    if (emailLower.Contains("@admin")) role = "admin";
-                    else if (emailLower.Contains("@local")) role = "teacher";
-                    else if (emailLower.Contains("@dbtc-cebu")) role = "student";
-                    else role = "admin";
+                    var errBody = await response.Content.ReadAsStringAsync();
+                    string errMsg = "Invalid email or password.";
+                    try
+                    {
+                        using var errDoc = JsonDocument.Parse(errBody);
+                        if (errDoc.RootElement.TryGetProperty("message", out var mp))
+                            errMsg = mp.GetString() ?? errMsg;
+                    }
+                    catch { }
+                    return (false, "", "", "", "", errMsg);
+                }
 
-                    // Fetch user details to get the ULID user_ID
-                    string userId = "";
-                    string fullName = model.Email.Split('@')[0];
-                    string userGroupId = "";
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                var token = doc.RootElement.TryGetProperty("token", out var tp) ? tp.GetString() ?? "" : "";
 
-                    var userResponse = await client.GetAsync($"{BackendBase}/api/User");
+                if (string.IsNullOrEmpty(token))
+                    return (false, "", "", "", "", "Server did not return a token.");
+
+                var emailLower = model.Email.ToLower();
+                string role;
+                if (emailLower.Contains("@admin")) role = "admin";
+                else if (emailLower.Contains("@local")) role = "teacher";
+                else if (emailLower.Contains("@dbtc-cebu")) role = "student";
+                else return (false, "", "", "", "", "Unrecognized email domain. Use @admin, @local, or @dbtc-cebu.");
+
+                string userId = "";
+                string fullName = model.Email.Split('@')[0];
+
+                try
+                {
+                    using var authClient = CreateClient(token);
+                    var userResponse = await authClient.GetAsync($"{BackendBase}/api/User");
                     if (userResponse.IsSuccessStatusCode)
                     {
                         var usersJson = await userResponse.Content.ReadAsStringAsync();
-                        using var doc = JsonDocument.Parse(usersJson);
-                        foreach (var user in doc.RootElement.EnumerateArray())
+                        using var usersDoc = JsonDocument.Parse(usersJson);
+
+                        var root = usersDoc.RootElement;
+                        JsonElement arrayEl = root;
+                        if (root.ValueKind == JsonValueKind.Object &&
+                            root.TryGetProperty("$values", out var valProp))
+                            arrayEl = valProp;
+
+                        if (arrayEl.ValueKind == JsonValueKind.Array)
                         {
-                            if (user.TryGetProperty("email", out var emailProp) &&
-                                emailProp.GetString()?.ToLower() == emailLower)
+                            foreach (var user in arrayEl.EnumerateArray())
                             {
-                                if (user.TryGetProperty("user_ID", out var idProp))
-                                    userId = idProp.GetString() ?? "";
-                                if (user.TryGetProperty("full_Name", out var fnProp))
-                                    fullName = fnProp.GetString() ?? fullName;
-                                if (user.TryGetProperty("userGroup_ID", out var ugProp))
-                                    userGroupId = ugProp.GetRawText().Trim('"');
+                                var userEmail = user.TryGetProperty("email", out var eProp)
+                                    ? eProp.GetString()?.ToLower() ?? "" : "";
+                                if (userEmail != emailLower) continue;
+
+                                userId = user.TryGetProperty("user_ID", out var idProp)
+                                    ? idProp.GetString() ?? "" : "";
+                                fullName = user.TryGetProperty("full_Name", out var nameProp)
+                                    ? nameProp.GetString() ?? fullName : fullName;
                                 break;
                             }
                         }
                     }
+                }
+                catch { }
 
-                    return (true, role, fullName, userId, userGroupId, "");
-                }
-                else
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync();
-                    string errMsg = "Invalid email or password.";
-                    try
-                    {
-                        using var doc = JsonDocument.Parse(errorBody);
-                        if (doc.RootElement.TryGetProperty("message", out var mp))
-                            errMsg = mp.GetString() ?? errMsg;
-                    }
-                    catch { errMsg = errorBody; }
-                    return (false, "", "", "", "", errMsg);
-                }
+                return (true, role, fullName, userId, token, "");
+            }
+            catch (TaskCanceledException)
+            {
+                return (false, "", "", "", "", "Cannot connect to server: Request timed out. The server may be sleeping (Render cold start). Please try again in 30 seconds.");
             }
             catch (Exception ex)
             {
