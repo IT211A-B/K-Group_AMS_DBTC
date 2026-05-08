@@ -17,7 +17,7 @@ namespace Backend.Backend.Repository
         public async Task<User?> GetByIdAsync(int id)
         {
             return await _db.Users
-                .FromSqlRaw(@"SELECT * FROM ""Students"" 
+                .FromSqlRaw(@"SELECT * FROM ""Users"" 
                   WHERE CAST(SPLIT_PART(""DocumentSeries"", '-', 3) AS INT) = {0}", id)
                 .FirstOrDefaultAsync();
         }
