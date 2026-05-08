@@ -22,8 +22,5 @@ namespace Backend.Backend.DTOs
     {
         public int Schedule_ID { get; set; }
 
-        public required AttStatus TeacherStatus { get; set; }
-
-        public DateTime CreatedAt { get; set; }
     }
 }

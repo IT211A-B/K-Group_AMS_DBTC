@@ -2,6 +2,7 @@
 using Backend.Backend.Interface.RepositoryInterface;
 using Backend.Backend.Interface.ServiceInterface;
 using Backend.Backend.Model;
+using attStat = Backend.Backend.Helper.Enum.AttendanceEnum.AttStatus;
 
 namespace Backend.Backend.Service
 {
@@ -9,11 +10,13 @@ namespace Backend.Backend.Service
     {
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IScheduleRepository _scheduleRepository;
 
-        public AttendanceService(IAttendanceRepository attendanceRepository, IUserRepository userRepository)
+        public AttendanceService(IAttendanceRepository attendanceRepository, IUserRepository userRepository, IScheduleRepository scheduleRepository)
         {
             _attendanceRepository = attendanceRepository;
             _userRepository = userRepository;
+            _scheduleRepository = scheduleRepository;
         }
 
         public async Task<ResponseDTO<IEnumerable<GetAttendanceDTO>>> GetAllAsync()
@@ -72,10 +75,47 @@ namespace Backend.Backend.Service
         public async Task<ResponseDTO<GetAttendanceDTO>> AddAsync(AddAttendanceDTO dto, string currentUserId)
         {
             var getOperator = await _userRepository.GetByUUIDAsync(currentUserId);
+
+            // Get schedule
+            var getSchedule = await _scheduleRepository.GetByIdAsync(dto.Schedule_ID);
+            if (getSchedule == null)
+                throw new Exception($"Schedule Id {dto.Schedule_ID} Does not Exist");
+
+            // get current time for validations
+            TimeOnly validationTimeAttendanceStatus = TimeOnly.FromDateTime(DateTime.UtcNow);
+
+            // Get time started
+            TimeOnly started = getSchedule.StartTime;
+
+            // set late limitation
+            TimeOnly lateChecker = validationTimeAttendanceStatus.AddMinutes(15);
+
+            // set attendance status, initialize to absent
+            attStat stat = attStat.Absent;
+
+            // get day of the week
+            DateTime thisday = DateTime.UtcNow;
+            DayOfWeek dayOfThisWeek = thisday.DayOfWeek;
+
+            // Validation and Status Assignment
+            // Check if todays is the recorded day for schedule
+            if (getSchedule.DayOfWeek != dayOfThisWeek)
+                throw new Exception($"Course is Only available at {getSchedule.DayOfWeek} Not {dayOfThisWeek}");
+
+            // Present
+            if (validationTimeAttendanceStatus < started)
+                stat = attStat.Present;
+
+            if (validationTimeAttendanceStatus <=  lateChecker && validationTimeAttendanceStatus > started)
+                stat = attStat.Late;
+
+            if (validationTimeAttendanceStatus > lateChecker)
+                stat = attStat.Absent;
+
             var attendance = new Attendance
             {
                 Schedule_ID = dto.Schedule_ID,
-                TeacherStatus = dto.TeacherStatus,
+                TeacherStatus = stat,
                 Date = DateOnly.FromDateTime(DateTime.UtcNow),
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = getOperator?.Full_Name ?? "Admin"
@@ -111,7 +151,6 @@ namespace Backend.Backend.Service
                 };
 
             existing.Schedule_ID = dto.Schedule_ID;
-            existing.TeacherStatus = dto.TeacherStatus;
 
             await _attendanceRepository.UpdateAsync(existing);
 
