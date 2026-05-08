@@ -103,13 +103,13 @@ function buildAccounts() {
 function loadAll() {
     $('#page-loader').fadeIn(150);
     $.when(
-        $.ajax({ url: '/api/User', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/api/Student', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/api/Teacher', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/AttendanceManagement/Program', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/AttendanceManagement/Department', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/AttendanceManagement/Course', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/AttendanceManagement/Enrollment', dataType: 'json' })
+        $.ajax({ url: '/api/proxy/api/User', dataType: 'json' }),
+        $.ajax({ url: '/api-proxy/api/proxy/api/Student', dataType: 'json' }),
+        $.ajax({ url: '/api-proxy/api/proxy/api/Teacher', dataType: 'json' }),
+        $.ajax({ url: '/api-proxy/api/proxy/AttendanceManagement/Program', dataType: 'json' }),
+        $.ajax({ url: '/api-proxy/api/proxy/AttendanceManagement/Department', dataType: 'json' }),
+        $.ajax({ url: '/api-proxy/api/proxy/AttendanceManagement/Course', dataType: 'json' }),
+        $.ajax({ url: '/api-proxy/api/proxy/AttendanceManagement/Enrollment', dataType: 'json' })
     ).done(function (uR, sR, tR, pR, dR, cR, eR) {
         allUsers = Array.isArray(uR[0]) ? uR[0] : [];
         allStudents = Array.isArray(sR[0]) ? sR[0] : [];
@@ -214,7 +214,7 @@ $(document).ready(function () {
 
         $('#page-loader').fadeIn(150);
         $.ajax({
-            type: 'POST', url: '/api/User', contentType: 'application/json',
+            type: 'POST', url: '/api/proxy/api/User', contentType: 'application/json',
             data: JSON.stringify(userData),
             success: function (user) {
                 var newUserId = user.user_ID || user.id;
@@ -236,7 +236,7 @@ $(document).ready(function () {
                         lastUpdatedBy: 'admin'
                     };
                     $.ajax({
-                        type: 'POST', url: '/api-proxy/api/Student', contentType: 'application/json',
+                        type: 'POST', url: '/api-proxy/api/proxy/api/Student', contentType: 'application/json',
                         data: JSON.stringify(studentData),
                         success: function (student) {
                             var checkedCourses = [];
@@ -245,7 +245,7 @@ $(document).ready(function () {
                             if (checkedCourses.length > 0 && sid) {
                                 var enrollRequests = checkedCourses.map(function (cid) {
                                     return $.ajax({
-                                        type: 'POST', url: '/api-proxy/AttendanceManagement/Enrollment',
+                                        type: 'POST', url: '/api-proxy/api/proxy/AttendanceManagement/Enrollment',
                                         contentType: 'application/json',
                                         data: JSON.stringify({ student_ID: sid, course_ID: parseInt(cid), lastUpdatedBy: 'admin' })
                                     });
@@ -273,7 +273,7 @@ $(document).ready(function () {
                     var dept = $('#addTeacherDept').val().trim();
                     var teacherData = { user_ID: newUserId, department: dept || null, lastUpdatedBy: 'admin' };
                     $.ajax({
-                        type: 'POST', url: '/api-proxy/api/Teacher', contentType: 'application/json',
+                        type: 'POST', url: '/api-proxy/api/proxy/api/Teacher', contentType: 'application/json',
                         data: JSON.stringify(teacherData),
                         success: function (teacher) {
                             var checkedTC = [];
@@ -282,7 +282,7 @@ $(document).ready(function () {
                             if (checkedTC.length > 0 && tid) {
                                 var tRequests = checkedTC.map(function (cid) {
                                     return $.ajax({
-                                        type: 'PUT', url: '/api-proxy/AttendanceManagement/Course/' + cid,
+                                        type: 'PUT', url: '/api-proxy/api/proxy/AttendanceManagement/Course/' + cid,
                                         contentType: 'application/json',
                                         data: JSON.stringify({ course_ID: parseInt(cid), teacher_ID: tid, lastUpdatedBy: 'admin' })
                                     });
@@ -335,7 +335,7 @@ $(document).ready(function () {
 
         $('#page-loader').fadeIn(150);
         $.ajax({
-            url: '/api/User/' + encodeURIComponent(uid), dataType: 'json',
+            url: '/api/proxy/api/User/' + encodeURIComponent(uid), dataType: 'json',
             success: function (user) {
                 $('#editFullName').val(user.full_Name || '');
                 $('#editEmail').val(user.email || '');
@@ -346,7 +346,7 @@ $(document).ready(function () {
 
                 if (ugid == STUDENT_GID && sid) {
                     $.ajax({
-                        url: '/api-proxy/api/Student/' + encodeURIComponent(sid), dataType: 'json',
+                        url: '/api-proxy/api/proxy/api/Student/' + encodeURIComponent(sid), dataType: 'json',
                         success: function (s) {
                             $('#editProgramId').val(s.program_ID || '');
                             $('#editDeptId').val(s.department_ID || '');
@@ -361,7 +361,7 @@ $(document).ready(function () {
                     });
                 } else if (ugid == TEACHER_GID && tid) {
                     $.ajax({
-                        url: '/api-proxy/api/Teacher/' + encodeURIComponent(tid), dataType: 'json',
+                        url: '/api-proxy/api/proxy/api/Teacher/' + encodeURIComponent(tid), dataType: 'json',
                         success: function (t) {
                             $('#editTeacherDept').val(t.department || '');
                             $('#page-loader').fadeOut(200);
@@ -409,7 +409,7 @@ $(document).ready(function () {
 
         $('#page-loader').fadeIn(150);
         $.ajax({
-            type: 'PUT', url: '/api/User/' + encodeURIComponent(uid),
+            type: 'PUT', url: '/api/proxy/api/User/' + encodeURIComponent(uid),
             contentType: 'application/json', data: JSON.stringify(userData),
             success: function () {
                 if (ugid === STUDENT_GID && sid) {
@@ -421,7 +421,7 @@ $(document).ready(function () {
                         lastUpdatedBy: 'admin'
                     };
                     $.ajax({
-                        type: 'PUT', url: '/api-proxy/api/Student/' + encodeURIComponent(sid),
+                        type: 'PUT', url: '/api-proxy/api/proxy/api/Student/' + encodeURIComponent(sid),
                         contentType: 'application/json', data: JSON.stringify(sData),
                         complete: function () {
                             $('#page-loader').fadeOut(200);
@@ -437,7 +437,7 @@ $(document).ready(function () {
                         lastUpdatedBy: 'admin'
                     };
                     $.ajax({
-                        type: 'PUT', url: '/api-proxy/api/Teacher/' + encodeURIComponent(tid),
+                        type: 'PUT', url: '/api-proxy/api/proxy/api/Teacher/' + encodeURIComponent(tid),
                         contentType: 'application/json', data: JSON.stringify(tData),
                         complete: function () {
                             $('#page-loader').fadeOut(200);
@@ -474,7 +474,7 @@ $(document).ready(function () {
 
         function deleteUser() {
             $.ajax({
-                type: 'DELETE', url: '/api/User/' + encodeURIComponent(uid),
+                type: 'DELETE', url: '/api/proxy/api/User/' + encodeURIComponent(uid),
                 success: function () {
                     $('#page-loader').fadeOut(200);
                     showToast(name + ' deleted successfully.', 'success');
@@ -489,13 +489,13 @@ $(document).ready(function () {
 
         if (ugid === STUDENT_GID && sid) {
             $.ajax({
-                type: 'DELETE', url: '/api-proxy/api/Student/' + encodeURIComponent(sid),
+                type: 'DELETE', url: '/api-proxy/api/proxy/api/Student/' + encodeURIComponent(sid),
                 success: deleteUser,
                 error: deleteUser 
             });
         } else if (ugid === TEACHER_GID && tid) {
             $.ajax({
-                type: 'DELETE', url: '/api-proxy/api/Teacher/' + encodeURIComponent(tid),
+                type: 'DELETE', url: '/api-proxy/api/proxy/api/Teacher/' + encodeURIComponent(tid),
                 success: deleteUser,
                 error: deleteUser
             });
