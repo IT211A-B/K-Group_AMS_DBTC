@@ -46,7 +46,7 @@ function renderNotifList() {
 
 function loadNotifications() {
     $.ajax({
-        url: '/api/Notifications',
+        url: '/api/proxy/api/Notifications',
         dataType: 'json',
         global: false,
         success: function (data) {
@@ -64,7 +64,7 @@ function loadNotifications() {
 
 function pushNotification(title, message, type, recipientId) {
     return $.ajax({
-        type: 'POST', url: '/api/Notifications',
+        type: 'POST', url: '/api/proxy/api/Notifications',
         contentType: 'application/json',
         data: JSON.stringify({ title: title, message: message, type: type || 'info', recipientId: recipientId || 'admin', senderName: 'System', senderRole: 'Auto' })
     });
@@ -85,13 +85,13 @@ $(function () {
         var n = _notifData.find(function (x) { return x.id == id; });
         if (n) n.isRead = true;
         if (!_notifData.filter(function (x) { return !x.isRead; }).length) $('#notifDot').hide();
-        $.ajax({ type: 'PUT', url: '/api/Notifications/' + id + '/read', global: false });
+        $.ajax({ type: 'PUT', url: '/api/proxy/api/Notifications/' + id + '/read', global: false });
     });
 
     $(document).on('click', '#clearNotif', function (e) {
         e.preventDefault();
         $.ajax({
-            type: 'DELETE', url: '/api/Notifications', global: false,
+            type: 'DELETE', url: '/api/proxy/api/Notifications', global: false,
             success: function () {
                 _notifData = [];
                 renderNotifList();
@@ -117,7 +117,7 @@ $(function () {
         var typeLabel = type === 'excuse' ? 'Excuse Letter' : type === 'concern' ? 'Concern' : 'Message';
         $('#sendMsgBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Sending…');
         $.ajax({
-            type: 'POST', url: '/api/Notifications', contentType: 'application/json',
+            type: 'POST', url: '/api/proxy/api/Notifications', contentType: 'application/json',
             data: JSON.stringify({ title: '[' + typeLabel + '] ' + subject, message: body, type: type, recipientId: to, senderName: senderName, senderRole: senderRole }),
             success: function () {
                 $('#sendMsgModal').modal('hide');

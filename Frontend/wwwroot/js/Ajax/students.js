@@ -1,6 +1,4 @@
-﻿// students.js - Fixed for String IDs (ULID)
-
-function _eS(xhr) {
+﻿function _eS(xhr) {
     var m = 'Something went wrong.';
     try {
         if (xhr.responseJSON) {
@@ -19,7 +17,7 @@ function _eS(xhr) {
 
 function getStudents(cb) {
     $.ajax({
-        type: 'GET', url: '/api/Student', dataType: 'json',
+        type: 'GET', url: '/api/proxy/api/Student', dataType: 'json',
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (r) { $('#page-loader').fadeOut(200); if (typeof cb === 'function') cb(Array.isArray(r) ? r : []); },
         error: function (x) { $('#page-loader').fadeOut(200); _eS(x); }
@@ -28,7 +26,7 @@ function getStudents(cb) {
 
 function addStudent(userData, studentData, cb) {
     $.ajax({
-        type: 'POST', url: '/api/User', contentType: 'application/json', dataType: 'json',
+        type: 'POST', url: '/api/proxy/api/User', contentType: 'application/json', dataType: 'json',
         data: JSON.stringify(userData),
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (user) {
@@ -39,7 +37,7 @@ function addStudent(userData, studentData, cb) {
                 return;
             }
             $.ajax({
-                type: 'POST', url: '/api/Student', contentType: 'application/json', dataType: 'json',
+                type: 'POST', url: '/api/proxy/api/Student', contentType: 'application/json', dataType: 'json',
                 data: JSON.stringify(studentData),
                 success: function (r) {
                     $('#page-loader').fadeOut(200);
@@ -56,7 +54,7 @@ function addStudent(userData, studentData, cb) {
 function updateStudent(userId, userData, studentId, studentData, cb) {
     $('#page-loader').fadeIn(150);
     $.ajax({
-        type: 'GET', url: '/api/User/' + encodeURIComponent(userId), dataType: 'json',
+        type: 'GET', url: '/api/proxy/api/User/' + encodeURIComponent(userId), dataType: 'json',
         success: function (currentUser) {
             var updateUserData = {
                 user_ID: userId,
@@ -71,12 +69,12 @@ function updateStudent(userId, userData, studentId, studentData, cb) {
                 lastUpdatedBy: userData.lastUpdatedBy || 'admin'
             };
             $.ajax({
-                type: 'PUT', url: '/api/User/' + encodeURIComponent(userId), contentType: 'application/json', dataType: 'json',
+                type: 'PUT', url: '/api/proxy/api/User/' + encodeURIComponent(userId), contentType: 'application/json', dataType: 'json',
                 data: JSON.stringify(updateUserData),
                 success: function () {
                     if (studentId) {
                         $.ajax({
-                            type: 'PUT', url: '/api/Student/' + encodeURIComponent(studentId), contentType: 'application/json', dataType: 'json',
+                            type: 'PUT', url: '/api/proxy/api/Student/' + encodeURIComponent(studentId), contentType: 'application/json', dataType: 'json',
                             data: JSON.stringify({
                                 program_ID: studentData.program_ID,
                                 department_ID: studentData.department_ID,
@@ -105,11 +103,11 @@ function updateStudent(userId, userData, studentId, studentData, cb) {
 
 function deleteStudent(userId, studentId, cb) {
     $.ajax({
-        type: 'DELETE', url: '/api/Student/' + encodeURIComponent(studentId), dataType: 'json',
+        type: 'DELETE', url: '/api/proxy/api/Student/' + encodeURIComponent(studentId), dataType: 'json',
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function () {
             $.ajax({
-                type: 'DELETE', url: '/api/User/' + encodeURIComponent(userId), dataType: 'json',
+                type: 'DELETE', url: '/api/proxy/api/User/' + encodeURIComponent(userId), dataType: 'json',
                 success: function () {
                     $('#page-loader').fadeOut(200);
                     showToast('Student deleted successfully.', 'success');

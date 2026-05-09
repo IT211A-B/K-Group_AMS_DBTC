@@ -1,16 +1,20 @@
-﻿
-var STUDENT_GID = 3, TEACHER_GID = 2, ADMIN_GID = 1;
+﻿var STUDENT_GID = 3, TEACHER_GID = 2, ADMIN_GID = 1;
 var allAccounts = [], allStudents = [], allTeachers = [], allUsers = [];
 var allPrograms = [], allDepts = [], allCourses = [], allEnrollments = [];
 var pg;
 
-function toUtcIso(v) { return v ? new Date(v).toISOString() : new Date().toISOString(); }
+function safeArr(r) {
+    if (Array.isArray(r)) return r;
+    if (r && Array.isArray(r.$values)) return r.$values;
+    return [];
+}
 
 function roleLabel(gid) {
     if (gid == TEACHER_GID) return '<span style="background:#EDE9FE;color:#6D28D9;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Teacher</span>';
     if (gid == STUDENT_GID) return '<span style="background:#DBEAFE;color:var(--accent);font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Student</span>';
     return '<span style="background:#FEE2E2;color:#DC2626;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Admin</span>';
 }
+
 function roleColor(gid) {
     if (gid == TEACHER_GID) return '#7C3AED';
     if (gid == STUDENT_GID) return 'var(--accent)';
@@ -72,7 +76,7 @@ function applyFilter() {
 
 function buildAccounts() {
     allAccounts = allUsers
-        .filter(function (u) { return u.userGroup_ID != ADMIN_GID; })
+        .filter(function (u) { return u.userGroup_ID !== ADMIN_GID; })
         .map(function (u) {
             var uid = u.user_ID;
             var gid = u.userGroup_ID;
@@ -104,20 +108,20 @@ function loadAll() {
     $('#page-loader').fadeIn(150);
     $.when(
         $.ajax({ url: '/api/proxy/api/User', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/api/proxy/api/Student', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/api/proxy/api/Teacher', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/api/proxy/AttendanceManagement/Program', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/api/proxy/AttendanceManagement/Department', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/api/proxy/AttendanceManagement/Course', dataType: 'json' }),
-        $.ajax({ url: '/api-proxy/api/proxy/AttendanceManagement/Enrollment', dataType: 'json' })
+        $.ajax({ url: '/api/proxy/api/Student', dataType: 'json' }),
+        $.ajax({ url: '/api/proxy/api/Teacher', dataType: 'json' }),
+        $.ajax({ url: '/api/proxy/AttendanceManagement/Program', dataType: 'json' }),
+        $.ajax({ url: '/api/proxy/AttendanceManagement/Department', dataType: 'json' }),
+        $.ajax({ url: '/api/proxy/AttendanceManagement/Course', dataType: 'json' }),
+        $.ajax({ url: '/api/proxy/AttendanceManagement/Enrollment', dataType: 'json' })
     ).done(function (uR, sR, tR, pR, dR, cR, eR) {
-        allUsers = Array.isArray(uR[0]) ? uR[0] : [];
-        allStudents = Array.isArray(sR[0]) ? sR[0] : [];
-        allTeachers = Array.isArray(tR[0]) ? tR[0] : [];
-        allPrograms = Array.isArray(pR[0]) ? pR[0] : [];
-        allDepts = Array.isArray(dR[0]) ? dR[0] : [];
-        allCourses = Array.isArray(cR[0]) ? cR[0] : [];
-        allEnrollments = Array.isArray(eR[0]) ? eR[0] : [];
+        allUsers = safeArr(uR[0]);
+        allStudents = safeArr(sR[0]);
+        allTeachers = safeArr(tR[0]);
+        allPrograms = safeArr(pR[0]);
+        allDepts = safeArr(dR[0]);
+        allCourses = safeArr(cR[0]);
+        allEnrollments = safeArr(eR[0]);
 
         buildAccounts();
 
@@ -126,11 +130,15 @@ function loadAll() {
         $('#statCourses').text(allCourses.length);
 
         var progHtml = '<option value="">Select Program</option>';
-        allPrograms.forEach(function (p) { progHtml += '<option value="' + p.program_Id + '">' + p.name + '</option>'; });
+        allPrograms.forEach(function (p) {
+            progHtml += '<option value="' + p.program_Id + '">' + p.name + '</option>';
+        });
         $('#addProgramId, #editProgramId').html(progHtml);
 
         var deptHtml = '<option value="">Select Department</option>';
-        allDepts.forEach(function (d) { deptHtml += '<option value="' + d.department_Id + '">' + d.name + '</option>'; });
+        allDepts.forEach(function (d) {
+            deptHtml += '<option value="' + d.department_Id + '">' + d.name + '</option>';
+        });
         $('#addDeptId, #editDeptId').html(deptHtml);
 
         var courseCheckHtml = '';
@@ -165,8 +173,7 @@ function loadAll() {
     });
 }
 
-
-$(document).ready(function () {
+$(function () {
 
     $('input[name="acctType"]').on('change', function () {
         if ($(this).val() === 'student') {
@@ -201,15 +208,10 @@ $(document).ready(function () {
 
         var ugid = type === 'student' ? STUDENT_GID : TEACHER_GID;
         var userData = {
-            full_Name: fullName,
-            email: email,
-            password: password,
-            phone_Number: phone || null,
-            gender: gender,
+            full_Name: fullName, email: email, password: password,
+            phone_Number: phone || null, gender: gender,
             birth_Date: birthDate ? new Date(birthDate).toISOString() : new Date('2000-01-01').toISOString(),
-            address: address || null,
-            userGroup_ID: ugid,
-            lastUpdatedBy: 'admin'
+            address: address || null, userGroup_ID: ugid, lastUpdatedBy: 'admin'
         };
 
         $('#page-loader').fadeIn(150);
@@ -223,7 +225,6 @@ $(document).ready(function () {
                     showToast('User created but ID not returned. Please reload.', 'warning');
                     loadAll(); return;
                 }
-
                 if (type === 'student') {
                     var programId = $('#addProgramId').val();
                     var deptId = $('#addDeptId').val();
@@ -232,11 +233,10 @@ $(document).ready(function () {
                         user_ID: newUserId,
                         program_ID: programId ? parseInt(programId) : null,
                         department_ID: deptId ? parseInt(deptId) : null,
-                        year_Level: yearLevel,
-                        lastUpdatedBy: 'admin'
+                        year_Level: yearLevel, lastUpdatedBy: 'admin'
                     };
                     $.ajax({
-                        type: 'POST', url: '/api-proxy/api/proxy/api/Student', contentType: 'application/json',
+                        type: 'POST', url: '/api/proxy/api/Student', contentType: 'application/json',
                         data: JSON.stringify(studentData),
                         success: function (student) {
                             var checkedCourses = [];
@@ -245,7 +245,7 @@ $(document).ready(function () {
                             if (checkedCourses.length > 0 && sid) {
                                 var enrollRequests = checkedCourses.map(function (cid) {
                                     return $.ajax({
-                                        type: 'POST', url: '/api-proxy/api/proxy/AttendanceManagement/Enrollment',
+                                        type: 'POST', url: '/api/proxy/AttendanceManagement/Enrollment',
                                         contentType: 'application/json',
                                         data: JSON.stringify({ student_ID: sid, course_ID: parseInt(cid), lastUpdatedBy: 'admin' })
                                     });
@@ -273,7 +273,7 @@ $(document).ready(function () {
                     var dept = $('#addTeacherDept').val().trim();
                     var teacherData = { user_ID: newUserId, department: dept || null, lastUpdatedBy: 'admin' };
                     $.ajax({
-                        type: 'POST', url: '/api-proxy/api/proxy/api/Teacher', contentType: 'application/json',
+                        type: 'POST', url: '/api/proxy/api/Teacher', contentType: 'application/json',
                         data: JSON.stringify(teacherData),
                         success: function (teacher) {
                             var checkedTC = [];
@@ -282,7 +282,7 @@ $(document).ready(function () {
                             if (checkedTC.length > 0 && tid) {
                                 var tRequests = checkedTC.map(function (cid) {
                                     return $.ajax({
-                                        type: 'PUT', url: '/api-proxy/api/proxy/AttendanceManagement/Course/' + cid,
+                                        type: 'PUT', url: '/api/proxy/AttendanceManagement/Course/' + cid,
                                         contentType: 'application/json',
                                         data: JSON.stringify({ course_ID: parseInt(cid), teacher_ID: tid, lastUpdatedBy: 'admin' })
                                     });
@@ -327,11 +327,8 @@ $(document).ready(function () {
         $('#editTeacherId').val(tid);
         $('#editUserGroupId').val(ugid);
 
-        if (ugid == STUDENT_GID) {
-            $('#editStudentSection').show(); $('#editTeacherSection').hide();
-        } else {
-            $('#editStudentSection').hide(); $('#editTeacherSection').show();
-        }
+        if (ugid == STUDENT_GID) { $('#editStudentSection').show(); $('#editTeacherSection').hide(); }
+        else { $('#editStudentSection').hide(); $('#editTeacherSection').show(); }
 
         $('#page-loader').fadeIn(150);
         $.ajax({
@@ -346,7 +343,7 @@ $(document).ready(function () {
 
                 if (ugid == STUDENT_GID && sid) {
                     $.ajax({
-                        url: '/api-proxy/api/proxy/api/Student/' + encodeURIComponent(sid), dataType: 'json',
+                        url: '/api/proxy/api/Student/' + encodeURIComponent(sid), dataType: 'json',
                         success: function (s) {
                             $('#editProgramId').val(s.program_ID || '');
                             $('#editDeptId').val(s.department_ID || '');
@@ -354,33 +351,24 @@ $(document).ready(function () {
                             $('#page-loader').fadeOut(200);
                             $('#editStudentModal').modal('show');
                         },
-                        error: function () {
-                            $('#page-loader').fadeOut(200);
-                            $('#editStudentModal').modal('show');
-                        }
+                        error: function () { $('#page-loader').fadeOut(200); $('#editStudentModal').modal('show'); }
                     });
                 } else if (ugid == TEACHER_GID && tid) {
                     $.ajax({
-                        url: '/api-proxy/api/proxy/api/Teacher/' + encodeURIComponent(tid), dataType: 'json',
+                        url: '/api/proxy/api/Teacher/' + encodeURIComponent(tid), dataType: 'json',
                         success: function (t) {
                             $('#editTeacherDept').val(t.department || '');
                             $('#page-loader').fadeOut(200);
                             $('#editStudentModal').modal('show');
                         },
-                        error: function () {
-                            $('#page-loader').fadeOut(200);
-                            $('#editStudentModal').modal('show');
-                        }
+                        error: function () { $('#page-loader').fadeOut(200); $('#editStudentModal').modal('show'); }
                     });
                 } else {
                     $('#page-loader').fadeOut(200);
                     $('#editStudentModal').modal('show');
                 }
             },
-            error: function () {
-                $('#page-loader').fadeOut(200);
-                showToast('Failed to load user data.', 'error');
-            }
+            error: function () { $('#page-loader').fadeOut(200); showToast('Failed to load user data.', 'error'); }
         });
     });
 
@@ -396,15 +384,14 @@ $(document).ready(function () {
         if (!email) { showToast('Email is required.', 'warning'); return; }
 
         var userData = {
-            user_ID: uid,
-            full_Name: fullName,
-            email: email,
+            user_ID: uid, full_Name: fullName, email: email,
             phone_Number: $('#editPhone').val().trim() || null,
             gender: $('#editGender').val(),
-            birth_Date: $('#editBirthDate').val() ? new Date($('#editBirthDate').val()).toISOString() : new Date('2000-01-01').toISOString(),
+            birth_Date: $('#editBirthDate').val()
+                ? new Date($('#editBirthDate').val()).toISOString()
+                : new Date('2000-01-01').toISOString(),
             address: $('#editAddress').val().trim() || null,
-            userGroup_ID: ugid,
-            lastUpdatedBy: 'admin'
+            userGroup_ID: ugid, lastUpdatedBy: 'admin'
         };
 
         $('#page-loader').fadeIn(150);
@@ -417,11 +404,10 @@ $(document).ready(function () {
                         student_ID: sid,
                         program_ID: $('#editProgramId').val() ? parseInt($('#editProgramId').val()) : null,
                         department_ID: $('#editDeptId').val() ? parseInt($('#editDeptId').val()) : null,
-                        year_Level: $('#editYearLevel').val(),
-                        lastUpdatedBy: 'admin'
+                        year_Level: $('#editYearLevel').val(), lastUpdatedBy: 'admin'
                     };
                     $.ajax({
-                        type: 'PUT', url: '/api-proxy/api/proxy/api/Student/' + encodeURIComponent(sid),
+                        type: 'PUT', url: '/api/proxy/api/Student/' + encodeURIComponent(sid),
                         contentType: 'application/json', data: JSON.stringify(sData),
                         complete: function () {
                             $('#page-loader').fadeOut(200);
@@ -437,7 +423,7 @@ $(document).ready(function () {
                         lastUpdatedBy: 'admin'
                     };
                     $.ajax({
-                        type: 'PUT', url: '/api-proxy/api/proxy/api/Teacher/' + encodeURIComponent(tid),
+                        type: 'PUT', url: '/api/proxy/api/Teacher/' + encodeURIComponent(tid),
                         contentType: 'application/json', data: JSON.stringify(tData),
                         complete: function () {
                             $('#page-loader').fadeOut(200);
@@ -469,7 +455,6 @@ $(document).ready(function () {
         var name = $(this).data('name');
 
         if (!confirm('Delete account for "' + name + '"?\n\nThis cannot be undone.')) return;
-
         $('#page-loader').fadeIn(150);
 
         function deleteUser() {
@@ -488,17 +473,9 @@ $(document).ready(function () {
         }
 
         if (ugid === STUDENT_GID && sid) {
-            $.ajax({
-                type: 'DELETE', url: '/api-proxy/api/proxy/api/Student/' + encodeURIComponent(sid),
-                success: deleteUser,
-                error: deleteUser 
-            });
+            $.ajax({ type: 'DELETE', url: '/api/proxy/api/Student/' + encodeURIComponent(sid), success: deleteUser, error: deleteUser });
         } else if (ugid === TEACHER_GID && tid) {
-            $.ajax({
-                type: 'DELETE', url: '/api-proxy/api/proxy/api/Teacher/' + encodeURIComponent(tid),
-                success: deleteUser,
-                error: deleteUser
-            });
+            $.ajax({ type: 'DELETE', url: '/api/proxy/api/Teacher/' + encodeURIComponent(tid), success: deleteUser, error: deleteUser });
         } else {
             deleteUser();
         }
@@ -506,4 +483,6 @@ $(document).ready(function () {
 
     $('#searchStudent').on('input', applyFilter);
     $('#filterRole, #sortBy').on('change', applyFilter);
+
+    loadAll();
 });

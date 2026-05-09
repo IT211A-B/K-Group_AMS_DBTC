@@ -60,6 +60,7 @@
         </div>
     </div>
 </div>
+
 <div class="modal fade" id="editCourseModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -142,32 +143,21 @@
 
         function loadCourses() {
             $('#page-loader').fadeIn(150);
-            console.log("Loading courses...");
+            console.log("Loading courses via proxy...");
 
-            $.ajax({
-                url: '/AttendanceManagement/Course',
-                dataType: 'json',
-                success: function(c) {
-                    console.log("Courses loaded:", c);
-                    allCourses = Array.isArray(c) ? c : [];
-                    if (coursePaginator) {
-                        coursePaginator.refresh(allCourses);
-                    } else {
-                        coursePaginator = paginate({
-                            data: allCourses, pageSize: 15,
-                            containerId: 'courseTableBody', paginationId: 'coursePagination',
-                            colSpan: 6, emptyMsg: 'No courses found.',
-                            renderRow: renderCourseRow
-                        });
-                    }
-                    $('#page-loader').fadeOut(200);
-                },
-                error: function(xhr, status, error) {
-                    $('#page-loader').fadeOut(200);
-                    console.error("AJAX Error:", status, error);
-                    console.error("Response:", xhr.responseText);
-                    showToast('Failed to load courses. Check console for details.', 'error');
+            getCourses(function(courses) {
+                allCourses = courses;
+                if (coursePaginator) {
+                    coursePaginator.refresh(allCourses);
+                } else {
+                    coursePaginator = paginate({
+                        data: allCourses, pageSize: 15,
+                        containerId: 'courseTableBody', paginationId: 'coursePagination',
+                        colSpan: 6, emptyMsg: 'No courses found.',
+                        renderRow: renderCourseRow
+                    });
                 }
+                $('#page-loader').fadeOut(200);
             });
         }
 
@@ -181,11 +171,10 @@
                     return (c.code || '').toLowerCase().includes(q) ||
                            (c.title || '').toLowerCase().includes(q);
                 });
-                coursePaginator.refresh(filtered);
+                if (coursePaginator) coursePaginator.refresh(filtered);
             });
 
             $('#openAddCourse').click(function() {
-                $('#courseModalTitle').html('<i class="bi bi-plus-circle"></i> Add Course');
                 $('#courseId, #courseCode, #courseTitle, #courseDesc').val('');
                 $('#courseModal').modal('show');
             });
@@ -199,20 +188,10 @@
                 if (!title) { showToast('Course title is required.', 'warning'); return; }
 
                 var data = { code: code, title: title, description: desc || null, lastUpdatedBy: 'admin' };
-                $.ajax({
-                    type: 'POST', url: '/AttendanceManagement/Course',
-                    contentType: 'application/json', data: JSON.stringify(data),
-                    beforeSend: function() { $('#page-loader').fadeIn(150); },
-                    success: function() {
-                        $('#page-loader').fadeOut(200);
-                        $('#courseModal').modal('hide');
-                        loadCourses();
-                        showToast('Course added successfully.', 'success');
-                    },
-                    error: function(x) {
-                        $('#page-loader').fadeOut(200);
-                        showToast('Add failed: ' + (x.responseJSON && x.responseJSON.message || 'error'), 'error');
-                    }
+
+                addCourse(data, function() {
+                    $('#courseModal').modal('hide');
+                    loadCourses();
                 });
             });
 
@@ -245,20 +224,10 @@
                     teacher_ID: teacherId ? parseInt(teacherId) : null,
                     lastUpdatedBy: 'admin'
                 };
-                $.ajax({
-                    type: 'PUT', url: '/AttendanceManagement/Course/' + cid,
-                    contentType: 'application/json', data: JSON.stringify(data),
-                    beforeSend: function() { $('#page-loader').fadeIn(150); },
-                    success: function() {
-                        $('#page-loader').fadeOut(200);
-                        $('#editCourseModal').modal('hide');
-                        loadCourses();
-                        showToast('Course updated successfully.', 'success');
-                    },
-                    error: function(x) {
-                        $('#page-loader').fadeOut(200);
-                        showToast('Update failed: ' + (x.responseJSON && x.responseJSON.message || 'error'), 'error');
-                    }
+
+                updateCourse(cid, data, function() {
+                    $('#editCourseModal').modal('hide');
+                    loadCourses();
                 });
             });
         });
