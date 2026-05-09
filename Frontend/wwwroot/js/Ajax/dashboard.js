@@ -6,12 +6,12 @@
 
 function getDashboardStats() {
     $.ajax({
-        type: 'GET', url: '/api/Student', dataType: 'json', global: false,
+        type: 'GET', url: '/api-proxy/api/Student', dataType: 'json', global: false,
         success: function (r) { $('#statStudents, #histStudents, #ovStudents').text(safeArray(r).length); },
         error: function () { $('#statStudents, #histStudents, #ovStudents').text('0'); }
     });
     $.ajax({
-        type: 'GET', url: '/api/Teacher', dataType: 'json', global: false,
+        type: 'GET', url: '/api-proxy/api/Teacher', dataType: 'json', global: false,
         success: function (r) { $('#statTeachers, #histTeachers, #ovTeachers').text(safeArray(r).length); },
         error: function () { $('#statTeachers, #histTeachers, #ovTeachers').text('0'); }
     });
