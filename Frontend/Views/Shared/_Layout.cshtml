@@ -236,14 +236,29 @@
     <script>
         (function ($) {
             var _ajax = $.ajax;
-            var PROXY = '/api/proxy';
+
+            function getBase() {
+                var p = window.location.pathname;
+                var routes = ['/admin/', '/teacher/', '/student/', '/login/', '/home/'];
+                for (var i = 0; i < routes.length; i++) {
+                    var idx = p.toLowerCase().indexOf(routes[i]);
+                    if (idx > 0) return p.substring(0, idx);
+                }
+                return '';
+            }
+
+            var BASE  = getBase();               
+            var PROXY = BASE + '/api/proxy';    
 
             function rewrite(url) {
                 if (!url || typeof url !== 'string') return url;
-                if (url.indexOf(PROXY) === 0) return url;          
-                if (/^\/api\//.test(url)) return PROXY + url;      
-                if (/^\/AttendanceManagement\//.test(url))          
-                    return PROXY + url;
+
+                if (url.indexOf('/api/proxy/') !== -1) return url;
+
+                if (/^\/api\//.test(url)) return PROXY + url;
+
+                if (/^\/AttendanceManagement\//.test(url)) return PROXY + url;
+
                 return url;
             }
 

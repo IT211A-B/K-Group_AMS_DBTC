@@ -1,6 +1,5 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
 
 namespace Frontend.Services
 {
@@ -22,9 +21,6 @@ namespace Frontend.Services
             var client = new HttpClient();
             client.BaseAddress = new Uri(BackendBase);
             client.Timeout = TimeSpan.FromSeconds(60);
-            client.DefaultRequestHeaders.Add("Origin", BackendBase);
-            client.DefaultRequestHeaders.Add("Referer", BackendBase + "/");
-            client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
 
             var token = GetToken();
             if (!string.IsNullOrEmpty(token))
@@ -49,7 +45,7 @@ namespace Frontend.Services
             }
         }
 
-         public async Task<(bool Ok, string Body, int Status)> PostAsync(string path, string rawJson)
+        public async Task<(bool Ok, string Body, int Status)> PostAsync(string path, string rawJson)
         {
             try
             {
