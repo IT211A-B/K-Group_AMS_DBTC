@@ -4,13 +4,13 @@ WORKDIR /src
 
 # Copy the .csproj file from the subdirectory
 COPY . ./
-RUN dotnet restore ./Frontend/Frontend.csproj
+RUN dotnet restore ./Frontend/Frontend/Frontend.csproj
 
 # Copy all source code from the subdirectory
 COPY . ./
 
 # Publish
-RUN dotnet publish ./Frontend/Frontend.csproj -c Release -o /app/publish
+RUN dotnet publish ./Frontend/Frontend/Frontend.csproj -c Release -o /app/publish
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
