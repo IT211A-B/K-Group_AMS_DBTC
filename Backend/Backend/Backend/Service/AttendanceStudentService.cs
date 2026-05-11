@@ -78,6 +78,8 @@ namespace Backend.Backend.Service
             // Get schedule
             var getSchedule = getAttendance.Schedule;
 
+            // Limit Time that can be tracked
+            TimeOnly attendanceStarted = getSchedule.StartTime.AddMinutes(-30);
 
             // get current time for validations
             TimeOnly validationTimeAttendanceStatus = TimeOnly.FromDateTime(DateTime.Now);
@@ -103,7 +105,7 @@ namespace Backend.Backend.Service
                 throw new Exception($"Course is Only available at {getSchedule.DayOfWeek} Not {dayOfThisWeek}");
 
             // Status
-            if (validationTimeAttendanceStatus <= started)
+            if (validationTimeAttendanceStatus <= started && attendanceStarted >= validationTimeAttendanceStatus)
                 stat = attStat.Present;
             else if (validationTimeAttendanceStatus <= lateChecker)
                 stat = attStat.Late;
