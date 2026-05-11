@@ -68,7 +68,7 @@ namespace Backend.Backend.Service
             // get student
             var getStudent = await _studentRepository.GetByUUIDAsync(uuid);
             if (getStudent is null)
-                throw new Exception($"Id {dto.Student_Id} does not Exist");
+                throw new Exception($"Student Does Not Exist");
 
             // Get Attendance
             var getAttendance = await _attendanceRepository.GetByIdAsync(dto.Attendance_Id);
@@ -97,20 +97,12 @@ namespace Backend.Backend.Service
             DateTime thisday = DateTime.Now;
             DayOfWeek dayOfThisWeek = thisday.DayOfWeek;
 
-            Console.WriteLine($"{validationTimeAttendanceStatus}" +
-    $"{started}\n" +
-    $"{lateChecker}\n" +
-    $"{thisday}\n" +
-    $"{dayOfThisWeek}\n"
-    );
-
             // Validation and Status Assignment
             // Check if todays is the recorded day for schedule
             if (getSchedule.DayOfWeek != dayOfThisWeek)
                 throw new Exception($"Course is Only available at {getSchedule.DayOfWeek} Not {dayOfThisWeek}");
 
             // Status
-
             if (validationTimeAttendanceStatus <= started)
                 stat = attStat.Present;
             else if (validationTimeAttendanceStatus <= lateChecker)
