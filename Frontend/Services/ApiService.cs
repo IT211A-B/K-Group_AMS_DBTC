@@ -1,6 +1,5 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
 
 namespace Frontend.Services
 {
@@ -19,14 +18,9 @@ namespace Frontend.Services
 
         private HttpClient CreateClient()
         {
-            var handler = new HttpClientHandler();
-            var client = new HttpClient(handler);
+            var client = new HttpClient();
             client.BaseAddress = new Uri(BackendBase);
             client.Timeout = TimeSpan.FromSeconds(60);
-
-            client.DefaultRequestHeaders.Add("Origin", BackendBase);
-            client.DefaultRequestHeaders.Add("Referer", BackendBase + "/");
-            client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
 
             var token = GetToken();
             if (!string.IsNullOrEmpty(token))
@@ -51,14 +45,12 @@ namespace Frontend.Services
             }
         }
 
-        public async Task<(bool Ok, string Body, int Status)> PostAsync(string path, object dto)
+        public async Task<(bool Ok, string Body, int Status)> PostAsync(string path, string rawJson)
         {
             try
             {
                 using var client = CreateClient();
-                var opts = new JsonSerializerOptions { PropertyNamingPolicy = null };
-                var json = JsonSerializer.Serialize(dto, opts);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var content = new StringContent(rawJson, Encoding.UTF8, "application/json");
                 var res = await client.PostAsync(path, content);
                 var body = await res.Content.ReadAsStringAsync();
                 return (res.IsSuccessStatusCode, body.Length > 0 ? body : "{}", (int)res.StatusCode);
@@ -69,14 +61,12 @@ namespace Frontend.Services
             }
         }
 
-        public async Task<(bool Ok, string Body, int Status)> PutAsync(string path, object dto)
+        public async Task<(bool Ok, string Body, int Status)> PutAsync(string path, string rawJson)
         {
             try
             {
                 using var client = CreateClient();
-                var opts = new JsonSerializerOptions { PropertyNamingPolicy = null };
-                var json = JsonSerializer.Serialize(dto, opts);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var content = new StringContent(rawJson, Encoding.UTF8, "application/json");
                 var res = await client.PutAsync(path, content);
                 var body = await res.Content.ReadAsStringAsync();
                 return (res.IsSuccessStatusCode, body.Length > 0 ? body : "{}", (int)res.StatusCode);

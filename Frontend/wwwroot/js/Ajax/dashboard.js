@@ -6,22 +6,22 @@
 
 function getDashboardStats() {
     $.ajax({
-        type: 'GET', url: '/api-proxy/api/Student', dataType: 'json', global: false,
+        type: 'GET', url: '/api/proxy/api/Student', dataType: 'json', global: false,
         success: function (r) { $('#statStudents, #histStudents, #ovStudents').text(safeArray(r).length); },
         error: function () { $('#statStudents, #histStudents, #ovStudents').text('0'); }
     });
     $.ajax({
-        type: 'GET', url: '/api-proxy/api/Teacher', dataType: 'json', global: false,
+        type: 'GET', url: '/api/proxy/api/Teacher', dataType: 'json', global: false,
         success: function (r) { $('#statTeachers, #histTeachers, #ovTeachers').text(safeArray(r).length); },
         error: function () { $('#statTeachers, #histTeachers, #ovTeachers').text('0'); }
     });
     $.ajax({
-        type: 'GET', url: '/AttendanceManagement/Course', dataType: 'json', global: false,
+        type: 'GET', url: '/api/proxy/AttendanceManagement/Course', dataType: 'json', global: false,
         success: function (r) { $('#statCourses, #histCourses, #ovCourses').text(safeArray(r).length); },
         error: function () { $('#statCourses, #histCourses, #ovCourses').text('0'); }
     });
     $.ajax({
-        type: 'GET', url: '/AttendanceManagement/Attendance', dataType: 'json', global: false,
+        type: 'GET', url: '/api/proxy/AttendanceManagement/Attendance', dataType: 'json', global: false,
         success: function (r) {
             var arr = safeArray(r);
             var today = new Date().toISOString().slice(0, 10);

@@ -6,7 +6,7 @@
 
 function getAttendance(date, cb) {
     $.ajax({
-        type: 'GET', url: '/api-proxy/AttendanceManagement/Attendance', dataType: 'json',
+        type: 'GET', url: '/api/proxy/AttendanceManagement/Attendance', dataType: 'json',
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (r) {
             var arr = Array.isArray(r) ? r : [];
@@ -19,7 +19,7 @@ function getAttendance(date, cb) {
 
 function getAttendanceHistory(params, cb) {
     $.ajax({
-        type: 'GET', url: '/api-proxy/AttendanceManagement/Attendance', dataType: 'json',
+        type: 'GET', url: '/api/proxy/AttendanceManagement/Attendance', dataType: 'json',
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (r) {
             var arr = Array.isArray(r) ? r : [];
@@ -36,7 +36,7 @@ function getTeacherAttendance(date, cb) { getAttendance(date, cb); }
 
 function markAttendance(data, cb) {
     $.ajax({
-        type: 'POST', url: '/api-proxy/AttendanceManagement/Attendance', contentType: 'application/json', dataType: 'json', data: JSON.stringify(data),
+        type: 'POST', url: '/api/proxy/AttendanceManagement/Attendance', contentType: 'application/json', dataType: 'json', data: JSON.stringify(data),
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (r) { $('#page-loader').fadeOut(200); showToast('Attendance saved successfully.', 'success'); if (typeof cb === 'function') cb(r); },
         error: function (x) { $('#page-loader').fadeOut(200); _eA(x); }
@@ -45,7 +45,7 @@ function markAttendance(data, cb) {
 
 function updateAttendance(id, data, cb) {
     $.ajax({
-        type: 'PUT', url: '/api-proxy/AttendanceManagement/Attendance/' + id, contentType: 'application/json', dataType: 'json', data: JSON.stringify(data),
+        type: 'PUT', url: '/api/proxy/AttendanceManagement/Attendance/' + id, contentType: 'application/json', dataType: 'json', data: JSON.stringify(data),
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (r) { $('#page-loader').fadeOut(200); showToast('Attendance updated successfully.', 'success'); if (typeof cb === 'function') cb(r); },
         error: function (x) { $('#page-loader').fadeOut(200); _eA(x); }

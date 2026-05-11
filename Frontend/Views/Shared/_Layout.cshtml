@@ -232,6 +232,49 @@
     <div id="page-loader" style="display:none;"><div class="spinner-ring"></div></div>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <script>
+        (function ($) {
+            var _ajax = $.ajax;
+
+            function getBase() {
+                var p = window.location.pathname;
+                var routes = ['/admin/', '/teacher/', '/student/', '/login/', '/home/'];
+                for (var i = 0; i < routes.length; i++) {
+                    var idx = p.toLowerCase().indexOf(routes[i]);
+                    if (idx > 0) return p.substring(0, idx);
+                }
+                return '';
+            }
+
+            var BASE  = getBase();               
+            var PROXY = BASE + '/api/proxy';    
+
+            function rewrite(url) {
+                if (!url || typeof url !== 'string') return url;
+
+                if (url.indexOf('/api/proxy/') !== -1) return url;
+
+                if (/^\/api\//.test(url)) return PROXY + url;
+
+                if (/^\/AttendanceManagement\//.test(url)) return PROXY + url;
+
+                return url;
+            }
+
+            $.ajax = function (url, settings) {
+                if (typeof url === 'object') {
+                    settings = url;
+                    if (settings && settings.url) settings.url = rewrite(settings.url);
+                    return _ajax.call(this, settings);
+                }
+                return _ajax.call(this, rewrite(url), settings);
+            };
+
+            $.extend($.ajax, _ajax);
+        }(jQuery));
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/JQuery/sidebar.js"></script>
     <script src="~/js/JQuery/toast.js"></script>

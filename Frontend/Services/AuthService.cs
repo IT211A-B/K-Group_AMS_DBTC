@@ -13,9 +13,6 @@ namespace Frontend.Services
         {
             var client = new HttpClient();
             client.Timeout = TimeSpan.FromSeconds(60);
-            client.DefaultRequestHeaders.Add("Origin", BackendBase);
-            client.DefaultRequestHeaders.Add("Referer", BackendBase + "/");
-            client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
             if (!string.IsNullOrEmpty(token))
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);
