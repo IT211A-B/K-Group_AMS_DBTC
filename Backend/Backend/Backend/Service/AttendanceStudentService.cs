@@ -92,7 +92,7 @@ namespace Backend.Backend.Service
 
 
             // set attendance status, initialize to absent
-            attStat stat = attStat.Absent;
+            attStat stat = attStat.Unassigned;
 
 
             // get day of the week
@@ -109,8 +109,10 @@ namespace Backend.Backend.Service
                 stat = attStat.Present;
             else if (validationTimeAttendanceStatus <= lateChecker)
                 stat = attStat.Late;
-            else
+            else if (validationTimeAttendanceStatus > lateChecker)
                 stat = attStat.Absent;
+            else
+                stat = attStat.Unassigned;
 
             var attendancestudent = new AttendanceStudent
             {
