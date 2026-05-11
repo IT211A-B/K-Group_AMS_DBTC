@@ -116,7 +116,11 @@ namespace Backend.Backend.Controllers
         public async Task<IActionResult> AddAttendanceStudent(AddAttendanceStudentDTO dto)
         {
             try {
-                var attendancestudent = await _attendanceService.AddAsync(dto);
+                string? uuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(uuid))
+                    throw new Exception("No Operator has been found");
+
+                var attendancestudent = await _attendanceService.AddAsync(dto, uuid);
                 return Ok(attendancestudent);
             }
             catch (Exception x)

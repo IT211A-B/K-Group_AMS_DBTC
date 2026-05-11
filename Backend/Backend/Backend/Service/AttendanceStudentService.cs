@@ -63,10 +63,10 @@ namespace Backend.Backend.Service
         //    };
         //}
 
-        public async Task<ResponseDTO<GetAttendanceStudentDTO>> AddAsync(AddAttendanceStudentDTO dto)
+        public async Task<ResponseDTO<GetAttendanceStudentDTO>> AddAsync(AddAttendanceStudentDTO dto, string uuid)
         {
             // get student
-            var getStudent = await _studentRepository.GetByIdAsync(dto.Student_Id);
+            var getStudent = await _studentRepository.GetByUUIDAsync(uuid);
             if (getStudent is null)
                 throw new Exception($"Id {dto.Student_Id} does not Exist");
 
