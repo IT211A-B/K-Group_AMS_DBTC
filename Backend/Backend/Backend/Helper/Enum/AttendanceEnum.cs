@@ -10,7 +10,8 @@
             Present,
             Absent,
             Late,
-            Excused
+            Excused,
+            Unassigned
         }
     }
 }
