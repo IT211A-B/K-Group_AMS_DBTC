@@ -3,11 +3,11 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy the .csproj file from the subdirectory
-COPY Frontend/Frontend.csproj .
+COPY Frontend.csproj .
 RUN dotnet restore
 
 # Copy all source code from the subdirectory
-COPY Frontend/. .
+COPY . .
 
 # Publish
 RUN dotnet publish -c Release -o /app/publish
