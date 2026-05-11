@@ -11,14 +11,12 @@ namespace Backend.Backend.Service
     {
         private readonly IAttendanceStudentRepository _attendancestudentRepository;
         private readonly IStudentRepository _studentRepository;
-        private readonly IScheduleRepository _scheduleRepository;
         private readonly IAttendanceRepository _attendanceRepository;
 
-        public AttendanceStudentService(IAttendanceStudentRepository attendancestudentRepository, IStudentRepository studentRepository, IScheduleRepository scheduleRepository, IAttendanceRepository attendanceRepository)
+        public AttendanceStudentService(IAttendanceStudentRepository attendancestudentRepository, IStudentRepository studentRepository, IAttendanceRepository attendanceRepository)
         {
             _attendancestudentRepository = attendancestudentRepository;
             _studentRepository = studentRepository;
-            _scheduleRepository=scheduleRepository;
             _attendanceRepository=attendanceRepository;
         }
 
@@ -78,7 +76,7 @@ namespace Backend.Backend.Service
                 throw new Exception($"Attendance {dto.Attendance_Id} Does Not Exist");
 
             // Get schedule
-            var getSchedule = await _scheduleRepository.GetByIdAsync(getAttendance.Schedule_ID);
+            var getSchedule = getAttendance.Schedule;
 
             // get current time for validations
             TimeOnly validationTimeAttendanceStatus = TimeOnly.FromDateTime(DateTime.UtcNow);
