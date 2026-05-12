@@ -8,6 +8,7 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task<Student?> GetByIdAsync(int ID);
         Task AddAsync(Student student);
         Task UpdateAsync(Student student);
+        Task<Student?> GetByUserUUIDAsync(string id);
         Task DeleteAsync(Student student);
         Task<Program_?> GetProgramByIdAsync(int Id);
         Task<Student?> GetByUUIDAsync(string id);
