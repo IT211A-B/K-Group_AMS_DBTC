@@ -44,7 +44,7 @@ namespace Backend.Backend.Controllers
         /// </code>
         /// </remarks>
         /// <returns>List of attendancestudent records</returns>
-        [Authorize(Roles = "Admin,Teacher")]
+        [Authorize(Roles = "Admin,Teacher,Student")]
         [HttpGet]
         public async Task<IActionResult> GetAllAttendanceStudents()
         {
