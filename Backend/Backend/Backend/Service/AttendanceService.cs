@@ -81,42 +81,52 @@ namespace Backend.Backend.Service
             if (getSchedule == null)
                 throw new Exception($"Schedule Id {dto.Schedule_ID} Does not Exist");
 
-            // get current time for validations
-            TimeOnly validationTimeAttendanceStatus = TimeOnly.FromDateTime(DateTime.UtcNow);
+            // Limit Time that can be tracked
+            TimeOnly attendanceStarted = getSchedule.StartTime.AddMinutes(-30);
 
             // Get time started
             TimeOnly started = getSchedule.StartTime;
 
             // set late limitation
-            TimeOnly lateChecker = validationTimeAttendanceStatus.AddMinutes(15);
+            TimeOnly lateChecker = started.AddMinutes(15);
 
             // set attendance status, initialize to absent
-            attStat stat = attStat.Absent;
+            attStat stat = attStat.Unassigned;
+
 
             // get day of the week
-            DateTime thisday = DateTime.UtcNow;
+            DateOnly thisday = DateOnly.FromDateTime(DateTime.Now);
             DayOfWeek dayOfThisWeek = thisday.DayOfWeek;
+
+            // get current time for validations
+            TimeOnly now = TimeOnly.FromDateTime(DateTime.Now);
 
             // Validation and Status Assignment
             // Check if todays is the recorded day for schedule
             if (getSchedule.DayOfWeek != dayOfThisWeek)
                 throw new Exception($"Course is Only available at {getSchedule.DayOfWeek} Not {dayOfThisWeek}");
 
-            // Present
-            if (validationTimeAttendanceStatus < started)
+
+            // Validation and Status Assignment
+            // Check if todays is the recorded day for schedule
+            if (getSchedule.DayOfWeek != dayOfThisWeek)
+                throw new Exception($"Course is Only available at {getSchedule.DayOfWeek} Not {dayOfThisWeek}");
+
+            // Status
+            if (now <= started && attendanceStarted >= now)
                 stat = attStat.Present;
-
-            if (validationTimeAttendanceStatus <=  lateChecker && validationTimeAttendanceStatus > started)
+            else if (now <= lateChecker)
                 stat = attStat.Late;
-
-            if (validationTimeAttendanceStatus > lateChecker)
+            else if (now > lateChecker)
                 stat = attStat.Absent;
+            else
+                stat = attStat.Unassigned;
 
             var attendance = new Attendance
             {
                 Schedule_ID = dto.Schedule_ID,
                 TeacherStatus = stat,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                Date = DateOnly.FromDateTime(DateTime.Now),
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = getOperator?.Full_Name ?? "Admin"
             };
