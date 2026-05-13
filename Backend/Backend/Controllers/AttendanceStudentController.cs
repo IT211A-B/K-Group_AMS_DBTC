@@ -110,16 +110,13 @@ namespace Backend.Backend.Controllers
         /// </code>
         /// </remarks>
         /// <returns>Created attendancestudent record</returns>
-        [Authorize(Roles = "Admin,Teacher,Student")]
+        /// [FromBody] ScanRequest request
+        [Authorize(Roles = "Admin,Teacher")]
         [HttpPost]
-        public async Task<IActionResult> AddAttendanceStudent()
+        public async Task<IActionResult> AddAttendanceStudent([FromBody] ScanRequest request)
         {
             try {
-                string? uuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(uuid))
-                    throw new Exception("No Operator has been found");
-
-                var attendancestudent = await _attendanceService.AddAsync(uuid);
+                var attendancestudent = await _attendanceService.AddAsync(request);
                 return Ok(attendancestudent);
             }
             catch (Exception x)
