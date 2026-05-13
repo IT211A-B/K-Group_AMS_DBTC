@@ -22,6 +22,15 @@ namespace Backend.Backend.Repository
                 .Include(t => t.User).Include(t => t.Courses).FirstOrDefaultAsync();
         }
 
+        public async Task<Teacher?> GetByQrToken(string qrToken)
+        {
+            return await _db.Teachers
+                .Include(s => s.User)
+                .Where(s => s.QrToken == qrToken)
+                .FirstOrDefaultAsync();
+        }
+
+
         public async Task<Teacher?> GetByUUIDAsync(string id)
         {
             return await _db.Teachers

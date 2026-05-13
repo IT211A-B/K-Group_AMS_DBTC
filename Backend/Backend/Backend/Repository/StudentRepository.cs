@@ -37,6 +37,14 @@ namespace Backend.Backend.Repository
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<Student?> GetByQrToken(string qrToken)
+        {
+            return await _db.Students
+                .Include(s => s.User)
+                .Where(s => s.QrToken == qrToken)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task AddAsync(Student student)
         {
             _db.Students.Add(student);
