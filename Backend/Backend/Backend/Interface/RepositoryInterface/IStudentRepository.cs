@@ -10,6 +10,7 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task UpdateAsync(Student student);
         Task<Student?> GetByUserUUIDAsync(string id);
         Task DeleteAsync(Student student);
+        Task<Student?> GetByQrToken(string qrToken);
         Task<Program_?> GetProgramByIdAsync(int Id);
         Task<Student?> GetByUUIDAsync(string id);
         Task<long> GetNextStudentNumber();
