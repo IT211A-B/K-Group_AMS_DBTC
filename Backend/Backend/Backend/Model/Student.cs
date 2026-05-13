@@ -53,6 +53,7 @@ namespace Backend.Backend.Model
                 _yearlevel = value;
             }
         }
+        [MaxLength(255)]
         public required string QrToken { get; set; }
 
         public DateTime CreatedAt { get; set; }
