@@ -37,10 +37,10 @@ namespace Backend.Backend.Repository
                     FROM ""Schedules"" s
                     JOIN ""Courses"" c ON s.""Course_ID"" = c.""Course_ID""
                     JOIN ""Teachers"" st ON st.""Teacher_ID"" = c.""Teacher_ID""
-                    WHERE t.""Teacher_ID"" = {0}
+                    WHERE st.""Teacher_ID"" = {0}
                     AND s.""DayOfWeek"" = {1}
                     AND s.""StartTime"" - INTERVAL '30 minutes' <= {2}
-                    AND ss.""EndTime"" >= {2}",
+                    AND s.""EndTime"" >= {2}",
                     id, dayOfWeek, now)
                 .Include(s => s.Course)
                 .FirstOrDefaultAsync();
