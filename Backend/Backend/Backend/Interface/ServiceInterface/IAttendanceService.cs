@@ -7,7 +7,6 @@ namespace Backend.Backend.Interface.ServiceInterface
         Task<ResponseDTO<IEnumerable<GetAttendanceDTO>>> GetAllAsync();
         Task<ResponseDTO<GetAttendanceDTO>> GetByIdAsync(int id);
         Task<ResponseDTO<GetAttendanceDTO>> AddAsync(string currentUserId);
-        Task<ResponseDTO<GetAttendanceDTO>> UpdateAsync(int id);
         Task<bool> DeleteAsync(int id);
     }
 }
