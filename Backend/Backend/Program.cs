@@ -112,9 +112,13 @@ builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAttendanceStudentService, AttendanceStudentService>();
 
+// Qr DI
+builder.Services.AddScoped<IQrService, QRService>();
+
 // Adding DI for the custom authorization system
 // singleton as it does not rely on each request but once and dies if app closes
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+
 //  evaluates user claims compared to those policies per request
 builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 builder.Services.AddScoped<IClaimService,ClaimService>();
