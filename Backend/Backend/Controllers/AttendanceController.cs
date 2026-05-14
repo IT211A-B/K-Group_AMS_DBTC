@@ -154,47 +154,6 @@ namespace Backend.Backend.Controllers
         }
 
         /// <summary>
-        /// Update an existing attendance record
-        /// </summary>
-        /// <remarks>
-        /// <para><b>Description:</b></para>
-        /// <para>Updates an attendance record using its ID.</para>
-        ///
-        /// <para><b>Inputs:</b></para>
-        /// <list type="bullet">
-        ///     <item><description><b>id</b> - Attendance ID</description></item>
-        ///     <item><description><b>Enrollment_ID</b> - Updated enrollment ID</description></item>
-        ///     <item><description><b>Date</b> - Updated date</description></item>
-        ///     <item><description><b>Status</b> - Updated status</description></item>
-        /// </list>
-        ///
-        /// <para><b>Behavior:</b></para>
-        /// <list type="bullet">
-        ///     <item><description>Updates the record if it exists</description></item>
-        ///     <item><description>Returns 404 if not found</description></item>
-        /// </list>
-        /// </remarks>
-        /// <param name="id">Attendance ID</param>
-        /// <param name="dto">Updated attendance data</param>
-        /// <returns>Updated attendance record</returns>
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateAttendance(int id, AddAttendanceDTO dto)
-        {
-            try { 
-                var updatedAttendance = await _attendanceService.UpdateAsync(id, dto);
-                if (updatedAttendance == null)
-                    return NotFound($"#404! Attendance with ID {id} not found");
-
-                return Ok(updatedAttendance);
-            }
-            catch (Exception x)
-            {
-                // Internal Error
-                return BadRequest($"An Error \"{x}\" Occured");
-            }
-        }
-
-        /// <summary>
         /// Delete an attendance record
         /// </summary>
         /// <remarks>
