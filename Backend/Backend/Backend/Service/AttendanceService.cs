@@ -2,6 +2,7 @@
 using Backend.Backend.Interface.RepositoryInterface;
 using Backend.Backend.Interface.ServiceInterface;
 using Backend.Backend.Model;
+using Microsoft.AspNetCore.Http.HttpResults;
 using attStat = Backend.Backend.Helper.Enum.AttendanceEnum.AttStatus;
 
 namespace Backend.Backend.Service
@@ -72,17 +73,28 @@ namespace Backend.Backend.Service
             };
         }
 
-        public async Task<ResponseDTO<GetAttendanceDTO>> AddAsync(AddAttendanceDTO dto, string currentUserId)
+        public async Task<ResponseDTO<GetAttendanceDTO>> AddAsync(string currentUserId)
         {
             // Find manila Id
             TimeZoneInfo manilaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
 
             var getOperator = await _userRepository.GetByUUIDAsync(currentUserId);
+            if (getOperator == null)
+                throw new Exception("No Teache Has been Found");
 
-            // Get schedule
-            var getSchedule = await _scheduleRepository.GetByIdAsync(dto.Schedule_ID);
+            // get current time for validations
+            TimeOnly now = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone));
+
+            // set attendance status, initialize to absent
+            attStat stat = attStat.Unassigned;
+
+            // get day of the week
+            DateOnly thisday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone));
+            DayOfWeek dayOfThisWeek = thisday.DayOfWeek;
+
+            var getSchedule = await _scheduleRepository.GetScheduleIfExist(getOperator.Id, dayOfThisWeek, now);
             if (getSchedule == null)
-                throw new Exception($"Schedule Id {dto.Schedule_ID} Does not Exist");
+                throw new Exception($"You do not have any classes in this hour");
 
             // Limit Time that can be tracked
             TimeOnly attendanceStarted = getSchedule.StartTime.AddMinutes(-30);
@@ -92,17 +104,6 @@ namespace Backend.Backend.Service
 
             // set late limitation
             TimeOnly lateChecker = started.AddMinutes(15);
-
-            // set attendance status, initialize to absent
-            attStat stat = attStat.Unassigned;
-
-
-            // get day of the week
-            DateOnly thisday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone));
-            DayOfWeek dayOfThisWeek = thisday.DayOfWeek;
-
-            // get current time for validations
-            TimeOnly now = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone));
 
             // Validation and Status Assignment
             // Check if todays is the recorded day for schedule
@@ -127,7 +128,7 @@ namespace Backend.Backend.Service
 
             var attendance = new Attendance
             {
-                Schedule_ID = dto.Schedule_ID,
+                Schedule_ID = getSchedule.Schedule_Id,
                 TeacherStatus = stat,
                 Date = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone)),
                 CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone),
