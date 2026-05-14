@@ -17,10 +17,4 @@ namespace Backend.Backend.DTOs
 
         public string? CreatedBy { get; set; }
     }
-
-    public class AddAttendanceDTO
-    {
-        public int Schedule_ID { get; set; }
-
-    }
 }
