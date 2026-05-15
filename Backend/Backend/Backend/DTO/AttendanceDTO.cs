@@ -17,4 +17,23 @@ namespace Backend.Backend.DTOs
 
         public string? CreatedBy { get; set; }
     }
+
+    public class GetRecordAttendanceOfCertainStudent
+    {
+        public int Attendance_ID { get; set; }
+        public string? Course_Title { get; set; }
+        public string? Course_Code { get; set; }
+        public DateOnly Date { get; set; }
+        public DayOfWeek DayOfWeek { get; set; }
+        public AttStatus AttendanceStatus { get; set; }
+    }
+    public class GetRecordAttendanceOfCertainStudentServiceDTO
+    {
+        public int Attendance_ID { get; set; }
+        public string? Course_Title { get; set; }
+        public string? Course_Code { get; set; }
+        public DateOnly Date { get; set; }
+        public DayOfWeek DayOfWeek { get; set; }
+        public string? AttendanceStatus { get; set; }
+    }
 }
