@@ -1,0 +1,36 @@
+﻿@{
+    ViewData["Title"] = "Attendance History";
+    Layout = "_Layout";
+}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-clock-history"></i> Attendance History</h4>
+        <ol class="breadcrumb"><li class="breadcrumb-item"><a href="/Admin/Dashboard">Home</a></li><li class="breadcrumb-item active">History</li></ol>
+    </div>
+</div>
+<div class="card shadow-sm">
+    <div class="card-header">
+        <div class="d-flex flex-wrap gap-2">
+            <input type="date" class="form-control" style="width:150px" id="histFrom" placeholder="From">
+            <input type="date" class="form-control" style="width:150px" id="histTo" placeholder="To">
+            <select class="form-select" style="width:130px" id="histStatus">
+                <option value="">All Status</option>
+                <option value="present">Present</option>
+                <option value="late">Late</option>
+                <option value="absent">Absent</option>
+            </select>
+            <button class="btn btn-primary" id="applyHistFilter"><i class="bi bi-funnel"></i> Filter</button>
+        </div>
+    </div>
+    <div class="table-wrapper">
+        <table class="table table-striped">
+            <thead><tr><th>#</th><th>Student</th><th>Course</th><th>Date</th><th>Status</th><th>Scan Time</th></tr></thead>
+            <tbody id="historyTableBody"><tr><td colspan="6" class="text-center py-4"><div class="spinner-border spinner-border-sm"></div> Loading...</td></tr></tbody>
+        </table>
+    </div>
+    <div class="px-3 py-2 text-muted" id="histCount"></div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin-attendance-history.js"></script>
+}
