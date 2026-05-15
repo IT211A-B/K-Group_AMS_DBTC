@@ -8,6 +8,7 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task<Attendance?> GetByIdAsync(int ID);
         Task AddAsync(Attendance attendance);
         Task<Attendance?> GetAttendanceIfExist(string id, DateOnly today, TimeOnly now);
+        Task<Attendance?> GetTodayByScheduleAsync(int scheduleId, DateOnly date);
         Task UpdateAsync(Attendance attendance);
         Task DeleteAsync(Attendance attendance);
     }

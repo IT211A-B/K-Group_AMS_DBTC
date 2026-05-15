@@ -10,6 +10,7 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task AddAsync(Student student);
         Task UpdateAsync(Student student);
         Task<Student?> GetByUserUUIDAsync(string id);
+        Task<IEnumerable<GetStudentItsCourse>> GetStudentCoursesAsync(string studentId);
         Task DeleteAsync(Student student);
         Task<List<GetRecordAttendanceOfCertainStudent>> GetStudentAttendanceAsync(string studentId);
         Task<Student?> GetByQrToken(string qrToken);
@@ -17,5 +18,6 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task<Student?> GetByUUIDAsync(string id);
         Task<long> GetNextStudentNumber();
         Task<bool> CheckUserIfTaken(string uId);
+        Task<IEnumerable<Student>> GetBySectionIdAsync(int sectionId);
     }
 }

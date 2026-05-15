@@ -15,7 +15,7 @@ namespace Backend.Backend.DTOs
 
     public class AddTeacherDTO
     {
-        public required int User_ID { get; set; }
+        public required string User_ID { get; set; }
         public required int DepartmentId { get; set; }
     }
 }

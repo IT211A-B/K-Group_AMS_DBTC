@@ -134,6 +134,32 @@ namespace Backend.Backend.Controllers
         /// </code>
         /// </remarks>
         /// <returns>Created attendance record</returns>
+        [HttpGet("teacher/schedules")]
+        public async Task<IActionResult> GetTeacherSchedules()
+        {
+            try
+            {
+                string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userId == null) return Unauthorized();
+                var schedules = await _attendanceService.GetTeacherSchedulesAsync(userId);
+                return Ok(schedules.Data ?? []);
+            }
+            catch (Exception x) { return BadRequest($"An Error \"{x}\" Occured"); }
+        }
+
+        [HttpGet("session/students")]
+        public async Task<IActionResult> GetSessionStudents()
+        {
+            try
+            {
+                string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userId == null) return Unauthorized();
+                var students = await _attendanceService.GetSessionStudentsAsync(userId);
+                return Ok(students.Data ?? []);
+            }
+            catch (Exception x) { return BadRequest($"An Error \"{x}\" Occured"); }
+        }
+
         [HttpPost]
         public async Task<IActionResult> AddAttendance()
         {

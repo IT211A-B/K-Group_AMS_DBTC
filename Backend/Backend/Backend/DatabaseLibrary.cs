@@ -25,6 +25,9 @@ namespace Backend.Backend
         public DbSet<AttendanceToken> AttendanceTokens { get; set; }
         public DbSet<Program_> Programs { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
+        public DbSet<Mail> Mails { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<AccountActivity> AccountActivities { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -84,9 +87,22 @@ namespace Backend.Backend
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Course>() // Entity: Course
-                .HasOne(c => c.Teacher) // Navigation: Course -> Teacher
-                .WithMany(t => t.Courses) // Navigation: Teacher -> Courses
+                .HasOne(c => c.Teacher)
+                .WithMany(t => t.Courses)
                 .HasForeignKey(c => c.Teacher_ID)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Section>()
+                .HasOne(sec => sec.Course)
+                .WithMany(c => c.Sections)
+                .HasForeignKey(sec => sec.Course_ID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Schedule>()
+                .HasOne(s => s.Teacher)
+                .WithMany()
+                .HasForeignKey(s => s.Teacher_ID)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Schedule>() // Entity: Schedule
@@ -153,6 +169,15 @@ namespace Backend.Backend
             modelBuilder.Entity<Teacher>()
                 .HasIndex(s => s.DocumentSeries)
                 .IsUnique();
+
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.Mail)
+                .WithMany()
+                .HasForeignKey(n => n.Mail_Id)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<AccountActivity>()
+                .HasIndex(a => a.CreatedAt);
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

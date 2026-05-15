@@ -30,17 +30,10 @@ namespace Frontend.Controllers
             return View(vm);
         }
 
-        public IActionResult Attendance()
+        public IActionResult AccountHistory()
         {
             var check = CheckSession(); if (check != null) return check;
-            var vm = new AdminViewModel { CurrentPage = "Attendance" };
-            return View(vm);
-        }
-
-        public IActionResult AttendanceHistory()
-        {
-            var check = CheckSession(); if (check != null) return check;
-            var vm = new AdminViewModel { CurrentPage = "AttendanceHistory" };
+            var vm = new AdminViewModel { CurrentPage = "AccountHistory" };
             return View(vm);
         }
 

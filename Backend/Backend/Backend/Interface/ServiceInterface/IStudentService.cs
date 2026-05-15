@@ -7,6 +7,7 @@ namespace Backend.Backend.Interface.ServiceInterface
     {
         Task<ResponseDTO<IEnumerable<GetStudentDTO>>> GetAllAsync();
         Task<ResponseDTO<GetStudentDTO>> GetByCurrentStudentAsync(string id);
+        Task<ResponseDTO<IEnumerable<GetStudentItsCourse>>> GetAllStudentCourse(string uuid);
         Task<ResponseDTO<GetStudentDTO>> AddAsync(AddStudentDTO dto, string uuid);
         Task<ResponseDTO<GetStudentDTO>> UpdateAsync(int id, AddStudentDTO dto, string uuid);
         Task<byte[]?> getQrByCurrentStudent(string uuid);

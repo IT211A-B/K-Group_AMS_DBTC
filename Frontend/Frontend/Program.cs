@@ -1,13 +1,48 @@
+<<<<<<< HEAD:Frontend/Program.cs
+﻿using System.Threading.RateLimiting;
+using Frontend.Services;
+using Microsoft.AspNetCore.RateLimiting;
+=======
 ﻿using Frontend.Services;
 using Microsoft.AspNetCore.HttpOverrides;
+>>>>>>> e184fcbcfe06e47564902f542f8e3d52da1323aa:Frontend/Frontend/Program.cs
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
+<<<<<<< HEAD:Frontend/Program.cs
+var loginRateLimit = builder.Configuration.GetSection("RateLimiting");
+var loginPermitLimit = loginRateLimit.GetValue("LoginPermitLimit", 15);
+var loginWindowSeconds = loginRateLimit.GetValue("LoginWindowSeconds", 60);
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            message = "Too many login attempts. Please wait and try again."
+        }, token);
+    };
+
+    options.AddPolicy("login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = loginPermitLimit,
+                Window = TimeSpan.FromSeconds(loginWindowSeconds),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+=======
 builder.Services.Configure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
 {
     options.SuppressMapClientErrors = true;
+>>>>>>> e184fcbcfe06e47564902f542f8e3d52da1323aa:Frontend/Frontend/Program.cs
 });
 
 builder.Services.AddCors(options => {
@@ -60,12 +95,16 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseRouting();
 
+<<<<<<< HEAD:Frontend/Program.cs
+app.UseRateLimiter();
+=======
 app.Use(async (ctx, next) => {
     var path = ctx.Request.Path.Value;
     if (path != null && path.Length > 1 && path.EndsWith("/"))
         ctx.Request.Path = path.TrimEnd('/');
     await next();
 });
+>>>>>>> e184fcbcfe06e47564902f542f8e3d52da1323aa:Frontend/Frontend/Program.cs
 
 app.UseCors("AllowFrontend");
 app.UseSession();

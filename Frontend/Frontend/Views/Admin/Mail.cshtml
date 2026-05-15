@@ -198,6 +198,7 @@
                         selectedUserId=''; selectedUserName=''; $('#selectedRecipient').text(''); $('#recipientSearch').val('');
                         $('#toMode').val('all'); $('#specificRecipBox').hide();
                         loadMail();
+                        if(typeof loadNotifications==='function') loadNotifications();
                     },
                     error:function(x){ $('#page-loader').fadeOut(200); showToast('Send failed: '+(x.responseJSON&&x.responseJSON.message||x.statusText),'error'); }
                 });

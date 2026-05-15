@@ -23,7 +23,7 @@
     <div class="table-wrapper">
         <table class="table table-striped">
             <thead>
-                <tr><th>ID</th><th>Code</th><th>Title</th><th>Description</th><th>Assigned Teacher</th><th>Actions</th></tr>
+                <tr><th>ID</th><th>Code</th><th>Title</th><th>Description</th><th>Section</th><th>Actions</th></tr>
             </thead>
             <tbody id="courseTableBody"></tbody>
         </table>
@@ -53,8 +53,13 @@
                     <textarea class="form-control" id="courseDesc" rows="3" placeholder="Optional course description"></textarea>
                 </div>
                 <div class="mb-3">
+<<<<<<< HEAD:Frontend/Views/Admin/Courses.cshtml
+                    <label class="form-label">Assign to Section <span class="text-danger">*</span></label>
+                    <select class="form-select" id="courseSectionId"><option value="">Select Section…</option></select>
+=======
                     <label class="form-label">Assign Teacher <span class="text-danger">*</span></label>
                     <select class="form-select" id="courseTeacher"></select>
+>>>>>>> e184fcbcfe06e47564902f542f8e3d52da1323aa:Frontend/Frontend/Views/Admin/Courses.cshtml
                 </div>
             </div>
             <div class="modal-footer">
@@ -86,10 +91,8 @@
                     <textarea class="form-control" id="editCourseDesc" rows="3"></textarea>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Assign Teacher</label>
-                    <select class="form-select" id="editCourseTeacher">
-                        <option value="">Unassigned</option>
-                    </select>
+                    <label class="form-label">Section <span class="text-danger">*</span></label>
+                    <select class="form-select" id="editCourseSectionId"><option value="">Select Section…</option></select>
                 </div>
             </div>
             <div class="modal-footer">
@@ -102,8 +105,21 @@
 
 @section Scripts {
     <script>
-        var allCourses = [], allTeachers = [], allUsers = [], coursePaginator;
+        var allCourses = [], allSections = [], coursePaginator;
 
+<<<<<<< HEAD:Frontend/Views/Admin/Courses.cshtml
+        function loadSections() {
+            $.ajax({ url: '/AttendanceManagement/Section', dataType: 'json',
+                success: function (secs) {
+                    allSections = Array.isArray(secs) ? secs : [];
+                    var html = '<option value="">Select Section…</option>';
+                    allSections.forEach(function (sec) {
+                        var sid = sec.section_Id || sec.Section_Id;
+                        html += '<option value="' + sid + '">' + (sec.section_Code || sec.Section_Code || sid) + '</option>';
+                    });
+                    $('#courseSectionId, #editCourseSectionId').html(html);
+                }
+=======
         function parseDocId(series) {
             if (!series) return '';
             var p = String(series).split('-');
@@ -129,11 +145,18 @@
                     if (tid) html += '<option value="' + tid + '">' + name + '</option>';
                 });
                 $('#editCourseTeacher, #courseTeacher').html(html);
+>>>>>>> e184fcbcfe06e47564902f542f8e3d52da1323aa:Frontend/Frontend/Views/Admin/Courses.cshtml
             });
         }
 
         function renderCourseRow(c, idx) {
             var cid = c.course_ID || c.id;
+<<<<<<< HEAD:Frontend/Views/Admin/Courses.cshtml
+            var code = c.code || c.Code || '—';
+            var title = c.title || c.Title || '—';
+            var desc = c.description || c.Description || '—';
+            var sectionName = c.section_Code || c.Section_Code || (c.section_ID ? 'Section ' + c.section_ID : '—');
+=======
             var code = c.code || '—';
             var title = c.title || '—';
             var desc = c.description || '—';
@@ -145,13 +168,14 @@
             });
             var teacherUser = teacher ? allUsers.find(function(u) { return String(u.user_ID) === String(teacher.user_ID); }) : null;
             var teacherName = teacherUser ? teacherUser.full_Name : (teacherId ? 'Assigned' : 'Unassigned');
+>>>>>>> e184fcbcfe06e47564902f542f8e3d52da1323aa:Frontend/Frontend/Views/Admin/Courses.cshtml
             var init = (title[0] || 'C').toUpperCase();
             return '<tr>' +
                 '<td>' + cid + '</td>' +
                 '<td><span style="background:#DBEAFE;color:var(--accent);padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + code + '</span></td>' +
                 '<td><div class="d-flex align-items-center gap-2"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">' + init + '</div>' + title + '</div></td>' +
                 '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">' + desc + '</td>' +
-                '<td>' + teacherName + '</td>' +
+                '<td>' + sectionName + '</td>' +
                 '<td><button class="btn btn-sm btn-outline-primary btn-icon edit-course" data-id="' + cid + '" title="Edit"><i class="bi bi-pencil"></i></button></td>' +
                 '</tr>';
         }
@@ -188,7 +212,7 @@
         }
 
         $(function() {
-            loadTeacherDropdown();
+            loadSections();
             loadCourses();
 
             $('#searchCourse').on('input', function() {
@@ -214,9 +238,15 @@
                 if (!code) { showToast('Course code is required.', 'warning'); return; }
                 if (!title) { showToast('Course title is required.', 'warning'); return; }
 
+<<<<<<< HEAD:Frontend/Views/Admin/Courses.cshtml
+                var sectionId = $('#courseSectionId').val();
+                if (!sectionId) { showToast('Section is required.', 'warning'); return; }
+                var data = { code: code, title: title, description: desc || null, section_ID: parseInt(sectionId) };
+=======
                 var teacherId = $('#courseTeacher').val();
                 if (!teacherId) { showToast('Please assign a teacher.', 'warning'); return; }
                 var data = { code: code, title: title, description: desc || null, teacher_ID: parseInt(teacherId, 10) };
+>>>>>>> e184fcbcfe06e47564902f542f8e3d52da1323aa:Frontend/Frontend/Views/Admin/Courses.cshtml
                 $.ajax({
                     type: 'POST', url: '/AttendanceManagement/Course',
                     contentType: 'application/json', data: JSON.stringify(data),
@@ -242,9 +272,13 @@
                     $('#editCourseCode').val(course.code || '');
                     $('#editCourseTitle').val(course.title || '');
                     $('#editCourseDesc').val(course.description || '');
+<<<<<<< HEAD:Frontend/Views/Admin/Courses.cshtml
+                    $('#editCourseSectionId').val(course.section_ID || course.Section_ID || '');
+=======
                     var tds = course.teacherDocumentSeries || course.TeacherDocumentSeries;
                     var tOpt = allTeachers.find(function(t) { return String(t.documentSeries || t.DocumentSeries) === String(tds); });
                     $('#editCourseTeacher').val(tOpt ? parseDocId(tOpt.documentSeries || tOpt.DocumentSeries) : (course.teacher_ID || ''));
+>>>>>>> e184fcbcfe06e47564902f542f8e3d52da1323aa:Frontend/Frontend/Views/Admin/Courses.cshtml
                     $('#editCourseModal').modal('show');
                 }
             });
@@ -254,15 +288,19 @@
                 var code = $('#editCourseCode').val().trim();
                 var title = $('#editCourseTitle').val().trim();
                 var desc = $('#editCourseDesc').val().trim();
-                var teacherId = $('#editCourseTeacher').val();
-
+                var sectionId = $('#editCourseSectionId').val();
                 if (!code) { showToast('Course code is required.', 'warning'); return; }
                 if (!title) { showToast('Course title is required.', 'warning'); return; }
+                if (!sectionId) { showToast('Section is required.', 'warning'); return; }
 
                 if (!teacherId) { showToast('Please assign a teacher.', 'warning'); return; }
                 var data = {
                     code: code, title: title, description: desc || null,
+<<<<<<< HEAD:Frontend/Views/Admin/Courses.cshtml
+                    section_ID: parseInt(sectionId)
+=======
                     teacher_ID: parseInt(teacherId, 10)
+>>>>>>> e184fcbcfe06e47564902f542f8e3d52da1323aa:Frontend/Frontend/Views/Admin/Courses.cshtml
                 };
                 $.ajax({
                     type: 'PUT', url: '/AttendanceManagement/Course/' + cid,

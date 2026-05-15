@@ -20,9 +20,17 @@
             <div class="card-body">
                 <div class="mb-3">
                     <label class="form-label fw-semibold">To <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="recipientSearch" placeholder="Type name or email to search…" autocomplete="off">
-                    <div id="recipientDropdown" style="position:absolute;z-index:9999;background:#fff;border:1px solid #e2e8f0;border-radius:6px;width:calc(100% - 32px);max-height:200px;overflow-y:auto;display:none;"></div>
-                    <div id="selectedRecipient" class="mt-1" style="font-size:12px;color:#16A34A;"></div>
+                    <select class="form-select" id="toMode">
+                        <option value="all">All Users</option>
+                        <option value="teacher">All Teachers</option>
+                        <option value="student">All Students</option>
+                        <option value="specific">Specific Person…</option>
+                    </select>
+                    <div id="specificRecipBox" style="display:none;margin-top:8px;">
+                        <input type="text" class="form-control form-control-sm" id="recipientSearch" placeholder="Type name or email…" autocomplete="off">
+                        <div id="recipientDropdown" style="position:absolute;z-index:9999;background:#fff;border:1px solid #e2e8f0;border-radius:6px;width:calc(100% - 32px);max-height:200px;overflow-y:auto;display:none;"></div>
+                        <div id="selectedRecipient" class="mt-2" style="font-size:12px;color:#16A34A;"></div>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Type</label>
@@ -55,6 +63,7 @@
                         <option value="read">Read</option>
                     </select>
                     <button class="btn btn-sm btn-outline-secondary" id="markAllReadBtn"><i class="bi bi-check2-all"></i> Mark all read</button>
+                    <button class="btn btn-sm btn-outline-danger" id="clearAllMailBtn"><i class="bi bi-trash3"></i> Clear</button>
                 </div>
             </div>
             <div id="mailList" style="min-height:300px;"></div>
@@ -88,6 +97,12 @@
 @section Scripts {
     <script>
         var allMails=[], selectedUserId='', selectedUserName='';
+
+        $('#toMode').on('change',function(){
+            var v=$(this).val();
+            $('#specificRecipBox').toggle(v==='specific');
+            if(v!=='specific'){ selectedUserId=''; selectedUserName=''; $('#selectedRecipient').text(''); $('#recipientSearch').val(''); }
+        });
 
         var searchTimer;
         $('#recipientSearch').on('input',function(){
@@ -156,17 +171,34 @@
             loadMail();
 
             $('#sendMsgBtn').on('click',function(){
+                var mode=$('#toMode').val();
                 var subject=$('#msgSubject').val().trim();
                 var body=$('#msgBody').val().trim();
-                if(!selectedUserId){ showToast('Please search and select a recipient.','warning'); return; }
+                var recipId=mode;
                 if(!subject){ showToast('Subject is required.','warning'); return; }
-                if(!body){ showToast('Message body is required.','warning'); return; }
+                if(!body){ showToast('Message is required.','warning'); return; }
+                if(mode==='specific'){
+                    if(!selectedUserId){ showToast('Please select a recipient.','warning'); return; }
+                    recipId=selectedUserId;
+                }
                 $('#page-loader').fadeIn(150);
                 $.ajax({ type:'POST', url:'/api/Notifications', contentType:'application/json',
-                    data:JSON.stringify({recipientId:selectedUserId,title:subject,message:body,type:$('#msgType').val()}),
-                    success:function(){ $('#page-loader').fadeOut(200); showToast('Message sent to '+selectedUserName+'.','success'); $('#msgSubject,#msgBody').val(''); selectedUserId=''; selectedUserName=''; $('#selectedRecipient').text(''); $('#recipientSearch').val(''); loadMail(); },
+                    data:JSON.stringify({recipientId:recipId,title:subject,message:body,type:$('#msgType').val()}),
+                    success:function(){
+                        $('#page-loader').fadeOut(200);
+                        showToast('Message sent.','success');
+                        $('#msgSubject,#msgBody').val('');
+                        selectedUserId=''; selectedUserName=''; $('#selectedRecipient').text(''); $('#recipientSearch').val('');
+                        $('#toMode').val('all'); $('#specificRecipBox').hide();
+                        loadMail();
+                        if(typeof loadNotifications==='function') loadNotifications();
+                    },
                     error:function(x){ $('#page-loader').fadeOut(200); showToast('Send failed: '+(x.responseJSON&&x.responseJSON.message||x.statusText),'error'); }
                 });
+            });
+
+            $('#clearAllMailBtn').on('click',function(){
+                $.ajax({ type:'DELETE', url:'/api/Notifications', success:function(){ loadMail(); if(typeof loadNotifications==='function') loadNotifications(); showToast('Mail cleared.','success'); } });
             });
 
             $(document).on('click','.mail-item',function(){

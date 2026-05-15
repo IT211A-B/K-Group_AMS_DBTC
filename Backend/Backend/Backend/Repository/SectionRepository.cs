@@ -10,12 +10,12 @@ namespace Backend.Backend.Repository
 
         public async Task<IEnumerable<Section>> GetAllAsync()
         {
-            return await _db.Sections.ToListAsync();
+            return await _db.Sections.Include(s => s.Course).ToListAsync();
         }
 
         public async Task<Section?> GetByIdAsync(int id)
         {
-            return await _db.Sections.FirstOrDefaultAsync(s => s.Section_Id == id);
+            return await _db.Sections.Include(s => s.Course).FirstOrDefaultAsync(s => s.Section_Id == id);
         }
 
         public async Task AddAsync(Section enrollment)

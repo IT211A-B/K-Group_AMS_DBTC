@@ -25,14 +25,10 @@ namespace Backend.Backend.Data.Seeders
             if (existingAdmin != null)
                 return;
 
-            string passhash = BCrypt.Net.BCrypt.HashPassword("123");
-
             var adminUser = new User
             {
                 UserName = adminEmail,
                 Email = adminEmail,
-
-                PasswordHash = passhash,
                 DocumentSeries = "ADM-2026-1",
                 Full_Name = "System Administrator",
                 Phone_Number = null,

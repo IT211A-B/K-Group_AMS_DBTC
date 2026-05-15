@@ -19,10 +19,18 @@ namespace Backend.Backend.DTOs
 
     public class AddStudentDTO
     {
-        public required int User_ID { get; set; }
+        public required string User_ID { get; set; }
         public int Program_ID { get; set; }
         public required int SectionID { get; set; }
         public required int Department_ID { get; set; }
         public required int Year_Level { get; set; }
+    }
+
+    public class GetStudentItsCourse
+    {
+        public int Course_ID { get; set; }
+        public string? Title { get; set; }
+        public string? Code { get; set; }
+        public string? Full_Name { get; set; }
     }
 }

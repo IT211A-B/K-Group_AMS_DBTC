@@ -43,7 +43,7 @@ namespace Backend.Backend.Controllers
 		/// </code>
 		/// </remarks>
 		/// <returns>List of sections</returns>
-		[Authorize(Roles = "Admin,Student")]
+		[Authorize(Roles = "Admin,Teacher,Student")]
 		[HttpGet]
         public async Task<IActionResult> GetAllSections()
         {

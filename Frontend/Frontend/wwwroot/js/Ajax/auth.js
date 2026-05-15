@@ -16,7 +16,17 @@ function redirectToLogin() {
 }
 
 $(document).ajaxError(function (event, xhr, settings) {
+<<<<<<< HEAD:Frontend/wwwroot/js/Ajax/auth.js
+    if (xhr.status === 429) {
+        var msg = 'Too many requests. Please wait a moment and try again.';
+        if (typeof showToast === 'function') showToast(msg, 'warning');
+        else alert(msg);
+        return;
+    }
+    if (xhr.status === 401) {
+=======
     if (xhr.status === 401 || xhr.status === 403) {
+>>>>>>> e184fcbcfe06e47564902f542f8e3d52da1323aa:Frontend/Frontend/wwwroot/js/Ajax/auth.js
         var url = settings.url || '';
         var bgEndpoints = ['/api/Notifications', '/api/SessionInfo', '/api/proxy/api/Notifications'];
         var isBg = bgEndpoints.some(function (ep) { return url.indexOf(ep) !== -1; });

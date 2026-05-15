@@ -1,0 +1,178 @@
+﻿@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Take Attendance";
+}
+<div class="page-header flex-wrap gap-2">
+    <div>
+        <h4><i class="bi bi-calendar-check"></i> Take Attendance</h4>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/Teacher/Dashboard">Home</a></li>
+            <li class="breadcrumb-item active">Attendance</li>
+        </ol>
+    </div>
+    <div class="d-flex align-items-center gap-2 ms-auto">
+        <button class="btn btn-success btn-sm" id="scanQrBtn"><i class="bi bi-qr-code-scan"></i> Scan QR</button>
+    </div>
+</div>
+
+<div class="alert alert-info py-2 mb-3" id="scheduleBanner" style="font-size:13px;display:none;">
+    <i class="bi bi-info-circle"></i> <span id="scheduleBannerText"></span>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-4"><div class="stat-card"><div class="stat-icon green"><i class="bi bi-check-circle"></i></div><div><div class="stat-label">Present</div><div class="stat-value" id="presentCount">0</div></div></div></div>
+    <div class="col-4"><div class="stat-card"><div class="stat-icon red"><i class="bi bi-x-circle"></i></div><div><div class="stat-label">Absent</div><div class="stat-value" id="absentCount">0</div></div></div></div>
+    <div class="col-4"><div class="stat-card"><div class="stat-icon orange"><i class="bi bi-clock"></i></div><div><div class="stat-label">Late</div><div class="stat-value" id="lateCount">0</div></div></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header"><div class="card-header-title"><i class="bi bi-table"></i> Students — Active Class</div></div>
+    <div class="table-wrapper">
+        <table class="table table-striped">
+            <thead><tr><th>#</th><th>Student</th><th>ID</th><th>Status</th></tr></thead>
+            <tbody id="attendanceTableBody"><tr><td colspan="4" class="text-center text-muted py-4">Loading schedules…</td></tr></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="qrScanModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-qr-code-scan"></i> Scan Student QR</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="qrReader" style="max-width:400px;margin:0 auto;"></div>
+                <div id="qrScanResult" class="mt-3 alert alert-success" style="display:none;"></div>
+                <div id="qrScanError" class="mt-2 alert alert-danger" style="display:none;"></div>
+                <p class="text-muted small mt-2">Status is assigned automatically (Present / Late / Absent).</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        var qrScanner = null, sessionReady = false, displayData = [];
+
+        function updateCounts() {
+            var p = 0, a = 0, l = 0;
+            displayData.forEach(function (r) {
+                var s = (r.attendanceStatus || '').toLowerCase();
+                if (s === 'present') p++;
+                else if (s === 'absent') a++;
+                else if (s === 'late') l++;
+            });
+            $('#presentCount').text(p);
+            $('#absentCount').text(a);
+            $('#lateCount').text(l);
+        }
+
+        function renderRows() {
+            if (!displayData.length) {
+                $('#attendanceTableBody').html('<tr><td colspan="4" class="text-center text-muted py-4">No students in this section or no active class.</td></tr>');
+                return;
+            }
+            var html = '';
+            displayData.forEach(function (r, i) {
+                var st = r.attendanceStatus || 'Unmarked';
+                var cls = st.toLowerCase() === 'present' ? 'badge-present' : st.toLowerCase() === 'late' ? 'badge-late' : st.toLowerCase() === 'absent' ? 'badge-absent' : '';
+                var badge = st !== 'Unmarked' ? '<span class="badge ' + cls + '">' + st + '</span>' : '<span class="text-muted small">Unmarked</span>';
+                html += '<tr><td>' + (i + 1) + '</td><td>' + (r.student_Name || r.studentName || '—') + '</td><td>' + (r.documentSeries || '—') + '</td><td>' + badge + '</td></tr>';
+            });
+            $('#attendanceTableBody').html(html);
+            updateCounts();
+        }
+
+        function loadSession() {
+            $.when(
+                $.ajax({ url: '/AttendanceManagement/Attendance/teacher/schedules', dataType: 'json' }),
+                $.ajax({ type: 'POST', url: '/AttendanceManagement/Attendance', contentType: 'application/json', data: '{}' })
+            ).done(function (schedR) {
+                var schedules = Array.isArray(schedR[0]) ? schedR[0] : (schedR[0] && schedR[0].data ? schedR[0].data : []);
+                if (!Array.isArray(schedules)) schedules = [];
+                var active = schedules.find(function (s) { return s.isActiveNow || s.IsActiveNow; });
+                if (active) {
+                    var label = (active.course_Code || active.Course_Code || '') + ' — ' + (active.course_Title || active.Course_Title || '') + ' (' + (active.section_Code || active.Section_Code || '') + ')';
+                    $('#scheduleBannerText').text('Active class: ' + label + ' · ' + (active.startTime || active.StartTime || '') + '–' + (active.endTime || active.EndTime || ''));
+                    $('#scheduleBanner').show();
+                    sessionReady = true;
+                } else if (schedules.length) {
+                    $('#scheduleBannerText').text('No class in the attendance window right now. Today\'s schedules are listed on your dashboard.');
+                    $('#scheduleBanner').removeClass('alert-info').addClass('alert-warning').show();
+                } else {
+                    $('#scheduleBannerText').text('No schedules for today.');
+                    $('#scheduleBanner').removeClass('alert-info').addClass('alert-warning').show();
+                }
+                loadStudents();
+            }).fail(function () {
+                loadStudents();
+            });
+        }
+
+        function loadStudents() {
+            $.ajax({
+                url: '/AttendanceManagement/Attendance/session/students',
+                dataType: 'json',
+                success: function (data) {
+                    displayData = Array.isArray(data) ? data : [];
+                    renderRows();
+                },
+                error: function () {
+                    $('#attendanceTableBody').html('<tr><td colspan="4" class="text-center text-danger py-4">Could not load students.</td></tr>');
+                }
+            });
+        }
+
+        function submitScan(qrToken) {
+            $.ajax({
+                type: 'POST',
+                url: '/AttendanceStudentManagement/AttendanceStudent',
+                contentType: 'application/json',
+                data: JSON.stringify({ qrToken: qrToken }),
+                success: function (res) {
+                    var status = (res.data && res.data.studentAttendanceStatus) || (res.studentAttendanceStatus) || 'Recorded';
+                    $('#qrScanResult').text('Attendance saved: ' + status).show();
+                    $('#qrScanError').hide();
+                    showToast('Student marked as ' + status, 'success');
+                    loadStudents();
+                    if (typeof loadNotifications === 'function') loadNotifications();
+                },
+                error: function (x) {
+                    var msg = (x.responseJSON && (x.responseJSON.message || x.responseJSON.title)) || x.responseText || 'Scan failed';
+                    $('#qrScanError').text(msg).show();
+                    $('#qrScanResult').hide();
+                }
+            });
+        }
+
+        function startQrScanner() {
+            $('#qrScanResult, #qrScanError').hide();
+            if (!qrScanner) qrScanner = new Html5Qrcode('qrReader');
+            qrScanner.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                function (decoded) {
+                    qrScanner.stop().catch(function () {});
+                    var token = decoded.trim();
+                    if (token.startsWith('{')) {
+                        try { var o = JSON.parse(token); token = o.qrToken || o.QrToken || token; } catch (e) {}
+                    }
+                    submitScan(token);
+                },
+                function () {}
+            ).catch(function (err) { $('#qrScanError').text('Camera: ' + err).show(); });
+        }
+
+        $(function () {
+            loadSession();
+            $('#scanQrBtn').on('click', function () { $('#qrScanModal').modal('show'); });
+            $('#qrScanModal').on('shown.bs.modal', startQrScanner);
+            $('#qrScanModal').on('hidden.bs.modal', function () {
+                if (qrScanner) qrScanner.stop().catch(function () {});
+            });
+        });
+    </script>
+}

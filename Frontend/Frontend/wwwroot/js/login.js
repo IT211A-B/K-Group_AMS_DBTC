@@ -76,6 +76,9 @@ function doLogin() {
                     else if (role === 'student') window.location.href = '/Student/Profile';
                     else window.location.href = '/Admin/Dashboard';
                 }, 150);
+            } else if (r.status === 429) {
+                setLoading(false);
+                showError(r.data.message || 'Too many login attempts. Please wait a minute and try again.');
             } else if (r.status === 502) {
                 setLoading(false);
                 showError(r.data.message || 'Server is starting up. Please wait 30 seconds and try again.');

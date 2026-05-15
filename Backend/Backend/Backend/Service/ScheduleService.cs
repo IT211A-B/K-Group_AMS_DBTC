@@ -137,6 +137,7 @@ namespace Backend.Backend.Service
             {
                 Section_ID = schedule.Section_ID,
                 Course_ID  = schedule.Course_ID,
+                Teacher_ID = schedule.Teacher_ID,
                 DayOfWeek  = schedule.DayOfWeek,
                 StartTime = schedule.StartTime,
                 EndTime = schedule.EndTime,
@@ -178,6 +179,7 @@ namespace Backend.Backend.Service
 
             existing.Course_ID = schedule.Course_ID;
             existing.Section_ID = schedule.Section_ID;
+            existing.Teacher_ID = schedule.Teacher_ID;
             existing.AcademicYear = schedule.AcademicYear;
             existing.Semester = schedule.Semester;
             existing.DayOfWeek = schedule.DayOfWeek;

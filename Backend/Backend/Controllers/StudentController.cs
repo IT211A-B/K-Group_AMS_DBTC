@@ -67,7 +67,7 @@ namespace Backend.Backend.Controller
 
         [HttpGet("Get_By_Current_Id")]
         [Authorize(Roles = "Admin,Teacher,Student")]
-        public async Task<IActionResult> GetByCurrentStudent(int id)
+        public async Task<IActionResult> GetByCurrentStudent()
         {
             try {
                 string? uuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -76,7 +76,30 @@ namespace Backend.Backend.Controller
 
                 var student = await _studentService.GetByCurrentStudentAsync(uuid);
                 if (student == null)
-                    return NotFound($"Student with ID {id} not found.");
+                    return NotFound($"Student not found.");
+
+                return Ok(student);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
+        }
+
+        [HttpGet("Get_All_Course")]
+        [Authorize(Roles = "Admin,Teacher,Student")]
+        public async Task<IActionResult> GetAllCourse()
+        {
+            try
+            {
+                string? uuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(uuid))
+                    throw new Exception("No Operator has been found");
+
+                var student = await _studentService.GetAllStudentCourse(uuid);
+                if (student == null)
+                    return NotFound($"Student not found.");
 
                 return Ok(student);
             }

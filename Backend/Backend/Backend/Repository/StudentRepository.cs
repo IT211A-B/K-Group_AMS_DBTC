@@ -69,6 +69,28 @@ namespace Backend.Backend.Repository
             return await _db.Programs.FindAsync(id);
         }
 
+        public async Task<IEnumerable<GetStudentItsCourse>>   GetStudentCoursesAsync(string studentId)
+        {
+            return await (
+                from st in _db.Students
+                join sec in _db.Sections on st.SectionID equals sec.Section_Id
+                join sch in _db.Schedules on sec.Section_Id equals sch.Section_ID
+                join c in _db.Courses on sch.Course_ID equals c.Course_ID
+                join tea in _db.Teachers on c.Teacher_ID equals tea.Teacher_ID
+                join u in _db.Users on tea.User_ID equals u.Id
+                where st.Student_ID == studentId
+                select new GetStudentItsCourse
+                {
+                    Course_ID = c.Course_ID,
+                    Title = c.Title,
+                    Code = c.Code,
+                    Full_Name = u.Full_Name
+                }
+            )
+            .Distinct()
+            .ToListAsync<GetStudentItsCourse>();
+        }
+
         /// <summary>
         /// Gets attendance records of a student.
         /// </summary>
@@ -127,5 +149,12 @@ namespace Backend.Backend.Repository
             return await _db.Students.AnyAsync(s => s.User_ID == uId);
         }
 
+        public async Task<IEnumerable<Student>> GetBySectionIdAsync(int sectionId)
+        {
+            return await _db.Students
+                .Include(s => s.User)
+                .Where(s => s.SectionID == sectionId)
+                .ToListAsync();
+        }
     }
 }

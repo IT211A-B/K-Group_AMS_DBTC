@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Frontend.Services;
 using Frontend.Models;
 
@@ -33,6 +34,7 @@ namespace Frontend.Controllers
         }
 
         [HttpPost]
+        [EnableRateLimiting("login")]
         public async Task<IActionResult> Authenticate([FromBody] LoginViewModel model)
         {
             if (model == null || string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Password))
@@ -52,6 +54,10 @@ namespace Frontend.Controllers
                 await HttpContext.Session.CommitAsync();
 
                 return Ok(new { role, name, userId });
+            }
+            else if (errorMessage.StartsWith("Too many requests"))
+            {
+                return StatusCode(429, new { message = errorMessage });
             }
             else if (errorMessage.StartsWith("Cannot connect"))
             {

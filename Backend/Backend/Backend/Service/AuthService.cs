@@ -54,7 +54,7 @@ namespace Backend.Backend.Service
         /// Process flow:
         /// 1. Retrieve user by email or username.
         /// 2. Validate if user exists.
-        /// 3. Verify password using BCrypt hashing.
+        /// 3. Verify password using Identity PBKDF2 hashing.
         /// 4. Generate claims for the user.
         /// 5. Generate JWT token using claims.
         /// 6. Return login result with token.
