@@ -87,6 +87,41 @@ namespace Backend.Backend.Service
             };
         }
 
+        public async Task<ResponseDTO<IEnumerable<GetStudentItsCourse>>> GetAllStudentCourse(string uuid)
+        {
+            var getStudentID = await _studentRepository.GetByUserUUIDAsync(uuid);
+            if (getStudentID is null)
+                return new ResponseDTO<IEnumerable<GetStudentItsCourse>>
+                {
+                    Status_code = 404,
+                    Data = null,
+                    Detail = $"No Operator Has Found"
+                };
+
+            var students = await _studentRepository.GetStudentCoursesAsync(getStudentID.Student_ID);
+            if (!students.Any() || !students.Any())
+                return new ResponseDTO<IEnumerable<GetStudentItsCourse>>
+                {
+                    Status_code = 404,
+                    Data = Enumerable.Empty<GetStudentItsCourse>(),
+                    Detail = $"No Student Has Found"
+                };
+
+            var data = students.Select(s => new GetStudentItsCourse
+            {
+                Course_ID = s.Course_ID,
+                Title = s.Title,
+                Code = s.Code,
+                Full_Name = s.Full_Name
+            });
+
+            return new ResponseDTO<IEnumerable<GetStudentItsCourse>>
+            {
+                Status_code = 200,
+                Data = data
+            };
+        }
+
         public async Task<byte[]?> getQrById(int id)
         {
             var student = await _studentRepository.GetByIdAsync(id);

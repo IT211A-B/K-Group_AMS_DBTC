@@ -25,4 +25,12 @@ namespace Backend.Backend.DTOs
         public required int Department_ID { get; set; }
         public required int Year_Level { get; set; }
     }
+
+    public class GetStudentItsCourse
+    {
+        public int Course_ID { get; set; }
+        public string? Title { get; set; }
+        public string? Code { get; set; }
+        public string? Full_Name { get; set; }
+    }
 }
