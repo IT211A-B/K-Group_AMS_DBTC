@@ -1,0 +1,142 @@
+﻿@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Account History";
+}
+<div class="page-header flex-wrap gap-2">
+    <div>
+        <h4><i class="bi bi-clock-history"></i> Account History</h4>
+        <ol class="breadcrumb"><li class="breadcrumb-item"><a href="/Admin/Dashboard">Home</a></li><li class="breadcrumb-item active">History</li></ol>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4"><div class="stat-card"><div class="stat-icon blue"><i class="bi bi-people"></i></div><div><div class="stat-label">Total Students</div><div class="stat-value" id="histStudents">—</div></div></div></div>
+    <div class="col-md-4"><div class="stat-card"><div class="stat-icon green"><i class="bi bi-person-badge"></i></div><div><div class="stat-label">Total Teachers</div><div class="stat-value" id="histTeachers">—</div></div></div></div>
+    <div class="col-md-4"><div class="stat-card"><div class="stat-icon orange"><i class="bi bi-journal-bookmark-fill"></i></div><div><div class="stat-label">Total Courses</div><div class="stat-value" id="histCourses">—</div></div></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header flex-wrap gap-2">
+        <div class="card-header-title"><i class="bi bi-person-plus-fill"></i> Recently Added Accounts</div>
+        <div class="d-flex flex-wrap gap-2 ms-auto">
+            <select class="form-select form-select-sm" id="histRoleFilter" style="width:130px;">
+                <option value="">All Roles</option>
+                <option value="teacher">Teachers</option>
+                <option value="student">Students</option>
+            </select>
+            <select class="form-select form-select-sm" id="histSort" style="width:160px;">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name-asc">Name A→Z</option>
+            </select>
+        </div>
+    </div>
+    <div class="table-wrapper">
+        <table class="table table-striped">
+            <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Department / Program</th><th>Courses</th><th>Date Added</th></tr></thead>
+            <tbody id="histTableBody"></tbody>
+        </table>
+    </div>
+    <div class="pagination-wrapper"><div id="histPagination"></div></div>
+</div>
+
+@section Scripts {
+    <script>
+        var allUsers=[], allStudents=[], allTeachers=[], allPrograms=[], allCourses=[], allEnrollments=[], histPg;
+        var STUDENT_GID=3, TEACHER_GID=2, ADMIN_GID=1;
+
+        function getCourseNames(uid, gid){
+            if(gid===STUDENT_GID){
+                var s=allStudents.find(function(x){ return String(x.user_ID||x.userId)===String(uid); });
+                if(!s) return '—';
+                var sid=s.student_ID||s.id;
+                var names=allEnrollments.filter(function(e){ return String(e.student_ID)===String(sid); }).map(function(e){
+                    var c=allCourses.find(function(x){ return String(x.course_ID||x.id)===String(e.course_ID); });
+                    return c?(c.title||c.code||'Course '+c.course_ID):'';
+                }).filter(Boolean);
+                return names.length?names.join(', '):'—';
+            } else if(gid===TEACHER_GID){
+                var t=allTeachers.find(function(x){ return String(x.user_ID||x.userId)===String(uid); });
+                if(!t) return '—';
+                var tid=t.teacher_ID||t.id;
+                var names2=allCourses.filter(function(c){ return String(c.teacher_ID)===String(tid); }).map(function(c){ return c.title||c.code||'Course '+(c.course_ID||c.id); });
+                return names2.length?names2.join(', '):'—';
+            }
+            return '—';
+        }
+
+        function getDept(uid, gid){
+            if(gid===STUDENT_GID){
+                var s=allStudents.find(function(x){ return String(x.user_ID||x.userId)===String(uid); });
+                if(s){ var p=allPrograms.find(function(x){ return String(x.id)===String(s.program_ID); }); return p?(p.name||p.program_Name||''):'—'; }
+            } else if(gid===TEACHER_GID){
+                var t=allTeachers.find(function(x){ return String(x.user_ID||x.userId)===String(uid); });
+                return t?(t.department||'—'):'—';
+            }
+            return '—';
+        }
+
+        function renderHistRow(u, i){
+            var gid=u.userGroup_ID||u.userGroupId||0;
+            var roleLabel=gid===TEACHER_GID?'<span style="background:#EDE9FE;color:#6D28D9;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Teacher</span>':'<span style="background:#DBEAFE;color:var(--accent);font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;">Student</span>';
+            var init=(u.full_Name||'?')[0].toUpperCase();
+            var color=gid===TEACHER_GID?'#7C3AED':'var(--accent)';
+            var dept=getDept(u.user_ID,gid);
+            var courses=getCourseNames(u.user_ID,gid);
+            var created=u.created_At||u.createdAt||u.create_Date||'';
+            var dateStr=created?new Date(created).toLocaleString():'—';
+            return '<tr>'
+                +'<td>'+(i+1)+'</td>'
+                +'<td><div class="d-flex align-items-center gap-2"><div style="width:30px;height:30px;border-radius:50%;background:'+color+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">'+init+'</div>'+(u.full_Name||'—')+'</div></td>'
+                +'<td>'+(u.email||'—')+'</td>'
+                +'<td>'+roleLabel+'</td>'
+                +'<td>'+dept+'</td>'
+                +'<td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+courses+'">'+courses+'</td>'
+                +'<td style="font-size:12px;">'+dateStr+'</td>'
+                +'</tr>';
+        }
+
+        function applyFilter(data){
+            var role=$('#histRoleFilter').val();
+            var sort=$('#histSort').val();
+            var result=data.filter(function(u){
+                var gid=u.userGroup_ID||u.userGroupId||0;
+                if(gid===ADMIN_GID) return false; // hide admins
+                if(role==='teacher' && gid!==TEACHER_GID) return false;
+                if(role==='student' && gid!==STUDENT_GID) return false;
+                return true;
+            });
+            if(sort==='newest') result.sort(function(a,b){ return new Date(b.created_At||b.createdAt||0)-new Date(a.created_At||a.createdAt||0); });
+            if(sort==='oldest') result.sort(function(a,b){ return new Date(a.created_At||a.createdAt||0)-new Date(b.created_At||b.createdAt||0); });
+            if(sort==='name-asc') result.sort(function(a,b){ return (a.full_Name||'').localeCompare(b.full_Name||''); });
+            if(histPg) histPg.refresh(result);
+            else histPg=paginate({data:result,pageSize:20,containerId:'histTableBody',paginationId:'histPagination',colSpan:7,emptyMsg:'No accounts found.',renderRow:renderHistRow});
+        }
+
+        $(function(){
+            $('#page-loader').fadeIn(150);
+            $.when(
+                $.ajax({url:'/api/User',dataType:'json'}),
+                $.ajax({url:'/api/Student',dataType:'json'}),
+                $.ajax({url:'/api/Teacher',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Program',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Course',dataType:'json'}),
+                $.ajax({url:'/AttendanceManagement/Enrollment',dataType:'json'})
+            ).done(function(uR,sR,tR,pR,cR,eR){
+                allUsers=Array.isArray(uR[0])?uR[0]:[];
+                allStudents=Array.isArray(sR[0])?sR[0]:[];
+                allTeachers=Array.isArray(tR[0])?tR[0]:[];
+                allPrograms=Array.isArray(pR[0])?pR[0]:[];
+                allCourses=Array.isArray(cR[0])?cR[0]:[];
+                allEnrollments=Array.isArray(eR[0])?eR[0]:[];
+                $('#histStudents').text(allStudents.length);
+                $('#histTeachers').text(allTeachers.length);
+                $('#histCourses').text(allCourses.length);
+                applyFilter(allUsers);
+                $('#page-loader').fadeOut(200);
+            }).fail(function(){ $('#page-loader').fadeOut(200); showToast('Failed to load.','error'); });
+
+            $('#histRoleFilter,#histSort').on('change', function(){ histPg=null; applyFilter(allUsers); });
+        });
+    </script>
+}

@@ -1,0 +1,136 @@
+﻿@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Student Profile";
+    var userName = Context.Session.GetString("UserName") ?? "Student";
+    var userEmail = Context.Session.GetString("UserEmail") ?? "";
+    var userId = Context.Session.GetString("UserId") ?? "";
+    var userInit = userName.Length > 0 ? userName[0].ToString().ToUpper() : "S";
+}
+<div class="page-header">
+    <div>
+        <h4><i class="bi bi-person-circle"></i> My Profile</h4>
+        <ol class="breadcrumb"><li class="breadcrumb-item active">Profile</li></ol>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="profile-header">
+                <div class="profile-avatar" id="profileInitial">@userInit</div>
+                <div><div class="profile-name" id="profileName">@userName</div><div class="profile-role" id="profileRole">Student</div></div>
+            </div>
+            <div class="card-body">
+                <div class="info-row"><i class="bi bi-envelope-fill"></i> <strong>Email:</strong> <span id="profileEmail">@userEmail</span></div>
+                <div class="info-row"><i class="bi bi-telephone-fill"></i> <strong>Phone:</strong> <span id="profilePhone">—</span></div>
+                <div class="info-row"><i class="bi bi-geo-alt-fill"></i> <strong>Address:</strong> <span id="profileAddress">—</span></div>
+                <div class="info-row"><i class="bi bi-gender-ambiguous"></i> <strong>Gender:</strong> <span id="profileGender">—</span></div>
+                <div class="info-row"><i class="bi bi-calendar-fill"></i> <strong>Birth Date:</strong> <span id="profileBirth">—</span></div>
+                <div class="info-row"><i class="bi bi-mortarboard-fill"></i> <strong>Program:</strong> <span id="profileProgram">—</span></div>
+                <div class="info-row"><i class="bi bi-building"></i> <strong>Department:</strong> <span id="profileDept">—</span></div>
+                <div class="info-row"><i class="bi bi-layers-fill"></i> <strong>Year Level:</strong> <span id="profileYear">—</span></div>
+                <div class="info-row"><i class="bi bi-person-badge-fill"></i> <strong>Student ID:</strong> <span id="profileStudentId">—</span></div>
+                <div class="info-row"><i class="bi bi-clock-fill"></i> <strong>Member Since:</strong> <span id="profileJoined">—</span></div>
+
+                <!-- QR Code Section -->
+                <div class="info-row mt-3"><i class="bi bi-qr-code"></i> <strong>QR Code:</strong></div>
+                <div id="qrCodeContainer" class="text-center my-2">
+                    <img id="userQrCode" src="" alt="QR Code" style="max-width:150px; display:none;">
+                    <div class="spinner-border spinner-border-sm text-primary" id="qrLoader" style="display:none;" role="status"></div>
+                </div>
+
+                <hr />
+                <a href="/Login/Logout" class="btn btn-outline-danger w-100"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card mb-3">
+            <div class="card-header"><div class="card-header-title"><i class="bi bi-bar-chart"></i> Attendance Summary</div></div>
+            <div class="card-body">
+                <div class="row text-center g-3">
+                    <div class="col-4"><div style="background:#DCFCE7;border-radius:10px;padding:16px;"><div class="attend-big-num num-present" id="sumPresent">—</div><small>Present</small></div></div>
+                    <div class="col-4"><div style="background:#FEE2E2;border-radius:10px;padding:16px;"><div class="attend-big-num num-absent" id="sumAbsent">—</div><small>Absent</small></div></div>
+                    <div class="col-4"><div style="background:#FEF3C7;border-radius:10px;padding:16px;"><div class="attend-big-num num-late" id="sumLate">—</div><small>Late</small></div></div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><div class="card-header-title"><i class="bi bi-calendar3"></i> Attendance Calendar</div></div>
+            <div class="card-body"><div id="miniCalendar"></div></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var userId = '@userId';
+
+        function loadStudentProfile() {
+            if (!userId) return;
+            $.ajax({ url: '/api/proxy/api/Me', dataType: 'json' })
+            .done(function(me) {
+                var user = me.user || me.User || me;
+                var student = me.student || me.Student || {};
+                var g = user.gender || user.sex || user.Sex || '';
+
+                $('#profileName').text(user.full_Name || user.Full_Name || '—');
+                $('#profileInitial').text((user.full_Name || user.Full_Name || 'S')[0].toUpperCase());
+                $('#profileEmail').text(user.email || user.Email || '—');
+                $('#profilePhone').text(user.phone_Number || user.Phone_Number || '—');
+                $('#profileAddress').text(user.address || user.Address || '—');
+                $('#profileGender').text(g === 'M' || g === 'm' ? 'Male' : g === 'F' || g === 'f' ? 'Female' : (g || '—'));
+                $('#profileBirth').text(user.birth_Date || user.Birth_Date ? new Date(user.birth_Date || user.Birth_Date).toLocaleDateString() : '—');
+                $('#profileStudentId').text(student.student_ID || student.Student_ID || student.id || user.documentSeries || '—');
+                $('#profileJoined').text(user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—');
+                $('#profileYear').text(student.year_Level || student.Year_Level || '—');
+                $('#profileProgram').text(me.programName || student.programName || (student.program_ID ? 'Program #' + student.program_ID : '—'));
+                $('#profileDept').text(me.departmentName || student.departmentName || (student.department_ID ? 'Dept #' + student.department_ID : '—'));
+            })
+            .fail(function() { showToast('Could not load profile. Please log in again.', 'error'); });
+        }
+
+        function loadQrCode(userId) {
+            $('#qrLoader').show();
+            $('#userQrCode').hide();
+            $.ajax({
+                url: '/api/proxy/api/Student/Qr_In_Student_By_Login',
+                method: 'GET',
+                xhrFields: { responseType: 'blob' },
+                success: function(blob) {
+                    var url = URL.createObjectURL(blob);
+                    $('#userQrCode').attr('src', url).show();
+                    $('#qrLoader').hide();
+                },
+                error: function() {
+                    $('#qrLoader').hide();
+                    $('#qrCodeContainer').append('<div class="text-danger small">QR code not available</div>');
+                }
+            });
+        }
+
+        function loadAttendance() {
+            $.ajax({ url: '/api/proxy/Get_Student_History_Record', dataType: 'json',
+                success: function(data) {
+                    var list = Array.isArray(data) ? data : (data && data.attendance ? data.attendance : []);
+                    if (!Array.isArray(list) && data && data.$values) list = data.$values;
+                    $('#sumPresent').text(list.filter(function(a) { return (a.status || '').toLowerCase() === 'present'; }).length);
+                    $('#sumAbsent').text(list.filter(function(a) { return (a.status || '').toLowerCase() === 'absent'; }).length);
+                    $('#sumLate').text(list.filter(function(a) { return (a.status || '').toLowerCase() === 'late'; }).length);
+                    var records = {};
+                    list.forEach(function(a) {
+                        var d = (a.date || a.attendanceDate || '').toString().substring(0, 10);
+                        if (d) records[d] = (a.status || '').toLowerCase();
+                    });
+                    if (typeof renderMiniCalendar === 'function')
+                        renderMiniCalendar('miniCalendar', new Date().getFullYear(), new Date().getMonth(), records);
+                }
+            });
+        }
+
+        $(function() {
+            loadStudentProfile();
+            loadAttendance();
+            loadQrCode(userId);
+        });
+    </script>
+}

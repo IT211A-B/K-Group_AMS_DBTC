@@ -1,0 +1,311 @@
+﻿@{
+    var currentController = ViewContext.RouteData.Values["Controller"]?.ToString() ?? "";
+    var currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
+    var roleFromSession = Context.Session.GetString("UserRole") ?? "";
+    var nameFromSession = Context.Session.GetString("UserName") ?? "User";
+    var isTeacher = roleFromSession == "teacher";
+    var isStudent = roleFromSession == "student";
+    var isAdmin = roleFromSession == "admin";
+    var userName = nameFromSession;
+    var userInitial = userName.Length > 0 ? userName[0].ToString().ToUpper() : "U";
+    var userRole = isTeacher ? "Teacher" : isStudent ? "Student" : "Admin";
+    var profileUrl = isTeacher ? "/Teacher/Profile" : isStudent ? "/Student/Profile" : "/Admin/Profile";
+    var homeUrl = isTeacher ? "/Teacher/Dashboard" : isStudent ? "/Student/Profile" : "/Admin/Dashboard";
+    var mailUrl = isTeacher ? "/Teacher/Mail" : isStudent ? "/Student/Mail" : "/Admin/Mail";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Don Bosco AMS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <input type="hidden" id="sessionUserId" value="@Context.Session.GetString("UserId")" />
+    <input type="hidden" id="sessionRole" value="@Context.Session.GetString("UserRole")" />
+
+    <div class="app-wrapper">
+        <aside class="sidebar" id="sidebar">
+            <a class="sidebar-brand" href="@homeUrl">
+                <img src="~/favicon.ico" alt="Logo" />
+                <div class="sidebar-brand-text">
+                    Don Bosco Technical College<br />
+                    <small style="font-size:9px;opacity:.7;">Attendance Management</small>
+                </div>
+            </a>
+            <div class="sidebar-nav">
+                @if (isAdmin)
+                {
+                    <div class="sidebar-label">MAIN</div>
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Dashboard" ? "active" : "")" href="/Admin/Dashboard">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Courses" ? "active" : "")" href="/Admin/Courses">
+                        <i class="bi bi-journal-bookmark-fill"></i> Courses
+                    </a>
+<<<<<<< HEAD:Frontend/Views/Shared/_Layout.cshtml
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "AccountHistory" ? "active" : "")" href="/Admin/AccountHistory">
+                        <i class="bi bi-clock-history"></i> Account History
+=======
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Schedules" ? "active" : "")" href="/Admin/Schedules">
+                        <i class="bi bi-calendar-week"></i> Schedules
+                    </a>
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Attendance" ? "active" : "")" href="/Admin/Attendance">
+                        <i class="bi bi-calendar-check"></i> Attendance
+                    </a>
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "AttendanceHistory" ? "active" : "")" href="/Admin/AttendanceHistory">
+                        <i class="bi bi-clock-history"></i> History
+>>>>>>> e184fcbcfe06e47564902f542f8e3d52da1323aa:Frontend/Frontend/Views/Shared/_Layout.cshtml
+                    </a>
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Mail" ? "active" : "")" href="/Admin/Mail">
+                        <i class="bi bi-envelope"></i> Mail
+                    </a>
+                    <div class="sidebar-label">ACCOUNT</div>
+                    <a class="sidebar-link @(currentAction == "Profile" ? "active" : "")" href="/Admin/Profile">
+                        <i class="bi bi-person-circle"></i> Profile
+                    </a>
+                    <a class="sidebar-link" href="/Login/Logout">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                }
+                else if (isTeacher)
+                {
+                    <div class="sidebar-label">MAIN</div>
+                    <a class="sidebar-link @(currentAction == "Dashboard" ? "active" : "")" href="/Teacher/Dashboard">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a class="sidebar-link @(currentAction == "Attendance" ? "active" : "")" href="/Teacher/Attendance">
+                        <i class="bi bi-calendar-check"></i> Take Attendance
+                    </a>
+                    <a class="sidebar-link @(currentController == "Teacher" && currentAction == "Mail" ? "active" : "")" href="/Teacher/Mail">
+                        <i class="bi bi-envelope"></i> Mail
+                    </a>
+                    <div class="sidebar-label">ACCOUNT</div>
+                    <a class="sidebar-link @(currentAction == "Profile" ? "active" : "")" href="/Teacher/Profile">
+                        <i class="bi bi-person-circle"></i> Profile
+                    </a>
+                    <a class="sidebar-link" href="/Login/Logout">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                }
+                else if (isStudent)
+                {
+                    <div class="sidebar-label">MAIN</div>
+                    <a class="sidebar-link @(currentAction == "Profile" ? "active" : "")" href="/Student/Profile">
+                        <i class="bi bi-person-circle"></i> My Profile
+                    </a>
+                    <a class="sidebar-link @(currentAction == "Courses" ? "active" : "")" href="/Student/Courses">
+                        <i class="bi bi-journal-bookmark-fill"></i> My Courses
+                    </a>
+                    <a class="sidebar-link @(currentController == "Student" && currentAction == "Mail" ? "active" : "")" href="/Student/Mail">
+                        <i class="bi bi-envelope"></i> Mail
+                    </a>
+                    <div class="sidebar-label">ACCOUNT</div>
+                    <a class="sidebar-link" href="/Login/Logout">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                }
+            </div>
+            <div class="sidebar-footer">
+                <a href="#"><i class="bi bi-question-circle"></i> Help &amp; Support</a>
+            </div>
+        </aside>
+        <div class="sidebar-overlay"></div>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                    <div class="topbar-title">@ViewData["Title"]</div>
+                </div>
+                <div class="topbar-right">
+                    <div class="dropdown">
+                        <button class="topbar-icon" data-bs-toggle="dropdown" id="notifBellBtn" style="position:relative;">
+                            <i class="bi bi-bell"></i>
+                            <span class="badge-dot" id="notifDot" style="display:none;"></span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end" style="width:320px;max-height:420px;overflow-y:auto;">
+                            <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                                <strong style="font-size:14px;">Notifications</strong>
+                                <a href="#" id="clearNotif" class="small text-muted">Clear all</a>
+                            </div>
+                            <div id="notifList">
+                                <div class="text-center text-muted py-4" style="font-size:13px;">
+                                    <i class="bi bi-bell-slash" style="font-size:2rem;display:block;opacity:.3;"></i>
+                                    No notifications
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <a class="topbar-user" data-bs-toggle="dropdown" style="cursor:pointer;">
+                            <div class="topbar-avatar">@userInitial</div>
+                            <div class="topbar-user-info">
+                                <div class="topbar-user-name" id="headerFullName">@userName</div>
+                                <div class="topbar-user-role">@userRole</div>
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="@profileUrl"><i class="bi bi-person"></i> Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="/Login/Logout"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+            <main class="page-body">@RenderBody()</main>
+            <footer class="site-footer">
+                &copy; @DateTime.Now.Year Don Bosco Technical College Cebu - Attendance Management System
+            </footer>
+        </div>
+    </div>
+
+    <div class="modal fade" id="attPopupModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:340px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-calendar-check"></i> Mark Attendance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center pb-4">
+                    <p class="fw-semibold mb-4" id="attPopupName" style="font-size:15px;"></p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <button class="btn btn-success att-status-btn" data-status="Present" style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
+                            <i class="bi bi-check-circle-fill" style="font-size:22px;"></i>Present
+                        </button>
+                        <button class="btn btn-danger att-status-btn" data-status="Absent" style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
+                            <i class="bi bi-x-circle-fill" style="font-size:22px;"></i>Absent
+                        </button>
+                        <button class="btn btn-warning att-status-btn" data-status="Late" style="width:88px;padding:14px 0;flex-direction:column;display:flex;align-items:center;gap:6px;border-radius:10px;">
+                            <i class="bi bi-clock-fill" style="font-size:22px;"></i>Late
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header danger">
+                    <h5 class="modal-title"><i class="bi bi-trash3"></i> Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete <strong id="deleteItemName"></strong>? This cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="warningModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header warning-hd">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Warning</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="warningMsg"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" id="warningConfirmBtn">Proceed</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="errorModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header danger">
+                    <h5 class="modal-title"><i class="bi bi-x-octagon"></i> Error</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="errorMsg"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <div id="page-loader" style="display:none;"><div class="spinner-ring"></div></div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <script>
+        (function ($) {
+            var _ajax = $.ajax;
+
+            function getBase() {
+                var p = window.location.pathname;
+                var routes = ['/admin/', '/teacher/', '/student/', '/login/', '/home/'];
+                for (var i = 0; i < routes.length; i++) {
+                    var idx = p.toLowerCase().indexOf(routes[i]);
+                    if (idx > 0) return p.substring(0, idx);
+                }
+                return '';
+            }
+
+            var BASE  = getBase();               
+            var PROXY = BASE + '/api/proxy';    
+
+            function rewrite(url) {
+                if (!url || typeof url !== 'string') return url;
+
+                if (url.indexOf('/api/proxy/') !== -1) return url;
+
+                if (/^\/api\//.test(url)) return PROXY + url;
+
+                if (/^\/AttendanceManagement\//.test(url)) return PROXY + url;
+
+                return url;
+            }
+
+            $.ajax = function (url, settings) {
+                if (typeof url === 'object') {
+                    settings = url;
+                    if (settings && settings.url) settings.url = rewrite(settings.url);
+                    return _ajax.call(this, settings);
+                }
+                return _ajax.call(this, rewrite(url), settings);
+            };
+
+            $.extend($.ajax, _ajax);
+
+            $.ajaxSetup({
+                xhrFields: { withCredentials: true },
+                crossDomain: false
+            });
+        }(jQuery));
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/JQuery/sidebar.js"></script>
+    <script src="~/js/JQuery/toast.js"></script>
+    <script src="~/js/JQuery/confirm-delete.js"></script>
+    <script src="~/js/JQuery/pagination.js"></script>
+    <script src="~/js/JQuery/export.js"></script>
+    <script src="~/js/JQuery/notifications.js"></script>
+    <script src="~/js/JQuery/calendar.js"></script>
+    <script src="~/js/Ajax/api-helpers.js"></script>
+    <script src="~/js/Ajax/students.js"></script>
+    <script src="~/js/Ajax/teachers.js"></script>
+    <script src="~/js/Ajax/attendance.js"></script>
+    <script src="~/js/Ajax/courses.js"></script>
+    <script src="~/js/Ajax/dashboard.js"></script>
+    <script src="~/js/Ajax/mail.js"></script>
+    <script src="~/js/Ajax/auth.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>
