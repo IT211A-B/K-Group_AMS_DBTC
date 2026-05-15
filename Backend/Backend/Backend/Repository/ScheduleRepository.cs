@@ -1,7 +1,8 @@
 ﻿using Backend.Backend;
+using Backend.Backend.DTOs;
+using Backend.Backend.Interface.RepositoryInterface;
 using Backend.Backend.Model;
 using Microsoft.EntityFrameworkCore;
-using Backend.Backend.Interface.RepositoryInterface;
 
 namespace Backend.Backend.Repository
 {
@@ -44,6 +45,33 @@ namespace Backend.Backend.Repository
                     id, dayOfWeek, now)
                 .Include(s => s.Course)
                 .FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Gets schedules of a student for a specific day.
+        /// </summary>
+        /// <param name="studentId">Student ULID/UUID.</param>
+        /// <param name="dayOfWeek">Day of week.</param>
+        /// <returns>List of schedules.</returns>
+        public async Task<IEnumerable<GetStudentSchedule>> GetStudentSchedulesAsync(string studentId, DayOfWeek dayOfWeek)
+        {
+            var query = from s in _db.Schedules
+                        join sec in _db.Sections
+                            on s.Section_ID equals sec.Section_Id
+                        join c in _db.Courses
+                            on s.Course_ID equals c.Course_ID
+                        join st in _db.Students
+                            on sec.Section_Id equals st.SectionID
+                        where st.Student_ID == studentId
+                            && s.DayOfWeek == dayOfWeek
+                        orderby s.StartTime
+                        select new GetStudentSchedule
+                        {
+                            Title = c.Title,
+                            StartTime = s.StartTime,
+                            EndTime = s.EndTime
+                        };
+            return await query.ToListAsync();
         }
 
         public async Task<bool> HasConflictingScheduleAsync(int courseId,string academicYear,TimeOnly startTime,TimeOnly endTime,int sectionId)
