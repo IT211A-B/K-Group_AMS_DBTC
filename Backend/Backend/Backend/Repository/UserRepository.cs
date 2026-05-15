@@ -17,15 +17,25 @@ namespace Backend.Backend.Repository
         public async Task<User?> GetByIdAsync(int id)
         {
             return await _db.Users
-                .FromSqlRaw(@"SELECT * FROM ""Students"" 
+                .FromSqlRaw(@"SELECT * FROM ""AspNetUsers"" 
                   WHERE CAST(SPLIT_PART(""DocumentSeries"", '-', 3) AS INT) = {0}", id)
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<User?> GetByEmailOrUsernameAsync(string emailOrUsername)
+        public async Task<User?> GetByUUIDAsync(string id)
         {
             return await _db.Users
-                .FirstOrDefaultAsync(u => u.Email == emailOrUsername || u.Full_Name == emailOrUsername);
+                .FindAsync(id);
+        }
+
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            return await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        public async Task<User?> GetByUsernameAsync(string Username)
+        {
+            return await _db.Users.FirstOrDefaultAsync(u => u.UserName == Username);
         }
 
         public async Task AddAsync(User user)

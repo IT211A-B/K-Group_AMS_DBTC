@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Backend.Backend.Controller
-{
+{ 
+
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
     [ApiController]
     public class UserController : ControllerBase
     {
@@ -50,6 +53,7 @@ namespace Backend.Backend.Controller
         }
 
         [HttpPost]
+        [AllowAnonymous]
         public async Task<IActionResult> Register(AddUserDTO dto)
         {
             try
@@ -57,35 +61,18 @@ namespace Backend.Backend.Controller
                 var user = await _userService.AddAsync(dto);
                 
                 // If Email Already Exist
-                if (user.Status_code == 422)
+                if (user.StatusCode == 422)
                 {
-                    return UnprocessableEntity($"Unprocessable Entity-{user.Status_code}: Email Already Exist");
+                    return UnprocessableEntity($"Unprocessable Entity-{user.StatusCode}: Email Already Exist");
                 }
                 //If The Email Does Not Follow the Given Email Domain, User Creation is Forbidden
-                if (user.Status_code == 403)
+                if (user.StatusCode == 403)
                 {
-                    return Forbid($"Forbidden-{user.Status_code}: Given Email Does Not Contain a Role and Will Not Accepted");
+                    return Forbid($"Forbidden-{user.StatusCode}: Given Email Does Not Contain a Role and Will Not Accepted");
                 }
 
                 return Ok(user);
             }catch (Exception x)
-            {
-                // Internal Error
-                return BadRequest($"An Error \"{x}\" Occured");
-            }
-        }
-
-        [HttpPost("/LogIn")]
-        public async Task<IActionResult> Login(LoginUserDto logindto)
-        {
-            try { 
-                var login = await _userService.LoginAsync(logindto);
-
-                if (!login.isSuccess) return Unauthorized(login.Detail);
-
-                return Ok(login.Detail);
-            }
-            catch (Exception x)
             {
                 // Internal Error
                 return BadRequest($"An Error \"{x}\" Occured");

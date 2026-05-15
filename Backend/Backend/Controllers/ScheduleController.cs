@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Backend.Backend.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [Route("AttendanceManagement/[controller]")]
     [ApiController]
     public class ScheduleController : ControllerBase
@@ -16,6 +18,7 @@ namespace Backend.Backend.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
             try { 

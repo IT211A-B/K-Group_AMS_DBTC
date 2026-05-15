@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Backend.Backend.Controllers
 {
     /// <summary>
     /// Handles all operations related to Department management.
     /// </summary>
+    [Authorize(Roles = "Admin")]
     [Route("AttendanceManagement/[controller]")]
     [ApiController]
     public class DepartmentController : ControllerBase
@@ -42,6 +44,7 @@ namespace Backend.Backend.Controllers
         /// </code>
         /// </remarks>
         /// <returns>List of departments</returns>
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAllDepartments()
         {

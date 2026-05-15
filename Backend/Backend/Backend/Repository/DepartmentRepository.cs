@@ -15,7 +15,7 @@ namespace Backend.Backend.Repository
 
         public async Task<Department?> GetByIdAsync(int id)
         {
-            return await _db.Departments.FindAsync(id);
+            return await _db.Departments.FirstOrDefaultAsync(d => d.Department_Id == id);
         }
 
         public async Task AddAsync(Department department)

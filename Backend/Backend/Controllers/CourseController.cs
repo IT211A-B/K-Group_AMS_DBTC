@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Backend.Backend.Controllers
 {
@@ -42,6 +43,7 @@ namespace Backend.Backend.Controllers
         /// </code>
         /// </remarks>
         /// <returns>List of courses</returns>
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAllCourses()
         {
@@ -84,6 +86,7 @@ namespace Backend.Backend.Controllers
         /// </remarks>
         /// <param name="id">Course ID</param>
         /// <returns>Course details</returns>
+        [Authorize(Roles = "Teacher,Admin")]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetCourseById(int id)
         {
@@ -134,8 +137,9 @@ namespace Backend.Backend.Controllers
         /// </remarks>
         /// <param name="dto">Course data</param>
         /// <returns>Created course</returns>
+        [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<IActionResult> AddCourse(AddCourseDTO dto)
+		public async Task<IActionResult> AddCourse(AddCourseDTO dto)
         {
             try { 
                 var course = await _courseService.AddAsync(dto);
@@ -173,8 +177,9 @@ namespace Backend.Backend.Controllers
         /// <param name="id">Course ID</param>
         /// <param name="dto">Updated course data</param>
         /// <returns>Updated course</returns>
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateCourse(int id, AddCourseDTO dto)
+		public async Task<IActionResult> UpdateCourse(int id, AddCourseDTO dto)
         {
             try { 
                 var updatedCourse = await _courseService.UpdateAsync(id, dto);
@@ -190,27 +195,28 @@ namespace Backend.Backend.Controllers
             }
         }
 
-        /// <summary>
-        /// Delete a course
-        /// </summary>
-        /// <remarks>
-        /// <para><b>Description:</b></para>
-        /// <para>Deletes a course record from the system.</para>
-        ///
-        /// <para><b>Inputs:</b></para>
-        /// <list type="bullet">
-        ///     <item><description><b>id</b> - Course ID to delete</description></item>
-        /// </list>
-        ///
-        /// <para><b>Behavior:</b></para>
-        /// <list type="bullet">
-        ///     <item><description>Deletes the course if found</description></item>
-        ///     <item><description>Returns 404 if not found</description></item>
-        /// </list>
-        /// </remarks>
-        /// <param name="id">Course ID</param>
-        /// <returns>Status message</returns>
-        [HttpDelete("{id:int}")]
+		/// <summary>
+		/// Delete a course
+		/// </summary>
+		/// <remarks>
+		/// <para><b>Description:</b></para>
+		/// <para>Deletes a course record from the system.</para>
+		///
+		/// <para><b>Inputs:</b></para>
+		/// <list type="bullet">
+		///     <item><description><b>id</b> - Course ID to delete</description></item>
+		/// </list>
+		///
+		/// <para><b>Behavior:</b></para>
+		/// <list type="bullet">
+		///     <item><description>Deletes the course if found</description></item>
+		///     <item><description>Returns 404 if not found</description></item>
+		/// </list>
+		/// </remarks>
+		/// <param name="id">Course ID</param>
+		/// <returns>Status message</returns>
+        [Authorize(Roles = "Admin")]
+		[HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteCourse(int id)
         {
             try { 

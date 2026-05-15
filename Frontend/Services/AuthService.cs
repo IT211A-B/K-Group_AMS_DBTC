@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using Frontend.Models;
 
@@ -6,64 +7,105 @@ namespace Frontend.Services
 {
     public class AuthService
     {
-        private readonly IHttpClientFactory _http;
-        private const string BackendBase = "http://localhost:5096";
+        private const string BackendBase = "https://k-group-ams-dbtc-11f4.onrender.com";
 
-        public AuthService(IHttpClientFactory http)
+        private HttpClient CreateClient(string? token = null)
         {
-            _http = http;
+            var client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(60);
+            client.DefaultRequestHeaders.Add("Origin", BackendBase);
+            client.DefaultRequestHeaders.Add("Referer", BackendBase + "/");
+            client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+            if (!string.IsNullOrEmpty(token))
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+            return client;
         }
 
-        public async Task<(bool Success, string Role, string Name, string UserId, string UserGroupId, string ErrorMessage)> AuthenticateAsync(LoginViewModel model)
+        public async Task<(bool Success, string Role, string Name, string UserId, string Token, string ErrorMessage)>
+            AuthenticateAsync(LoginViewModel model)
         {
             try
             {
-                var client = _http.CreateClient();
+                using var client = CreateClient();
                 var payload = JsonSerializer.Serialize(new { email = model.Email, password = model.Password });
                 var content = new StringContent(payload, Encoding.UTF8, "application/json");
                 var response = await client.PostAsync($"{BackendBase}/LogIn", content);
 
-                if (response.IsSuccessStatusCode)
+                if (!response.IsSuccessStatusCode)
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    string role = model.Role?.ToLower() ?? "admin";
-                    string name = model.Email;
-                    string userId = "";
-                    string userGroupId = "";
-
-                    try
-                    {
-                        using var doc = JsonDocument.Parse(json);
-                        var root = doc.RootElement;
-                        if (root.TryGetProperty("user_ID", out var uid)) userId = uid.GetRawText().Trim('"');
-                        if (root.TryGetProperty("full_Name", out var fn)) name = fn.GetString() ?? model.Email;
-                        if (root.TryGetProperty("userGroup_ID", out var ug)) userGroupId = ug.GetRawText().Trim('"');
-                        if (root.TryGetProperty("role", out var rp)) role = rp.GetString()?.ToLower() ?? role;
-                    }
-                    catch { }
-
-                    return (true, role, name, userId, userGroupId, "");
-                }
-                else
-                {
+                    var errBody = await response.Content.ReadAsStringAsync();
                     string errMsg = "Invalid email or password.";
                     try
                     {
-                        var errJson = await response.Content.ReadAsStringAsync();
-                        using var doc = JsonDocument.Parse(errJson);
-                        if (doc.RootElement.TryGetProperty("message", out var mp))
+                        using var errDoc = JsonDocument.Parse(errBody);
+                        if (errDoc.RootElement.TryGetProperty("message", out var mp))
                             errMsg = mp.GetString() ?? errMsg;
-                        else if (doc.RootElement.TryGetProperty("title", out var tp))
-                            errMsg = tp.GetString() ?? errMsg;
                     }
                     catch { }
-
                     return (false, "", "", "", "", errMsg);
                 }
+
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                var token = doc.RootElement.TryGetProperty("token", out var tp) ? tp.GetString() ?? "" : "";
+
+                if (string.IsNullOrEmpty(token))
+                    return (false, "", "", "", "", "Server did not return a token.");
+
+                var emailLower = model.Email.ToLower();
+                string role;
+                if (emailLower.Contains("@admin")) role = "admin";
+                else if (emailLower.Contains("@local")) role = "teacher";
+                else if (emailLower.Contains("@dbtc-cebu")) role = "student";
+                else return (false, "", "", "", "", "Unrecognized email domain. Use @admin, @local, or @dbtc-cebu.");
+
+                string userId = "";
+                string fullName = model.Email.Split('@')[0];
+
+                try
+                {
+                    using var authClient = CreateClient(token);
+                    var userResponse = await authClient.GetAsync($"{BackendBase}/api/User");
+                    if (userResponse.IsSuccessStatusCode)
+                    {
+                        var usersJson = await userResponse.Content.ReadAsStringAsync();
+                        using var usersDoc = JsonDocument.Parse(usersJson);
+
+                        var root = usersDoc.RootElement;
+                        JsonElement arrayEl = root;
+                        if (root.ValueKind == JsonValueKind.Object &&
+                            root.TryGetProperty("$values", out var valProp))
+                            arrayEl = valProp;
+
+                        if (arrayEl.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var user in arrayEl.EnumerateArray())
+                            {
+                                var userEmail = user.TryGetProperty("email", out var eProp)
+                                    ? eProp.GetString()?.ToLower() ?? "" : "";
+                                if (userEmail != emailLower) continue;
+
+                                userId = user.TryGetProperty("user_ID", out var idProp)
+                                    ? idProp.GetString() ?? "" : "";
+                                fullName = user.TryGetProperty("full_Name", out var nameProp)
+                                    ? nameProp.GetString() ?? fullName : fullName;
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch { }
+
+                return (true, role, fullName, userId, token, "");
+            }
+            catch (TaskCanceledException)
+            {
+                return (false, "", "", "", "", "Cannot connect to server: Request timed out. The server may be sleeping (Render cold start). Please try again in 30 seconds.");
             }
             catch (Exception ex)
             {
-                return (false, "", "", "", "", "Cannot connect to backend: " + ex.Message);
+                return (false, "", "", "", "", $"Cannot connect to server: {ex.Message}");
             }
         }
     }

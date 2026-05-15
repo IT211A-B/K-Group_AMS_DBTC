@@ -10,10 +10,7 @@ namespace Backend.Backend.Model
         public int Permission_ID { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public required string Permission_Description { get; set; }
-
-        [Required]
-        public int Access_ID { get; set; }
+        [MaxLength(20)]
+        public required string String_Name { get; set; }
     }
 }

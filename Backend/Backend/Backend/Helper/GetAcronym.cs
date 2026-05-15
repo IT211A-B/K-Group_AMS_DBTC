@@ -4,7 +4,11 @@ namespace Backend.Backend.Helper
 {
     public static class GetAcronym
     {
-        // Convert Into Acronym Every First Capital Letter Each Word
+        /// <summary>
+        /// Convert Into Acronym Every First Capital Letter Each Word
+        /// </summary>
+        /// <param name="title"></param>
+        /// <returns></returns>
         public static string GetAllCapitalLettersPerWord(this string title)
         {
             if (string.IsNullOrWhiteSpace(title))

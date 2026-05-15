@@ -7,6 +7,7 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task<IEnumerable<Attendance>> GetAllAsync();
         Task<Attendance?> GetByIdAsync(int ID);
         Task AddAsync(Attendance attendance);
+        Task<Attendance?> GetAttendanceIfExist(string id, DateOnly today, TimeOnly now);
         Task UpdateAsync(Attendance attendance);
         Task DeleteAsync(Attendance attendance);
     }

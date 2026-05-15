@@ -2,12 +2,16 @@
 {
     public class AttendanceEnum
     {
+        /// <summary>
+        /// Attendance Status
+        /// </summary>
         public enum AttStatus
         {
             Present,
             Absent,
             Late,
-            Excused
+            Excused,
+            Unassigned
         }
     }
 }

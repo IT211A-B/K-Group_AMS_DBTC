@@ -27,7 +27,6 @@
     <div class="pagination-wrapper"><div id="sPagination"></div></div>
 </div>
 
-<!-- Edit Student Modal -->
 <div class="modal fade" id="editStudentModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -162,7 +161,6 @@
                 sStudents = Array.isArray(sRes[0]) ? sRes[0] : [];
                 sUsers    = Array.isArray(uRes[0]) ? uRes[0] : [];
 
-                // Debug — open F12 Console to see exact field names
                 if (sStudents.length > 0) console.log('Student fields:', JSON.stringify(sStudents[0]));
                 if (sUsers.length > 0)    console.log('User fields:',    JSON.stringify(sUsers[0]));
 

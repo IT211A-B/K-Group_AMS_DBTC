@@ -12,7 +12,6 @@ namespace Backend.Backend.DTOs
         public char? Sex { get; set; }
         public DateTime? Birth_Date { get; set; }
         public string? Address { get; set; }
-        public int? UserGroup_ID { get; set; }
     }
 
     public class AddUserDTO
@@ -24,7 +23,6 @@ namespace Backend.Backend.DTOs
         public char? Sex { get; set; }
         public DateTime? Birth_Date { get; set; }
         public string? Address { get; set; }
-        public int? UserGroup_ID { get; set; }
     }
 
     public class LoginUserDto
@@ -35,7 +33,16 @@ namespace Backend.Backend.DTOs
 
     public class LoginResult
     {
-        public bool isSuccess { get; set; }  
+        public bool isSuccess { get; set; }
+        public string? Token { get; set; }
         public string? Detail { get; set; }
+    }
+
+    public class RegisterDTO
+    {
+        public int StatusCode { get; set; }
+        public string? Token { get; set; }
+        public string? Detail { get; set;  }
+        public GetUserDTO? Data { get; set; }
     }
 }

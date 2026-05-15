@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Backend.Backend.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Backend.Backend.Interface.ServiceInterface;
 
 namespace Backend.Backend.Controllers
@@ -7,6 +8,7 @@ namespace Backend.Backend.Controllers
     /// <summary>
     /// Handles all operations related to permissions.
     /// </summary>
+    [Authorize(Roles = "Admin")]
     [Route("AttendanceManagement/[controller]")]
     [ApiController]
     public class PermissionController : ControllerBase

@@ -3,14 +3,15 @@
     public class DeptEnum
     {
 
-       /*
-       Status For Department in Document Series
-       -------- POSITION-YEAR-ID ------------
-       Department's Acronym
-       COL - College
-       BED - Basic Education
-       PRE - Preschool
-       */
+       /// <summary>
+       /// Status For Department in Document Series
+       /// -------- POSITION-YEAR-ID ------------
+       /// Department's Acronym
+       /// COL - College
+       /// BED - Basic Education
+       /// PRE - Preschool
+       /// </summary>
+
 
         public enum DeptType
         {

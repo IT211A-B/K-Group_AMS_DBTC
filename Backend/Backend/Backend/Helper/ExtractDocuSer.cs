@@ -1,20 +1,50 @@
-﻿using System.Runtime.CompilerServices;
+﻿using Backend.Backend.Helper.Enum;
+using System.Runtime.CompilerServices;
 
 namespace Backend.Backend.Helper
 {
     public static class ExtractDocuSer
     {
-        public static (int ExtractedId, int statusCode) GetIdByExtractingDocumentSeries(this string DocumentSeries)
+        /// <summary>
+        /// Extract The Datas from Document Series
+        /// </summary>
+        /// <param name="DocumentSeries"></param>
+        /// <returns></returns>
+        public static (int? ExtractedId, PosEnum.PosStatus ExtractedPosition, int? ExtractedDate ,int statusCode) ExtractDataFromDocumentSeries(this string DocumentSeries)
         {
+
+            if (string.IsNullOrWhiteSpace(DocumentSeries))
+                return (null, PosEnum.PosStatus.STU, null, 400); // Bad Request
+
+            PosEnum.PosStatus posStatus = PosEnum.PosStatus.STU; //initializer
+
             string[] Data = DocumentSeries.Split('-');
+            if (Data.Length < 3)
+                return (null, PosEnum.PosStatus.STU, null, 422);
 
-            if (string.IsNullOrEmpty(Data[2]))
-                return (0, 404);
+            for (int position = 0; position < 3; position++)
+            {
+                if (string.IsNullOrEmpty(Data[position]))
+                    return (null, posStatus, null, 404); // Null or Empty ID
+            }
 
-            if (int.TryParse(Data[2], out int Id))
-                return (Id, 200);
+            switch (Data[0])
+            {
+                case "STU":
+                    posStatus = PosEnum.PosStatus.STU;
+                    break;
+                case "ADM":
+                    posStatus = PosEnum.PosStatus.ADM; 
+                    break;
+                case "TEA":
+                    posStatus = PosEnum.PosStatus.TEA;
+                    break;
+            }
 
-            return (0, 422);
+            int id = int.Parse(Data[2]);
+            int year = int.Parse(Data[1]);
+
+            return (id, posStatus, year, 200);
         }
     }
 }

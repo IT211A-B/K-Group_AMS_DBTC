@@ -22,10 +22,16 @@ namespace Backend.Backend.Model
         public required string DocumentSeries { get; set; }
 
         [Required]
-        public required int User_ID { get; set; }
+        public required string User_ID { get; set; }
+        public User User { get; set; } = null!;
+        [MaxLength(255)]
+        public required string QrToken { get; set; }
 
         [Required]
         public required int DepartmentId { get; set; }
+        public Department Department { get; set; } = null!;
+
+        public ICollection<Course> Courses { get; set; } = new List<Course>();
 
         public DateTime CreatedAt {get; set;}
 

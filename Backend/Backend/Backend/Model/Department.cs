@@ -15,5 +15,7 @@ namespace Backend.Backend.Model
 
         [MaxLength(511)]
         public string? Description { get; set; }
+
+        public ICollection<Student> Students { get; set; } = new List<Student>();
     }
 }

@@ -121,7 +121,6 @@
                 var teachers = Array.isArray(tRes[0]) ? tRes[0] : [];
                 var users    = Array.isArray(uRes[0]) ? uRes[0] : [];
 
-                // Only users with userGroup_ID = 2 (Teacher)
                 var teacherUsers = users.filter(function(u) {
                     var gid = u.userGroup_ID ?? u.UserGroup_ID ?? u.userGroupId ?? 0;
                     return String(gid) === String(TEACHER_GROUP_ID);
@@ -129,12 +128,10 @@
                     return (a.user_ID || 0) - (b.user_ID || 0);
                 });
 
-                // Sort teachers by teacher_ID
                 teachers.sort(function(a, b) {
                     return (a.teacher_ID || a.id || 0) - (b.teacher_ID || b.id || 0);
                 });
 
-                // Match teacher users to teacher records by index
                 allTeachers = teacherUsers.map(function(u, i) {
                     var t   = teachers[i] || {};
                     var uid = u.user_ID  ?? u.userId  ?? null;

@@ -27,8 +27,7 @@ namespace Backend.Backend.Service
             var data = permissions.Select(p => new GetPermissionDTO
             {
                 Permission_ID = p.Permission_ID,
-                Permission_Description = p.Permission_Description,
-                Access_ID = p.Access_ID
+                String_Name = p.String_Name,
             });
 
             return new ResponseDTO<IEnumerable<GetPermissionDTO>>
@@ -51,8 +50,7 @@ namespace Backend.Backend.Service
             var data = new GetPermissionDTO
             {
                 Permission_ID = p.Permission_ID,
-                Permission_Description = p.Permission_Description,
-                Access_ID = p.Access_ID
+                String_Name = p.String_Name,
             };
 
             return new ResponseDTO<GetPermissionDTO>
@@ -66,8 +64,7 @@ namespace Backend.Backend.Service
         {
             var permission = new Permission
             {
-                Permission_Description = dto.Permission_Description,
-                Access_ID = dto.Access_ID
+                String_Name = dto.String_Name,
             };
 
             await _permissionRepository.AddAsync(permission);
@@ -75,8 +72,8 @@ namespace Backend.Backend.Service
             var data = new GetPermissionDTO
             {
                 Permission_ID = permission.Permission_ID,
-                Permission_Description = permission.Permission_Description,
-                Access_ID = permission.Access_ID
+                String_Name = permission.String_Name,
+
             };
 
             return new ResponseDTO<GetPermissionDTO>
@@ -96,16 +93,14 @@ namespace Backend.Backend.Service
                     Data = null
                 };
 
-            existing.Permission_Description = dto.Permission_Description;
-            existing.Access_ID = dto.Access_ID;
+            existing.String_Name = dto.String_Name;
 
             await _permissionRepository.UpdateAsync(existing);
 
             var data = new GetPermissionDTO
             {
                 Permission_ID = existing.Permission_ID,
-                Permission_Description = existing.Permission_Description,
-                Access_ID = existing.Access_ID
+                String_Name = existing.String_Name,
             };
 
             return new ResponseDTO<GetPermissionDTO>

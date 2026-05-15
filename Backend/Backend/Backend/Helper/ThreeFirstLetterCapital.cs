@@ -4,7 +4,11 @@ namespace Backend.Backend.Helper
 {
     public static class ThreeFirstLetterCapital
     {
-        // The Name Will Be Converted Into an 3 First Word Ackronym
+        /// <summary>
+        /// The Name Will Be Converted Into an 3 First Word Ackronym
+        /// </summary>
+        /// <param name="Word"></param>
+        /// <returns></returns>
         public static string CapitalTheFirstThreeLetterInWord(this string Word)
         {
             StringBuilder Ackronym = new StringBuilder();

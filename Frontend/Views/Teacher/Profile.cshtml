@@ -28,6 +28,17 @@
                 <div class="info-row"><i class="bi bi-telephone-fill"></i> <span id="profilePhone">—</span></div>
                 <div class="info-row"><i class="bi bi-geo-alt-fill"></i> <span id="profileAddress">—</span></div>
                 <div class="info-row"><i class="bi bi-gender-ambiguous"></i> <span id="profileGender">—</span></div>
+                <div class="info-row"><i class="bi bi-calendar-fill"></i> <span id="profileBirth">—</span></div>
+                <div class="info-row"><i class="bi bi-building"></i> <strong>Department:</strong> <span id="profileDepartment">—</span></div>
+                <div class="info-row"><i class="bi bi-person-badge-fill"></i> Teacher ID: <span id="profileTeacherId">—</span></div>
+
+                <!-- QR Code Section -->
+                <div class="info-row mt-3"><i class="bi bi-qr-code"></i> <strong>QR Code:</strong></div>
+                <div id="qrCodeContainer" class="text-center my-2">
+                    <img id="userQrCode" src="" alt="QR Code" style="max-width:150px; display:none;">
+                    <div class="spinner-border spinner-border-sm text-primary" id="qrLoader" style="display:none;" role="status"></div>
+                </div>
+
                 <hr />
                 <a href="/Login/Logout" class="btn btn-outline-danger w-100"><i class="bi bi-box-arrow-right"></i> Logout</a>
             </div>
@@ -38,9 +49,9 @@
             <div class="card-header"><div class="card-header-title"><i class="bi bi-bar-chart"></i> Today's Attendance Summary</div></div>
             <div class="card-body">
                 <div class="row text-center g-3">
-                    <div class="col-4"><div style="background:#DCFCE7;border-radius:10px;padding:16px;"><div class="attend-big-num num-present" id="sumPresent">—</div><small class="text-muted">Present</small></div></div>
-                    <div class="col-4"><div style="background:#FEE2E2;border-radius:10px;padding:16px;"><div class="attend-big-num num-absent" id="sumAbsent">—</div><small class="text-muted">Absent</small></div></div>
-                    <div class="col-4"><div style="background:#FEF3C7;border-radius:10px;padding:16px;"><div class="attend-big-num num-late" id="sumLate">—</div><small class="text-muted">Late</small></div></div>
+                    <div class="col-4"><div style="background:#DCFCE7;border-radius:10px;padding:16px;"><div class="attend-big-num num-present" id="sumPresent">—</div><small>Present</small></div></div>
+                    <div class="col-4"><div style="background:#FEE2E2;border-radius:10px;padding:16px;"><div class="attend-big-num num-absent" id="sumAbsent">—</div><small>Absent</small></div></div>
+                    <div class="col-4"><div style="background:#FEF3C7;border-radius:10px;padding:16px;"><div class="attend-big-num num-late" id="sumLate">—</div><small>Late</small></div></div>
                 </div>
             </div>
         </div>
@@ -51,32 +62,23 @@
     </div>
 </div>
 
-<!-- Edit Profile Modal -->
+<!-- Edit Profile Modal (teacher) -->
 <div class="modal fade" id="editProfileModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Profile</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
+            <div class="modal-header"><h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Profile</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
-                <input type="hidden" id="editProfileUserId">
-                <div class="row g-2">
-                    <div class="col-md-6"><label class="form-label">Full Name</label><input type="text" class="form-control" id="epFullName"></div>
-                    <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" id="epEmail"></div>
-                    <div class="col-md-6"><label class="form-label">Phone</label><input type="text" class="form-control" id="epPhone"></div>
-                    <div class="col-md-6">
-                        <label class="form-label">Gender</label>
-                        <select class="form-select" id="epGender"><option value="M">Male</option><option value="F">Female</option></select>
-                    </div>
-                    <div class="col-md-6"><label class="form-label">Birth Date</label><input type="date" class="form-control" id="epBirthDate"></div>
-                    <div class="col-md-6"><label class="form-label">Address</label><input type="text" class="form-control" id="epAddress"></div>
-                </div>
+                <input type="hidden" id="editUserId">
+                <input type="hidden" id="editTeacherId">
+                <div class="mb-3"><label class="form-label">Full Name</label><input type="text" class="form-control" id="epFullName"></div>
+                <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" id="epEmail"></div>
+                <div class="mb-3"><label class="form-label">Phone</label><input type="text" class="form-control" id="epPhone"></div>
+                <div class="mb-3"><label class="form-label">Gender</label><select class="form-select" id="epGender"><option value="M">Male</option><option value="F">Female</option></select></div>
+                <div class="mb-3"><label class="form-label">Birth Date</label><input type="date" class="form-control" id="epBirthDate"></div>
+                <div class="mb-3"><label class="form-label">Address</label><input type="text" class="form-control" id="epAddress"></div>
+                <div class="mb-3"><label class="form-label">Department</label><input type="text" class="form-control" id="epDepartment"></div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveProfileBtn">Update Profile</button>
-            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveProfileBtn">Update Profile</button></div>
         </div>
     </div>
 </div>
@@ -87,68 +89,104 @@
 
         function loadProfile() {
             if (!currentUserId) return;
-            $.ajax({ url:'/api/User/'+currentUserId, dataType:'json',
-                success: function(u){
-                    $('#profileName').text(u.full_Name||'—');
-                    $('#profileInitial').text((u.full_Name||'T')[0].toUpperCase());
-                    $('#profileEmail').text(u.email||'—');
-                    $('#profilePhone').text(u.phone_Number||'—');
-                    $('#profileAddress').text(u.address||'—');
-                    $('#profileGender').text(u.gender==='M'?'Male':u.gender==='F'?'Female':(u.gender||'—'));
-                }
-            });
-            $.ajax({ url:'/api/Teacher', dataType:'json',
-                success: function(teachers){
-                    var t=(Array.isArray(teachers)?teachers:[]).find(function(x){ return (x.user_ID||x.userId)==currentUserId; });
-                    if(t && t.department) $('#profileDept').text('Teacher — '+t.department);
-                }
+            $.when(
+                $.ajax({ url: '/api/User/' + currentUserId, dataType: 'json' }),
+                $.ajax({ url: '/api/Teacher', dataType: 'json' })
+            ).done(function(uRes, tRes) {
+                var user = uRes[0] || {};
+                var teachers = Array.isArray(tRes[0]) ? tRes[0] : [];
+                var teacher = teachers.find(t => String(t.user_ID) === String(currentUserId)) || {};
+
+                $('#profileName').text(user.full_Name || '—');
+                $('#profileInitial').text((user.full_Name || 'T')[0].toUpperCase());
+                $('#profileEmail').text(user.email || '—');
+                $('#profilePhone').text(user.phone_Number || '—');
+                $('#profileAddress').text(user.address || '—');
+                $('#profileGender').text(user.gender === 'M' ? 'Male' : user.gender === 'F' ? 'Female' : (user.gender || '—'));
+                $('#profileBirth').text(user.birth_Date ? new Date(user.birth_Date).toLocaleDateString() : '—');
+                $('#profileDepartment').text(teacher.department || '—');
+                $('#profileTeacherId').text(teacher.teacher_ID || teacher.id || '—');
+                $('#profileDept').text('Teacher - ' + (teacher.department || '—'));
+
+                $('#editUserId').val(user.user_ID);
+                $('#editTeacherId').val(teacher.teacher_ID || teacher.id);
+                $('#epFullName').val(user.full_Name || '');
+                $('#epEmail').val(user.email || '');
+                $('#epPhone').val(user.phone_Number || '');
+                $('#epGender').val(user.gender || 'M');
+                $('#epBirthDate').val((user.birth_Date || '').substring(0,10));
+                $('#epAddress').val(user.address || '');
+                $('#epDepartment').val(teacher.department || '');
             });
         }
 
-        function loadAttendanceSummary(){
-            var today=new Date().toISOString().slice(0,10);
-            $.ajax({ url:'/AttendanceManagement/Attendance', dataType:'json',
-                success: function(data){
-                    var arr=Array.isArray(data)?data:[];
-                    var todayArr=arr.filter(function(a){ return (a.date||a.attendanceDate||'').substring(0,10)===today; });
-                    $('#sumPresent').text(todayArr.filter(a=>(a.status||'').toLowerCase()==='present').length);
-                    $('#sumAbsent').text(todayArr.filter(a=>(a.status||'').toLowerCase()==='absent').length);
-                    $('#sumLate').text(todayArr.filter(a=>(a.status||'').toLowerCase()==='late').length);
-                    var records={};
-                    arr.forEach(function(a){ var d=(a.date||a.attendanceDate||'').substring(0,10); if(d) records[d]=(a.status||'').toLowerCase(); });
-                    renderMiniCalendar('miniCalendar', new Date().getFullYear(), new Date().getMonth(), records);
+        function loadQrCode(userId) {
+            $('#qrLoader').show();
+            $('#userQrCode').hide();
+            $.ajax({
+                url: '/api/User/' + userId + '/qrcode',
+                method: 'GET',
+                xhrFields: { responseType: 'blob' },
+                success: function(blob) {
+                    var url = URL.createObjectURL(blob);
+                    $('#userQrCode').attr('src', url).show();
+                    $('#qrLoader').hide();
                 },
-                error: function(){ renderMiniCalendar('miniCalendar'); }
+                error: function() {
+                    $('#qrLoader').hide();
+                    $('#qrCodeContainer').append('<div class="text-danger small">QR code not available</div>');
+                }
             });
         }
 
-        $(function(){
+        function loadAttendanceSummary() {
+            var today = new Date().toISOString().slice(0,10);
+            $.ajax({ url: '/AttendanceManagement/Attendance', dataType: 'json',
+                success: function(data) {
+                    var arr = Array.isArray(data) ? data : [];
+                    var todayArr = arr.filter(a => (a.date || a.attendanceDate || '').substring(0,10) === today);
+                    $('#sumPresent').text(todayArr.filter(a => (a.status||'').toLowerCase() === 'present').length);
+                    $('#sumAbsent').text(todayArr.filter(a => (a.status||'').toLowerCase() === 'absent').length);
+                    $('#sumLate').text(todayArr.filter(a => (a.status||'').toLowerCase() === 'late').length);
+                    var records = {};
+                    arr.forEach(a => { var d = (a.date || a.attendanceDate || '').substring(0,10); if (d) records[d] = (a.status || '').toLowerCase(); });
+                    if (typeof renderMiniCalendar === 'function') renderMiniCalendar('miniCalendar', new Date().getFullYear(), new Date().getMonth(), records);
+                },
+                error: function() { if (typeof renderMiniCalendar === 'function') renderMiniCalendar('miniCalendar'); }
+            });
+        }
+
+        $(function() {
             loadProfile();
             loadAttendanceSummary();
+            loadQrCode(currentUserId);
 
-            $('#editProfileBtn').click(function(){
-                $.ajax({ url:'/api/User/'+currentUserId, dataType:'json',
-                    success: function(u){
-                        $('#editProfileUserId').val(u.user_ID);
-                        $('#epFullName').val(u.full_Name||'');
-                        $('#epEmail').val(u.email||'');
-                        $('#epPhone').val(u.phone_Number||'');
-                        $('#epGender').val(u.gender||'M');
-                        $('#epBirthDate').val((u.birth_Date||'').substring(0,10));
-                        $('#epAddress').val(u.address||'');
-                        $('#editProfileModal').modal('show');
-                    }
-                });
-            });
-
-            $('#saveProfileBtn').click(function(){
-                var uid=$('#editProfileUserId').val();
-                if(!$('#epFullName').val().trim()){ showToast('Full name is required.','warning'); return; }
-                $.ajax({ type:'PUT', url:'/api/User/'+uid, contentType:'application/json',
-                    data: JSON.stringify({ user_ID:parseInt(uid), full_Name:$('#epFullName').val().trim(), email:$('#epEmail').val().trim(), phone_Number:$('#epPhone').val().trim(), gender:$('#epGender').val(), birth_Date:$('#epBirthDate').val()||new Date().toISOString(), address:$('#epAddress').val().trim(), userGroup_ID:0, lastUpdatedBy:'teacher' }),
-                    beforeSend: function(){ $('#page-loader').fadeIn(150); },
-                    success: function(){ $('#page-loader').fadeOut(200); showToast('Profile updated successfully.','success'); $('#editProfileModal').modal('hide'); loadProfile(); },
-                    error: function(){ $('#page-loader').fadeOut(200); showToast('Update failed.','error'); }
+            $('#editProfileBtn').click(function() { $('#editProfileModal').modal('show'); });
+            $('#saveProfileBtn').click(function() {
+                if (!$('#epFullName').val().trim()) { showToast('Full name is required.', 'warning'); return; }
+                var uid = $('#editUserId').val();
+                var userData = {
+                    user_ID: uid,
+                    full_Name: $('#epFullName').val().trim(),
+                    email: $('#epEmail').val().trim(),
+                    phone_Number: $('#epPhone').val().trim(),
+                    gender: $('#epGender').val(),
+                    birth_Date: $('#epBirthDate').val() || new Date().toISOString(),
+                    address: $('#epAddress').val().trim(),
+                    userGroup_ID: 2,
+                    lastUpdatedBy: 'teacher'
+                };
+                $.ajax({ type:'PUT', url:'/api/User/'+uid, contentType:'application/json', data:JSON.stringify(userData),
+                    beforeSend:function(){ $('#page-loader').fadeIn(150); },
+                    success:function() {
+                        var tid = $('#editTeacherId').val();
+                        if(tid) {
+                            $.ajax({ type:'PUT', url:'/api/Teacher/'+tid, contentType:'application/json', data:JSON.stringify({ teacher_ID: parseInt(tid), department: $('#epDepartment').val().trim(), lastUpdatedBy: 'teacher' }),
+                                complete:function(){ $('#page-loader').fadeOut(200); $('#editProfileModal').modal('hide'); showToast('Profile updated.', 'success'); loadProfile(); }
+                            });
+                        } else { $('#page-loader').fadeOut(200); $('#editProfileModal').modal('hide'); showToast('Profile updated.', 'success'); loadProfile(); }
+                    },
+                    error:function(){ $('#page-loader').fadeOut(200); showToast('Update failed.', 'error'); }
                 });
             });
         });

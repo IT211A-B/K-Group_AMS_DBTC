@@ -55,5 +55,28 @@ namespace Frontend.Controllers
             var vm = new AdminViewModel { CurrentPage = "Profile" };
             return View(vm);
         }
+
+        public IActionResult Mail()
+        {
+            var check = CheckSession(); if (check != null) return check;
+            var vm = new AdminViewModel { CurrentPage = "Mail" };
+            return View(vm);
+        }
+
+        public IActionResult ViewStudentProfile(string userId)
+        {
+            var check = CheckSession(); if (check != null) return check;
+            ViewData["TargetUserId"] = userId;
+            ViewData["IsAdminView"] = true;
+            return View("~/Views/Student/Profile.cshtml", new AdminViewModel { CurrentPage = "Dashboard" });
+        }
+
+        public IActionResult ViewTeacherProfile(string userId)
+        {
+            var check = CheckSession(); if (check != null) return check;
+            ViewData["TargetUserId"] = userId;
+            ViewData["IsAdminView"] = true;
+            return View("~/Views/Teacher/Profile.cshtml", new AdminViewModel { CurrentPage = "Dashboard" });
+        }
     }
 }

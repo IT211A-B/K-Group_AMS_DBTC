@@ -17,21 +17,20 @@ namespace Frontend.Controllers
         {
             var role = HttpContext.Session.GetString("UserRole");
             if (!_teacherService.IsSessionValid(role)) return Redirect("/Login/Index");
+            if (role == "admin") return Redirect("/Admin/Dashboard");
+            if (role != "teacher") return Redirect("/Login/Index");
             return null;
         }
 
         public IActionResult Index()
         {
             var check = CheckSession(); if (check != null) return check;
-            var vm = new TeacherViewModel { CurrentPage = "Index" };
-            return View(vm);
+            return RedirectToAction("Dashboard");
         }
 
         public IActionResult Dashboard()
         {
             var check = CheckSession(); if (check != null) return check;
-            var role = HttpContext.Session.GetString("UserRole");
-            if (_teacherService.IsAdmin(role)) return RedirectToAction("Dashboard", "Admin");
             var vm = new TeacherViewModel { CurrentPage = "Dashboard" };
             return View(vm);
         }
@@ -47,6 +46,13 @@ namespace Frontend.Controllers
         {
             var check = CheckSession(); if (check != null) return check;
             var vm = new TeacherViewModel { CurrentPage = "Profile" };
+            return View(vm);
+        }
+
+        public IActionResult Mail()
+        {
+            var check = CheckSession(); if (check != null) return check;
+            var vm = new TeacherViewModel { CurrentPage = "Mail" };
             return View(vm);
         }
     }

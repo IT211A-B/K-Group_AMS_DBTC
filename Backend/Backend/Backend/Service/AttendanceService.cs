@@ -1,17 +1,22 @@
-﻿using Backend.Backend.Model;
-using Backend.Backend.DTOs;
-using Backend.Backend.Interface.ServiceInterface;
+﻿using Backend.Backend.DTOs;
 using Backend.Backend.Interface.RepositoryInterface;
+using Backend.Backend.Interface.ServiceInterface;
+using Backend.Backend.Model;
+using attStat = Backend.Backend.Helper.Enum.AttendanceEnum.AttStatus;
 
 namespace Backend.Backend.Service
 {
     public class AttendanceService : IAttendanceService
     {
         private readonly IAttendanceRepository _attendanceRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IScheduleRepository _scheduleRepository;
 
-        public AttendanceService(IAttendanceRepository attendanceRepository)
+        public AttendanceService(IAttendanceRepository attendanceRepository, IUserRepository userRepository, IScheduleRepository scheduleRepository)
         {
             _attendanceRepository = attendanceRepository;
+            _userRepository = userRepository;
+            _scheduleRepository = scheduleRepository;
         }
 
         public async Task<ResponseDTO<IEnumerable<GetAttendanceDTO>>> GetAllAsync()
@@ -26,9 +31,11 @@ namespace Backend.Backend.Service
             var data = attendances.Select(a => new GetAttendanceDTO
             {
                 Attendance_ID = a.Attendance_ID,
-                Enrollment_ID = a.Enrollment_ID,
+                Schedule_ID = a.Schedule_ID,
+                TeacherStatus = a.TeacherStatus,
                 Date = a.Date,
-                Status = a.Status,
+                CreatedAt = a.CreatedAt,
+                CreatedBy = a.CreatedBy,
             });
 
             return new ResponseDTO<IEnumerable<GetAttendanceDTO>>
@@ -50,10 +57,12 @@ namespace Backend.Backend.Service
 
             var data = new GetAttendanceDTO
             {
-                Attendance_ID = a.Attendance_ID,
-                Enrollment_ID = a.Enrollment_ID,
+                Attendance_ID= a.Attendance_ID,
+                Schedule_ID = a.Schedule_ID,
+                TeacherStatus = a.TeacherStatus,
                 Date = a.Date,
-                Status = a.Status,
+                CreatedAt = a.CreatedAt,
+                CreatedBy = a.CreatedBy,
             };
 
             return new ResponseDTO<GetAttendanceDTO>
@@ -63,25 +72,78 @@ namespace Backend.Backend.Service
             };
         }
 
-        public async Task<ResponseDTO<GetAttendanceDTO>> AddAsync(AddAttendanceDTO dto)
+        public async Task<ResponseDTO<GetAttendanceDTO>> AddAsync(AddAttendanceDTO dto, string currentUserId)
         {
+            // Find manila Id
+            TimeZoneInfo manilaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
+
+            var getOperator = await _userRepository.GetByUUIDAsync(currentUserId);
+
+            // Get schedule
+            var getSchedule = await _scheduleRepository.GetByIdAsync(dto.Schedule_ID);
+            if (getSchedule == null)
+                throw new Exception($"Schedule Id {dto.Schedule_ID} Does not Exist");
+
+            // Limit Time that can be tracked
+            TimeOnly attendanceStarted = getSchedule.StartTime.AddMinutes(-30);
+
+            // Get time started
+            TimeOnly started = getSchedule.StartTime;
+
+            // set late limitation
+            TimeOnly lateChecker = started.AddMinutes(15);
+
+            // set attendance status, initialize to absent
+            attStat stat = attStat.Unassigned;
+
+
+            // get day of the week
+            DateOnly thisday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone));
+            DayOfWeek dayOfThisWeek = thisday.DayOfWeek;
+
+            // get current time for validations
+            TimeOnly now = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone));
+
+            // Validation and Status Assignment
+            // Check if todays is the recorded day for schedule
+            if (getSchedule.DayOfWeek != dayOfThisWeek)
+                throw new Exception($"Course is Only available at {getSchedule.DayOfWeek} Not {dayOfThisWeek}");
+
+
+            // Validation and Status Assignment
+            // Check if todays is the recorded day for schedule
+            if (getSchedule.DayOfWeek != dayOfThisWeek)
+                throw new Exception($"Course is Only available at {getSchedule.DayOfWeek} Not {dayOfThisWeek}");
+
+            // Status
+            if (now <= started && attendanceStarted >= now)
+                stat = attStat.Present;
+            else if (now <= lateChecker)
+                stat = attStat.Late;
+            else if (now > lateChecker)
+                stat = attStat.Absent;
+            else
+                stat = attStat.Unassigned;
+
             var attendance = new Attendance
             {
-                Enrollment_ID = dto.Enrollment_ID,
-                Date = dto.Date,
-                Status = dto.Status,
-                CreatedAt = DateTime.UtcNow,
-                LastUpdatedAt = DateTime.UtcNow,
+                Schedule_ID = dto.Schedule_ID,
+                TeacherStatus = stat,
+                Date = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone)),
+                CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone),
+                CreatedBy = getOperator?.Full_Name ?? "Admin"
             };
 
             await _attendanceRepository.AddAsync(attendance);
 
             var data = new GetAttendanceDTO
             {
-                Attendance_ID = attendance.Attendance_ID,
-                Enrollment_ID = attendance.Enrollment_ID,
+                Attendance_ID= attendance.Attendance_ID,
+                Schedule_ID = attendance.Schedule_ID,
+                TeacherStatus = attendance.TeacherStatus,
                 Date = attendance.Date,
-                Status = attendance.Status,
+                CreatedAt = attendance.CreatedAt,
+                CreatedBy = attendance.CreatedBy,
             };
 
             return new ResponseDTO<GetAttendanceDTO>
@@ -101,19 +163,18 @@ namespace Backend.Backend.Service
                     Data = null
                 };
 
-            existing.Enrollment_ID = dto.Enrollment_ID;
-            existing.Date = dto.Date;
-            existing.Status = dto.Status;
-            existing.LastUpdatedAt = DateTime.UtcNow;
+            existing.Schedule_ID = dto.Schedule_ID;
 
             await _attendanceRepository.UpdateAsync(existing);
 
             var data = new GetAttendanceDTO
             {
                 Attendance_ID = existing.Attendance_ID,
-                Enrollment_ID = existing.Enrollment_ID,
+                Schedule_ID = existing.Schedule_ID,
+                TeacherStatus = existing.TeacherStatus,
                 Date = existing.Date,
-                Status = existing.Status,
+                CreatedAt = existing.CreatedAt,
+                CreatedBy = existing.CreatedBy,
             };
 
             return new ResponseDTO<GetAttendanceDTO>

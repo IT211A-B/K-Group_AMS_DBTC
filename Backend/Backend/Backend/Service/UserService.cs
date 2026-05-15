@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Backend.Backend.Configuration;
 using Backend.Backend.DTOs;
+using Backend.Backend.Helper;
+using Backend.Backend.Interface.ConfigureInterface;
 using Backend.Backend.Interface.RepositoryInterface;
 using Backend.Backend.Interface.ServiceInterface;
 using Backend.Backend.Model;
-using Backend.Backend.Helper;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using PosStatus = Backend.Backend.Helper.Enum.PosEnum.PosStatus;
 
 namespace Backend.Backend.Service
@@ -11,10 +14,23 @@ namespace Backend.Backend.Service
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly UserManager<User> _userManager;
+        /// <summary>
+        /// Service used to generate claims for the authenticated user.
+        /// </summary>
+        private readonly IClaimService _claimService;
 
-        public UserService(IUserRepository userRepository)
+        /// <summary>
+        /// Service used to generate JWT tokens.
+        /// </summary>
+        private readonly IJwtService _jwtService;
+
+        public UserService(IUserRepository userRepository, UserManager<User> userManager, IClaimService claimService, IJwtService kwtService)
         {
             _userRepository = userRepository;
+            _userManager = userManager;
+            _claimService = claimService;
+            _jwtService = kwtService;  
         }
 
         public async Task<ResponseDTO<IEnumerable<GetUserDTO>>> GetAllAsync()
@@ -31,12 +47,11 @@ namespace Backend.Backend.Service
             {
                 DocumentSeries = u.DocumentSeries,
                 Full_Name = u.Full_Name,
-                Email = u.Email,
+                Email = u.Email!,
                 Phone_Number = u.Phone_Number,
                 Sex = u.Sex,
                 Birth_Date = u.Birth_Date,
                 Address = u.Address,
-                UserGroup_ID = u.UserGroup_ID,
             });
 
             return new ResponseDTO<IEnumerable<GetUserDTO>>
@@ -60,12 +75,11 @@ namespace Backend.Backend.Service
             {
                 DocumentSeries = u.DocumentSeries,
                 Full_Name = u.Full_Name,
-                Email = u.Email,
+                Email = u.Email!,
                 Phone_Number = u.Phone_Number,
                 Sex = u.Sex,
                 Birth_Date = u.Birth_Date,
                 Address = u.Address,
-                UserGroup_ID = u.UserGroup_ID,
             };
 
             return new ResponseDTO<GetUserDTO>
@@ -75,32 +89,33 @@ namespace Backend.Backend.Service
             };
         }
 
-        public async Task<ResponseDTO<GetUserDTO>> AddAsync(AddUserDTO userDto)
+        public async Task<RegisterDTO> AddAsync(AddUserDTO userDto)
         {
+            TimeZoneInfo manilaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
             // This will check if the email exist
-            User? DBEmails = await _userRepository.GetByEmailOrUsernameAsync(userDto.Email);
+            User? DBEmails = await _userManager.FindByEmailAsync(userDto.Email);
             if (DBEmails != null)
             {
-                return new ResponseDTO<GetUserDTO>
+                return new RegisterDTO
                 {
-                    Status_code = 422, //422 Unprocessable Content: Understands the request but cannot process ("Email is already used")
+                    Token = null,
+                    StatusCode = 422, //422 Unprocessable Content: Understands the request but cannot process ("Email is already used")
                     Data = null
                 };
             }
-            // Password Hashing shesh
-            string Pass_Hash = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
             //Add Role According To Email
             PosStatus? role = AddRole.AddRoleAccordingToEmail(userDto.Email).role;
             int statcode_roleCheck = AddRole.AddRoleAccordingToEmail(userDto.Email).status_code;
             //If email does not match, return with 404 as not found and 403 as Access Denied
             if (statcode_roleCheck == 404)
             {
-                return new ResponseDTO<GetUserDTO>
-                { 
-                    Status_code = 403, //403 access_denied: You are not authorized to use the specific service with that account.
+                return new RegisterDTO
+                {
+                    Token = null,
+                    StatusCode = 403, //403 rolepermission_denied: You are not authorized to use the specific service with that account.
                     Data = null
                 };
-            }
+            } 
             // Get Year
             int year = DateTime.Now.Year;
             // Get the next student number used by sequence that we made early in migration and such
@@ -108,68 +123,77 @@ namespace Backend.Backend.Service
             // Add Document Series
             string DocSer = $"{role}-{year}-{id}";
 
+
             var user = new User
             {
                 DocumentSeries = DocSer,
                 Full_Name = userDto.Full_Name,
                 Email = userDto.Email,
-                PassHash = Pass_Hash,
+                UserName = userDto.Email,
                 Phone_Number = userDto.Phone_Number,
                 Sex = userDto.Sex,
                 Birth_Date = userDto.Birth_Date,
                 Address = userDto.Address,
-                UserGroup_ID = userDto.UserGroup_ID,
-                CreatedAt = DateTime.UtcNow,
-                LastUpdatedAt = DateTime.UtcNow,
+                CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone),
+                LastUpdatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone),
                 CreatedBy = "Admin",
                 LastUpdatedBy = "Admin"
             };
 
-            await _userRepository.AddAsync(user);
+            var result = await _userManager.CreateAsync(user, userDto.Password);
 
-            GetUserDTO show = new GetUserDTO()
-            {
-                DocumentSeries = user.DocumentSeries,
-                Full_Name = user.Full_Name,
-                Email = user.Email,
-                Phone_Number = user.Phone_Number,
-                Sex = user.Sex,
-                Birth_Date = user.Birth_Date,
-                Address = user.Address,
-                UserGroup_ID = user.UserGroup_ID
-            };
+            // Add Role Base on Email
 
-            return new ResponseDTO<GetUserDTO>
+            // Extract Role from Document Series
+            var extractedRole = ExtractDocuSer.ExtractDataFromDocumentSeries(DocSer);
+
+            // Convert it into string
+            var convertedRole = EnumRoletoStringRole.ConvertEnumRoletoStringRole(extractedRole.ExtractedPosition);
+
+            // Give Role
+            await _userManager.AddToRoleAsync(user, convertedRole);
+
+            if (!result.Succeeded)
             {
-                Status_code = 200,
+                return new RegisterDTO
+                {
+                    Token = null,
+                    StatusCode = 500,
+                    Data = null,
+                    Detail = string.Join(", ", result.Errors.Select(e => e.Description))
+                };
+            }
+            var userDisplay = await _userRepository.GetByEmailAsync(userDto.Email);
+
+            GetUserDTO? show = userDisplay != null ? 
+                new GetUserDTO
+            {
+                DocumentSeries = userDisplay.DocumentSeries,
+                Full_Name = userDisplay.Full_Name,
+                Email = userDisplay.Email!,
+                Phone_Number = userDisplay.Phone_Number,
+                Sex = userDisplay.Sex,
+                Birth_Date = userDisplay.Birth_Date,
+                Address = userDisplay.Address,
+            }
+            : null;
+
+
+            // collect user's identity
+            var claims = await _claimService.GetClaimsAsync(user);
+
+            // generate token
+            var token = _jwtService.GenerateToken(claims);
+
+            return new RegisterDTO
+            {
+                Token = token,
+                StatusCode = 200,
                 Data = show
             };
         }
 
-        public async Task<LoginResult> LoginAsync(LoginUserDto login)
-        {
-            var user = await _userRepository.GetByEmailOrUsernameAsync(login.Email);
-
-            // User Validation
-            if (user == null) return new LoginResult
-            {
-                isSuccess = false,
-                Detail = "User Cannot Be Found"
-            };
-            // Password validation
-            if (!BCrypt.Net.BCrypt.Verify(login.Password, user.PassHash))
-            return new LoginResult
-            {
-                isSuccess = false,
-                Detail = "Password Incorrect"
-            };
-
-            return new LoginResult
-            {
-                isSuccess = true,
-                Detail = $"Welcome Back {user.Full_Name}"
-            };
-        }
+        
 
         //public async Task<GetUserDTO?> UpdateAsync(int id, AddUserDTO userDto)
         //{
@@ -184,7 +208,7 @@ namespace Backend.Backend.Service
         //    existing.Birth_Date = userDto.Birth_Date;
         //    existing.Address = userDto.Address;
         //    existing.UserGroup_ID = userDto.UserGroup_ID;
-        //    existing.LastUpdatedAt = DateTime.UtcNow;
+        //    existing.LastUpdatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone);
         //    existing.LastUpdatedBy = userDto.LastUpdatedBy;
 
         //    await _userRepository.UpdateAsync(existing);

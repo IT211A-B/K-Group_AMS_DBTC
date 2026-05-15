@@ -1,12 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Backend.Backend.DTOs;
+﻿using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Backend.Backend.Controllers
 {
     /// <summary>
     /// Handles all operations related to Attendance management.
     /// </summary>
+    [Authorize(Roles = "Admin,Teacher")]
     [Route("AttendanceManagement/[controller]")]
     [ApiController]
     public class AttendanceController : ControllerBase
@@ -87,7 +90,7 @@ namespace Backend.Backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetAttendanceById(int id)
         {
-            try { 
+            try {
                 var attendance = await _attendanceService.GetByIdAsync(id);
                 if (attendance == null)
                     return NotFound($"#404! Attendance with ID {id} not found");
@@ -135,8 +138,13 @@ namespace Backend.Backend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddAttendance(AddAttendanceDTO dto)
         {
-            try { 
-                var attendance = await _attendanceService.AddAsync(dto);
+            try {
+                string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (userId == null)
+                    throw new Exception("The Operator is Not Found");
+
+                var attendance = await _attendanceService.AddAsync(dto, userId);
                 return Ok(attendance);
             }
             catch (Exception x)

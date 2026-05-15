@@ -12,14 +12,36 @@ namespace Backend.Backend.Repository
 
         public async Task<IEnumerable<Student>> GetAllAsync()
         {
-            return await _db.Students.ToListAsync();
+            return await _db.Students.Include(s => s.User).ToListAsync();
         }
 
         public async Task<Student?> GetByIdAsync(int ID)
         {
             return await _db.Students
                 .FromSqlRaw(@"SELECT * FROM ""Students"" 
-                  WHERE CAST(SPLIT_PART(""DocumentSeries"", '-', 3) AS INT) = {0}", ID)
+                  WHERE CAST(SPLIT_PART(""DocumentSeries"", '-', 3) AS INT) = {0}", ID).Include(s => s.User)
+                .FirstOrDefaultAsync();
+        }
+        public async Task<Student?> GetByUUIDAsync(string id)
+        {
+            return await _db.Students
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(fid => fid.Student_ID == id);
+        }
+
+        public async Task<Student?> GetByUserUUIDAsync(string id)
+        {
+            return await _db.Students
+                .Include(s => s.User)
+                .Where(s => s.User_ID  == id)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<Student?> GetByQrToken(string qrToken)
+        {
+            return await _db.Students
+                .Include(s => s.User)
+                .Where(s => s.QrToken == qrToken)
                 .FirstOrDefaultAsync();
         }
 
@@ -53,7 +75,7 @@ namespace Backend.Backend.Repository
                 .SingleAsync();
         }
 
-        public async Task<bool> CheckUserIfTaken(int uId)
+        public async Task<bool> CheckUserIfTaken(string uId)
         {
             return await _db.Students.AnyAsync(s => s.User_ID == uId);
         }

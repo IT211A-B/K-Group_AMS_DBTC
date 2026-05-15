@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Backend.Backend.Controllers
 {
     /// <summary>
     /// Handles all operations related to programs.
     /// </summary>
+    [Authorize(Roles = "Admin")]
     [Route("AttendanceManagement/[controller]")]
     [ApiController]
     public class ProgramController : ControllerBase
@@ -28,6 +30,7 @@ namespace Backend.Backend.Controllers
         /// <response code="200">Programs retrieved successfully</response>
         /// <response code="404">No programs found</response>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllPrograms()
         {
             try { 

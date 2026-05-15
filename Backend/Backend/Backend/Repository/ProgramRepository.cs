@@ -16,7 +16,7 @@ namespace Backend.Backend.Repository
 
         public async Task<Program_?> GetByIdAsync(int id)
         {
-            return await _db.Programs.FindAsync(id);
+            return await _db.Programs.FirstOrDefaultAsync(p => p.Program_Id == id);
         }
 
         public async Task AddAsync(Program_ program)

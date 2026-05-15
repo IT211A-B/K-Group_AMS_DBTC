@@ -1,5 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore.Query.Internal;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Globalization;
 
 namespace Backend.Backend.Model
 {
@@ -11,18 +13,23 @@ namespace Backend.Backend.Model
 
         [Required]
         public required int Course_ID { get; set; }
+        public Course Course { get; set; } = null!;
+
 
         [Required]
-        public required int Course_Year { get; set; }
+        public required int Section_ID {  get; set; }
+        public Section Section { get; set; } = null!;
 
-        [Required]
-        public required int Department_ID { get; set; }
 
-        [Required]
-        public required int Program_ID { get; set; }   
-
+        public ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
         [Required]
         public required DayOfWeek DayOfWeek { get; set; }
+
+        [Required]
+        public required int Semester { get; set; }
+
+        [Required]
+        public required string AcademicYear { get; set; }
 
         [Required]
         public required TimeOnly StartTime { get; set; }

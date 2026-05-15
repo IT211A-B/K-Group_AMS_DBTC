@@ -3,13 +3,12 @@
     public class GetPermissionDTO
     {
         public int Permission_ID { get; set; }
-        public required string Permission_Description { get; set; }
-        public required int Access_ID { get; set; }
+        public required string String_Name { get; set; }
     }
 
     public class AddPermissionDTO
     {
-        public required string Permission_Description { get; set; }
-        public required int Access_ID { get; set; }
+        public required string String_Name { get; set; }
+
     }
 }

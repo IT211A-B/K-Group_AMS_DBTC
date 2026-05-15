@@ -3,9 +3,10 @@
 /bin
 /obj
 /Migrations
-/Backend/Migrations
+Backend/Backend/Backend.csproj.lscache
+Backend/Backend/Migrations
 .gitignore 
-Backend/Attendnce_Management_System/Attendnce_Management_System/appsettings.json
+Backend/Backend/appsettings.json
 ﻿.vs/
 bin/
 obj/

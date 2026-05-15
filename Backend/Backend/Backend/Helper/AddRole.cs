@@ -4,16 +4,12 @@ namespace Backend.Backend.Helper
 {
     public static class AddRole
     {
-        // Add role through email, using this method
+        /// Add role through email, using this method
         public static (Role? role, int status_code) AddRoleAccordingToEmail(this string email)
         {
             Role? role;
             int status_code;
-            if(email.Contains("@sup.user"))
-            {
-                role = Role.SUP;
-                status_code = 200;
-            } else if (email.Contains("@dbtc-cebu"))
+            if (email.Contains("@dbtc-cebu"))
             {
                 role = Role.STU;
                 status_code = 200;
