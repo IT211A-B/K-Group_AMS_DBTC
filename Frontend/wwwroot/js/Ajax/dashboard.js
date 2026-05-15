@@ -6,36 +6,21 @@
 
 function getDashboardStats() {
     $.ajax({
-        type: 'GET', url: '/api/Student', dataType: 'json', global: false,
-        success: function (r) { $('#statStudents, #histStudents, #ovStudents').text(safeArray(r).length); },
-        error: function () { $('#statStudents, #histStudents, #ovStudents').text('0'); }
-    });
-    $.ajax({
-        type: 'GET', url: '/api/Teacher', dataType: 'json', global: false,
-        success: function (r) { $('#statTeachers, #histTeachers, #ovTeachers').text(safeArray(r).length); },
-        error: function () { $('#statTeachers, #histTeachers, #ovTeachers').text('0'); }
-    });
-    $.ajax({
-        type: 'GET', url: '/AttendanceManagement/Course', dataType: 'json', global: false,
-        success: function (r) { $('#statCourses, #histCourses, #ovCourses').text(safeArray(r).length); },
-        error: function () { $('#statCourses, #histCourses, #ovCourses').text('0'); }
-    });
-    $.ajax({
-        type: 'GET', url: '/AttendanceManagement/Attendance', dataType: 'json', global: false,
-        success: function (r) {
-            var arr = safeArray(r);
-            var today = new Date().toISOString().slice(0, 10);
-            var todayArr = arr.filter(function (a) {
-                return (a.date || a.attendanceDate || '').substring(0, 10) === today;
-            });
-            var absences = todayArr.filter(function (a) { return (a.status || '').toLowerCase() === 'absent'; }).length;
-            var present = todayArr.filter(function (a) { return (a.status || '').toLowerCase() === 'present'; }).length;
-            var late = todayArr.filter(function (a) { return (a.status || '').toLowerCase() === 'late'; }).length;
-            $('#statAbsences, #ovAbsences').text(absences);
-            $('#sumPresent').text(present);
-            $('#sumAbsent').text(absences);
-            $('#sumLate').text(late);
+        type: 'GET', url: '/api/Dashboard/stats', dataType: 'json', global: false,
+        success: function (stats) {
+            if (!stats) return;
+            $('#statStudents, #histStudents, #ovStudents').text(stats.totalStudents ?? stats.TotalStudents ?? '0');
+            $('#statTeachers, #histTeachers, #ovTeachers').text(stats.totalTeachers ?? stats.TotalTeachers ?? '0');
+            $('#statCourses, #histCourses, #ovCourses').text(stats.totalCourses ?? stats.TotalCourses ?? '0');
+            $('#statAbsences, #ovAbsences').text(stats.absencesToday ?? stats.AbsencesToday ?? '0');
         },
-        error: function () { $('#statAbsences, #ovAbsences').text('0'); }
+        error: function () {
+            $.ajax({ type: 'GET', url: '/api/Student', dataType: 'json', global: false,
+                success: function (r) { $('#statStudents, #histStudents').text(safeArray(r).length); } });
+            $.ajax({ type: 'GET', url: '/api/Teacher', dataType: 'json', global: false,
+                success: function (r) { $('#statTeachers, #histTeachers').text(safeArray(r).length); } });
+            $.ajax({ type: 'GET', url: '/AttendanceManagement/Course', dataType: 'json', global: false,
+                success: function (r) { $('#statCourses, #histCourses').text(safeArray(r).length); } });
+        }
     });
 }

@@ -7,14 +7,20 @@ namespace Frontend.Services
 {
     public class AuthService
     {
-        private const string BackendBase = "https://k-group-ams-dbtc-11f4.onrender.com";
+        private readonly string _backendBase;
+
+        public AuthService(IConfiguration configuration)
+        {
+            _backendBase = configuration["BackendBase"]
+                ?? "https://k-group-ams-dbtc-11f4.onrender.com";
+        }
 
         private HttpClient CreateClient(string? token = null)
         {
             var client = new HttpClient();
             client.Timeout = TimeSpan.FromSeconds(60);
-            client.DefaultRequestHeaders.Add("Origin", BackendBase);
-            client.DefaultRequestHeaders.Add("Referer", BackendBase + "/");
+            client.DefaultRequestHeaders.Add("Origin", _backendBase);
+            client.DefaultRequestHeaders.Add("Referer", _backendBase + "/");
             client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
             if (!string.IsNullOrEmpty(token))
                 client.DefaultRequestHeaders.Authorization =
@@ -30,7 +36,13 @@ namespace Frontend.Services
                 using var client = CreateClient();
                 var payload = JsonSerializer.Serialize(new { email = model.Email, password = model.Password });
                 var content = new StringContent(payload, Encoding.UTF8, "application/json");
-                var response = await client.PostAsync($"{BackendBase}/LogIn", content);
+                var response = await client.PostAsync($"{_backendBase}/LogIn", content);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                {
+                    return (false, "", "", "", "",
+                        "Too many requests. Please wait a minute and try again.");
+                }
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -66,7 +78,7 @@ namespace Frontend.Services
                 try
                 {
                     using var authClient = CreateClient(token);
-                    var userResponse = await authClient.GetAsync($"{BackendBase}/api/User");
+                    var userResponse = await authClient.GetAsync($"{_backendBase}/api/User");
                     if (userResponse.IsSuccessStatusCode)
                     {
                         var usersJson = await userResponse.Content.ReadAsStringAsync();

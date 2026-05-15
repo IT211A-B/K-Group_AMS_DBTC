@@ -1,7 +1,7 @@
 ﻿
 var STUDENT_GID = 3, TEACHER_GID = 2, ADMIN_GID = 1;
 var allAccounts = [], allStudents = [], allTeachers = [], allUsers = [];
-var allPrograms = [], allDepts = [], allCourses = [], allEnrollments = [];
+var allPrograms = [], allDepts = [], allCourses = [], allSections = [];
 var pg;
 
 function toUtcIso(v) { return v ? new Date(v).toISOString() : new Date().toISOString(); }
@@ -50,7 +50,7 @@ function renderRow(a, i) {
         '<td>' + roleBadge + '</td>' +
         '<td>' + (a._gender === 'M' ? 'Male' : a._gender === 'F' ? 'Female' : (a._gender || '—')) + '</td>' +
         '<td>' + dept + '</td>' +
-        '<td>' + (a._courses || 0) + '</td>' +
+        '<td>' + (a._section || '—') + '</td>' +
         '<td class="d-flex gap-1 flex-wrap">' + actions + '</td>' +
         '</tr>';
 }
@@ -86,15 +86,16 @@ function buildAccounts() {
                     : '—';
             var sid = student ? (student.student_ID || student.id || '') : '';
             var tid = teacher ? (teacher.teacher_ID || teacher.id || '') : '';
-            var courseCount = allEnrollments.filter(function (e) { return String(e.student_ID) === String(sid); }).length;
+            var section = student ? allSections.find(function (sec) { return String(sec.section_Id || sec.Section_Id) === String(student.sectionID || student.SectionID); }) : null;
+            var sectionLabel = section ? (section.section_Code || section.Section_Code || 'Section ' + section.section_Id) : '—';
             return {
                 _uid: uid, _ugid: gid,
                 _name: u.full_Name || u.email || '?',
                 _email: u.email || '—',
-                _gender: u.gender || '',
+                _gender: u.gender || u.sex || '',
                 _dept: dept,
                 _sid: sid, _tid: tid,
-                _courses: courseCount,
+                _section: sectionLabel,
                 _created: u.createdAt || ''
             };
         });
@@ -109,21 +110,17 @@ function loadAll() {
         $.ajax({ url: '/AttendanceManagement/Program', dataType: 'json' }),
         $.ajax({ url: '/AttendanceManagement/Department', dataType: 'json' }),
         $.ajax({ url: '/AttendanceManagement/Course', dataType: 'json' }),
-        $.ajax({ url: '/AttendanceManagement/Enrollment', dataType: 'json' })
-    ).done(function (uR, sR, tR, pR, dR, cR, eR) {
+        $.ajax({ url: '/AttendanceManagement/Section', dataType: 'json' })
+    ).done(function (uR, sR, tR, pR, dR, cR, secR) {
         allUsers = Array.isArray(uR[0]) ? uR[0] : [];
         allStudents = Array.isArray(sR[0]) ? sR[0] : [];
         allTeachers = Array.isArray(tR[0]) ? tR[0] : [];
         allPrograms = Array.isArray(pR[0]) ? pR[0] : [];
         allDepts = Array.isArray(dR[0]) ? dR[0] : [];
         allCourses = Array.isArray(cR[0]) ? cR[0] : [];
-        allEnrollments = Array.isArray(eR[0]) ? eR[0] : [];
+        allSections = Array.isArray(secR[0]) ? secR[0] : [];
 
         buildAccounts();
-
-        $('#statStudents').text(allStudents.length);
-        $('#statTeachers').text(allTeachers.length);
-        $('#statCourses').text(allCourses.length);
 
         var progHtml = '<option value="">Select Program</option>';
         allPrograms.forEach(function (p) { progHtml += '<option value="' + p.program_Id + '">' + p.name + '</option>'; });
@@ -131,21 +128,16 @@ function loadAll() {
 
         var deptHtml = '<option value="">Select Department</option>';
         allDepts.forEach(function (d) { deptHtml += '<option value="' + d.department_Id + '">' + d.name + '</option>'; });
-        $('#addDeptId, #editDeptId').html(deptHtml);
+        $('#addDeptId, #editDeptId, #addTeacherDeptId').html(deptHtml);
 
-        var courseCheckHtml = '';
-        allCourses.forEach(function (c) {
-            var cid = c.course_ID || c.id;
-            courseCheckHtml += '<div class="form-check"><input class="form-check-input course-check" type="checkbox" value="' + cid + '" id="cc' + cid + '"><label class="form-check-label" for="cc' + cid + '">' + (c.code || '') + ' — ' + (c.title || '') + '</label></div>';
+        var secHtml = '<option value="">Select Section…</option>';
+        allSections.forEach(function (sec) {
+            var sid = sec.section_Id || sec.Section_Id;
+            var label = (sec.section_Code || sec.Section_Code || 'Section ' + sid);
+            if (sec.course_Code || sec.Course_Code) label += ' — ' + (sec.course_Code || sec.Course_Code);
+            secHtml += '<option value="' + sid + '">' + label + '</option>';
         });
-        $('#addStudentCourses').html(courseCheckHtml || '<span class="text-muted small">No courses available</span>');
-
-        var tcHtml = '';
-        allCourses.forEach(function (c) {
-            var cid = c.course_ID || c.id;
-            tcHtml += '<div class="form-check"><input class="form-check-input teacher-course-check" type="checkbox" value="' + cid + '" id="tc' + cid + '"><label class="form-check-label" for="tc' + cid + '">' + (c.code || '') + ' — ' + (c.title || '') + '</label></div>';
-        });
-        $('#addTeacherCourses').html(tcHtml || '<span class="text-muted small">No courses available</span>');
+        $('#addSectionId').html(secHtml);
 
         if (pg) {
             pg.refresh(allAccounts);
@@ -225,43 +217,24 @@ $(document).ready(function () {
                 }
 
                 if (type === 'student') {
-                    var programId = $('#addProgramId').val();
-                    var deptId = $('#addDeptId').val();
-                    var yearLevel = $('#addYearLevel').val();
+                    var sectionId = $('#addSectionId').val();
+                    if (!sectionId) { $('#page-loader').fadeOut(200); showToast('Section is required.', 'warning'); return; }
                     var studentData = {
                         user_ID: newUserId,
-                        program_ID: programId ? parseInt(programId) : null,
-                        department_ID: deptId ? parseInt(deptId) : null,
-                        year_Level: yearLevel,
-                        lastUpdatedBy: 'admin'
+                        program_ID: parseInt($('#addProgramId').val()) || 0,
+                        department_ID: parseInt($('#addDeptId').val()) || 0,
+                        sectionID: parseInt(sectionId),
+                        year_Level: parseInt($('#addYearLevel').val()) || 1
                     };
                     $.ajax({
                         type: 'POST', url: '/api/Student', contentType: 'application/json',
                         data: JSON.stringify(studentData),
-                        success: function (student) {
-                            var checkedCourses = [];
-                            $('.course-check:checked').each(function () { checkedCourses.push($(this).val()); });
-                            var sid = student.student_ID || student.id;
-                            if (checkedCourses.length > 0 && sid) {
-                                var enrollRequests = checkedCourses.map(function (cid) {
-                                    return $.ajax({
-                                        type: 'POST', url: '/AttendanceManagement/Enrollment',
-                                        contentType: 'application/json',
-                                        data: JSON.stringify({ student_ID: sid, course_ID: parseInt(cid), lastUpdatedBy: 'admin' })
-                                    });
-                                });
-                                $.when.apply($, enrollRequests).always(function () {
-                                    $('#page-loader').fadeOut(200);
-                                    $('#addAccountModal').modal('hide');
-                                    showToast('Student account created and enrolled.', 'success');
-                                    loadAll();
-                                });
-                            } else {
-                                $('#page-loader').fadeOut(200);
-                                $('#addAccountModal').modal('hide');
-                                showToast('Student account created successfully.', 'success');
-                                loadAll();
-                            }
+                        success: function () {
+                            $('#page-loader').fadeOut(200);
+                            $('#addAccountModal').modal('hide');
+                            showToast('Student account created successfully.', 'success');
+                            loadAll();
+                            getDashboardStats();
                         },
                         error: function (x) {
                             $('#page-loader').fadeOut(200);
@@ -270,35 +243,18 @@ $(document).ready(function () {
                         }
                     });
                 } else {
-                    var dept = $('#addTeacherDept').val().trim();
-                    var teacherData = { user_ID: newUserId, department: dept || null, lastUpdatedBy: 'admin' };
+                    var deptId = $('#addTeacherDeptId').val();
+                    if (!deptId) { $('#page-loader').fadeOut(200); showToast('Department is required.', 'warning'); return; }
+                    var teacherData = { user_ID: newUserId, departmentId: parseInt(deptId) };
                     $.ajax({
                         type: 'POST', url: '/api/Teacher', contentType: 'application/json',
                         data: JSON.stringify(teacherData),
-                        success: function (teacher) {
-                            var checkedTC = [];
-                            $('.teacher-course-check:checked').each(function () { checkedTC.push($(this).val()); });
-                            var tid = teacher.teacher_ID || teacher.id;
-                            if (checkedTC.length > 0 && tid) {
-                                var tRequests = checkedTC.map(function (cid) {
-                                    return $.ajax({
-                                        type: 'PUT', url: '/AttendanceManagement/Course/' + cid,
-                                        contentType: 'application/json',
-                                        data: JSON.stringify({ course_ID: parseInt(cid), teacher_ID: tid, lastUpdatedBy: 'admin' })
-                                    });
-                                });
-                                $.when.apply($, tRequests).always(function () {
-                                    $('#page-loader').fadeOut(200);
-                                    $('#addAccountModal').modal('hide');
-                                    showToast('Teacher account created and courses assigned.', 'success');
-                                    loadAll();
-                                });
-                            } else {
-                                $('#page-loader').fadeOut(200);
-                                $('#addAccountModal').modal('hide');
-                                showToast('Teacher account created successfully.', 'success');
-                                loadAll();
-                            }
+                        success: function () {
+                            $('#page-loader').fadeOut(200);
+                            $('#addAccountModal').modal('hide');
+                            showToast('Teacher account created successfully.', 'success');
+                            loadAll();
+                            getDashboardStats();
                         },
                         error: function (x) {
                             $('#page-loader').fadeOut(200);

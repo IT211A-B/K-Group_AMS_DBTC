@@ -15,6 +15,7 @@ using Microsoft.OpenApi;
 using System.Text;
 using Backend.Backend.Helper;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.RateLimiting;
 
 using SeedRole = Backend.Backend.Seeder.RolePermissionandPermission;
 
@@ -33,8 +34,16 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<DatabaseLibrary>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("AttendanceDBString")));
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddDbContext<DatabaseLibrary>(options =>
+        options.UseInMemoryDatabase("AttendanceTestDb"));
+}
+else
+{
+    builder.Services.AddDbContext<DatabaseLibrary>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("AttendanceDBString")));
+}
 
 //  enable authorize (authorization services)
 builder.Services.AddAuthorization();
@@ -95,6 +104,9 @@ builder.Services.AddScoped<IProgramRepository, ProgramRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IAttendanceStudentRepository, AttendanceStudentRepository>();
+builder.Services.AddScoped<IMailRepository, MailRepository>();
+builder.Services.AddScoped<IAccountActivityRepository, AccountActivityRepository>();
+builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 
 
 // Adding DI for the Controller: so controller can use this automatically 
@@ -111,6 +123,9 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAttendanceStudentService, AttendanceStudentService>();
+builder.Services.AddScoped<IMailService, MailService>();
+builder.Services.AddScoped<IAccountActivityService, AccountActivityService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // Qr DI
 builder.Services.AddScoped<IQrService, QRService>();
@@ -123,6 +138,8 @@ builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProv
 builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 builder.Services.AddScoped<IClaimService,ClaimService>();
 builder.Services.AddScoped<IJwtService,JwtService>();
+builder.Services.AddSingleton<IPasswordHashingService, PasswordHashingService>();
+builder.Services.AddAppRateLimiting(builder.Configuration);
 
 builder.Services
     .AddIdentity<User, IdentityRole>()
@@ -199,8 +216,9 @@ builder.Services
 var app = builder.Build();
 
 // Using 'using' to despose	a logic / code block if done once
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
 
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
@@ -211,6 +229,9 @@ using (var scope = app.Services.CreateScope())
 
 // Local Dev
     //app.UseHttpsRedirection(); // Authomatically redirect Http request to Https
+
+app.UseRouting();
+app.UseRateLimiter();
 
 // Pre Middleware hooks that asks before every transactions
 app.UseAuthentication();  // Authenticate user
@@ -233,3 +254,5 @@ app.Urls.Add($"http://0.0.0.0:{port}");
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

@@ -16,6 +16,12 @@ function redirectToLogin() {
 }
 
 $(document).ajaxError(function (event, xhr, settings) {
+    if (xhr.status === 429) {
+        var msg = 'Too many requests. Please wait a moment and try again.';
+        if (typeof showToast === 'function') showToast(msg, 'warning');
+        else alert(msg);
+        return;
+    }
     if (xhr.status === 401) {
         var url = settings.url || '';
         var bgEndpoints = ['/api/Notifications', '/api/SessionInfo'];

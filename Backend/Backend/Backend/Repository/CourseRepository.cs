@@ -11,13 +11,13 @@ namespace Backend.Backend.Repository
 
         public async Task<IEnumerable<Course>> GetAllAsync()
         {
-            return await _db.Courses.Include(c => c.Teacher).Include(c => c.Schedules)
+            return await _db.Courses.Include(c => c.Sections).Include(c => c.Schedules)
             .ToListAsync();
         }
 
         public async Task<Course?> GetByIdAsync(int ID)
         {
-            return await _db.Courses.Include(c => c.Teacher).Include(c => c.Schedules).FirstOrDefaultAsync(c => c.Course_ID == ID);
+            return await _db.Courses.Include(c => c.Sections).Include(c => c.Schedules).FirstOrDefaultAsync(c => c.Course_ID == ID);
         }
 
         public async Task AddAsync(Course course)

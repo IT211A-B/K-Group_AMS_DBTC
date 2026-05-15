@@ -17,5 +17,6 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task<Student?> GetByUUIDAsync(string id);
         Task<long> GetNextStudentNumber();
         Task<bool> CheckUserIfTaken(string uId);
+        Task<IEnumerable<Student>> GetBySectionIdAsync(int sectionId);
     }
 }

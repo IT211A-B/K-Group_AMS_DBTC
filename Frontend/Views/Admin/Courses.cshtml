@@ -23,7 +23,7 @@
     <div class="table-wrapper">
         <table class="table table-striped">
             <thead>
-                <tr><th>ID</th><th>Code</th><th>Title</th><th>Description</th><th>Assigned Teacher</th><th>Actions</th></tr>
+                <tr><th>ID</th><th>Code</th><th>Title</th><th>Description</th><th>Section</th><th>Actions</th></tr>
             </thead>
             <tbody id="courseTableBody"></tbody>
         </table>
@@ -51,6 +51,10 @@
                 <div class="mb-3">
                     <label class="form-label">Description</label>
                     <textarea class="form-control" id="courseDesc" rows="3" placeholder="Optional course description"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Assign to Section <span class="text-danger">*</span></label>
+                    <select class="form-select" id="courseSectionId"><option value="">Select Section…</option></select>
                 </div>
             </div>
             <div class="modal-footer">
@@ -82,10 +86,8 @@
                     <textarea class="form-control" id="editCourseDesc" rows="3"></textarea>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Assign Teacher</label>
-                    <select class="form-select" id="editCourseTeacher">
-                        <option value="">Unassigned</option>
-                    </select>
+                    <label class="form-label">Section <span class="text-danger">*</span></label>
+                    <select class="form-select" id="editCourseSectionId"><option value="">Select Section…</option></select>
                 </div>
             </div>
             <div class="modal-footer">
@@ -98,44 +100,35 @@
 
 @section Scripts {
     <script>
-        var allCourses = [], allTeachers = [], allUsers = [], coursePaginator;
+        var allCourses = [], allSections = [], coursePaginator;
 
-        function loadTeacherDropdown() {
-            $.ajax({ url: '/api/Teacher', dataType: 'json',
-                success: function(t) {
-                    allTeachers = Array.isArray(t) ? t : [];
-                    $.ajax({ url: '/api/User', dataType: 'json',
-                        success: function(u) {
-                            allUsers = Array.isArray(u) ? u : [];
-                            var html = '<option value="">Unassigned</option>';
-                            allTeachers.forEach(function(teacher) {
-                                var user = allUsers.find(function(x) { return String(x.user_ID) === String(teacher.user_ID); });
-                                var name = user ? user.full_Name : 'Teacher #' + (teacher.teacher_ID || teacher.id);
-                                html += '<option value="' + (teacher.teacher_ID || teacher.id) + '">' + name + '</option>';
-                            });
-                            $('#editCourseTeacher').html(html);
-                        }
+        function loadSections() {
+            $.ajax({ url: '/AttendanceManagement/Section', dataType: 'json',
+                success: function (secs) {
+                    allSections = Array.isArray(secs) ? secs : [];
+                    var html = '<option value="">Select Section…</option>';
+                    allSections.forEach(function (sec) {
+                        var sid = sec.section_Id || sec.Section_Id;
+                        html += '<option value="' + sid + '">' + (sec.section_Code || sec.Section_Code || sid) + '</option>';
                     });
+                    $('#courseSectionId, #editCourseSectionId').html(html);
                 }
             });
         }
 
         function renderCourseRow(c, idx) {
             var cid = c.course_ID || c.id;
-            var code = c.code || '—';
-            var title = c.title || '—';
-            var desc = c.description || '—';
-            var teacherId = c.teacher_ID;
-            var teacher = allTeachers.find(function(t) { return String(t.teacher_ID || t.id) === String(teacherId); });
-            var teacherUser = teacher ? allUsers.find(function(u) { return String(u.user_ID) === String(teacher.user_ID); }) : null;
-            var teacherName = teacherUser ? teacherUser.full_Name : (teacherId ? 'Assigned' : 'Unassigned');
+            var code = c.code || c.Code || '—';
+            var title = c.title || c.Title || '—';
+            var desc = c.description || c.Description || '—';
+            var sectionName = c.section_Code || c.Section_Code || (c.section_ID ? 'Section ' + c.section_ID : '—');
             var init = (title[0] || 'C').toUpperCase();
             return '<tr>' +
                 '<td>' + cid + '</td>' +
                 '<td><span style="background:#DBEAFE;color:var(--accent);padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + code + '</span></td>' +
                 '<td><div class="d-flex align-items-center gap-2"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">' + init + '</div>' + title + '</div></td>' +
                 '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">' + desc + '</td>' +
-                '<td>' + teacherName + '</td>' +
+                '<td>' + sectionName + '</td>' +
                 '<td><button class="btn btn-sm btn-outline-primary btn-icon edit-course" data-id="' + cid + '" title="Edit"><i class="bi bi-pencil"></i></button></td>' +
                 '</tr>';
         }
@@ -172,7 +165,7 @@
         }
 
         $(function() {
-            loadTeacherDropdown();
+            loadSections();
             loadCourses();
 
             $('#searchCourse').on('input', function() {
@@ -198,7 +191,9 @@
                 if (!code) { showToast('Course code is required.', 'warning'); return; }
                 if (!title) { showToast('Course title is required.', 'warning'); return; }
 
-                var data = { code: code, title: title, description: desc || null, lastUpdatedBy: 'admin' };
+                var sectionId = $('#courseSectionId').val();
+                if (!sectionId) { showToast('Section is required.', 'warning'); return; }
+                var data = { code: code, title: title, description: desc || null, section_ID: parseInt(sectionId) };
                 $.ajax({
                     type: 'POST', url: '/AttendanceManagement/Course',
                     contentType: 'application/json', data: JSON.stringify(data),
@@ -224,7 +219,7 @@
                     $('#editCourseCode').val(course.code || '');
                     $('#editCourseTitle').val(course.title || '');
                     $('#editCourseDesc').val(course.description || '');
-                    $('#editCourseTeacher').val(course.teacher_ID || '');
+                    $('#editCourseSectionId').val(course.section_ID || course.Section_ID || '');
                     $('#editCourseModal').modal('show');
                 }
             });
@@ -234,16 +229,14 @@
                 var code = $('#editCourseCode').val().trim();
                 var title = $('#editCourseTitle').val().trim();
                 var desc = $('#editCourseDesc').val().trim();
-                var teacherId = $('#editCourseTeacher').val();
-
+                var sectionId = $('#editCourseSectionId').val();
                 if (!code) { showToast('Course code is required.', 'warning'); return; }
                 if (!title) { showToast('Course title is required.', 'warning'); return; }
+                if (!sectionId) { showToast('Section is required.', 'warning'); return; }
 
                 var data = {
-                    course_ID: parseInt(cid),
                     code: code, title: title, description: desc || null,
-                    teacher_ID: teacherId ? parseInt(teacherId) : null,
-                    lastUpdatedBy: 'admin'
+                    section_ID: parseInt(sectionId)
                 };
                 $.ajax({
                     type: 'PUT', url: '/AttendanceManagement/Course/' + cid,

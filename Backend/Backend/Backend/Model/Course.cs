@@ -20,10 +20,10 @@ namespace Backend.Backend.Model
         [MaxLength(512)]
         public string? Description { get; set; }
 
-        [Required]
-        public required string Teacher_ID { get; set; }
-        public Teacher Teacher { get; set; } = null!;
+        public string? Teacher_ID { get; set; }
+        public Teacher? Teacher { get; set; }
 
+        public ICollection<Section> Sections { get; set; } = new List<Section>();
         public ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 
         public DateTime CreatedAt { get; set; }

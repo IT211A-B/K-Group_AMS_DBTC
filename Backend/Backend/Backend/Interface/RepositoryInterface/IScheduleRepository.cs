@@ -9,6 +9,7 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task<Schedule?> GetByIdAsync(int id);
         Task AddAsync(Schedule schedule);
         Task<Schedule?> GetScheduleIfExist(string id, DayOfWeek dayOfWeek, TimeOnly now);
+        Task<IEnumerable<Schedule>> GetTeacherSchedulesForDayAsync(string teacherId, DayOfWeek dayOfWeek);
         Task<IEnumerable<GetStudentSchedule>> GetStudentSchedulesAsync(string studentId, DayOfWeek dayOfWeek);
         Task<bool> HasConflictingScheduleAsync(int courseId, string academicYear, TimeOnly startTime, TimeOnly endTime, int sectionId);
         Task UpdateAsync(Schedule schedule);

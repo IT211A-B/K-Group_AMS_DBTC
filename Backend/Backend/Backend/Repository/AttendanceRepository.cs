@@ -44,6 +44,13 @@ namespace Backend.Backend.Repository
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<Attendance?> GetTodayByScheduleAsync(int scheduleId, DateOnly date)
+        {
+            return await _db.Attendances
+                .Include(a => a.AttendanceStudents)
+                .FirstOrDefaultAsync(a => a.Schedule_ID == scheduleId && a.Date == date);
+        }
+
         public async Task UpdateAsync(Attendance attendance)
         {
             _db.Entry(attendance).State = EntityState.Modified;

@@ -93,7 +93,7 @@ namespace Backend.Backend.Service
             var getOperator = await _userRepository.GetByUUIDAsync(uuid);
 
             // Get User
-            var getUser = await _userRepository.GetByIdAsync(dto.User_ID);
+            var getUser = await _userRepository.GetByUUIDAsync(dto.User_ID);
             if (getUser == null)
                 throw new Exception($"User No.{dto.User_ID} Does Not Exist");
 
@@ -154,7 +154,7 @@ namespace Backend.Backend.Service
             var getOperator = await _userRepository.GetByUUIDAsync(uuid);
 
             // Get User
-            var getUser = await _userRepository.GetByIdAsync(dto.User_ID);
+            var getUser = await _userRepository.GetByUUIDAsync(dto.User_ID);
             if (getUser == null)
                 throw new Exception($"User Id {dto.User_ID} Does not Exist");
 

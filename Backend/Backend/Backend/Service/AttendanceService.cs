@@ -14,13 +14,15 @@ namespace Backend.Backend.Service
         private readonly IUserRepository _userRepository;
         private readonly IScheduleRepository _scheduleRepository;
         private readonly ITeacherRepository _teacherRepository;
+        private readonly IStudentRepository _studentRepository;
 
-        public AttendanceService(IAttendanceRepository attendanceRepository, IUserRepository userRepository, IScheduleRepository scheduleRepository, ITeacherRepository teacherRepository)
+        public AttendanceService(IAttendanceRepository attendanceRepository, IUserRepository userRepository, IScheduleRepository scheduleRepository, ITeacherRepository teacherRepository, IStudentRepository studentRepository)
         {
             _attendanceRepository = attendanceRepository;
             _userRepository = userRepository;
             _scheduleRepository = scheduleRepository;
             _teacherRepository = teacherRepository;
+            _studentRepository = studentRepository;
         }
 
         public async Task<ResponseDTO<IEnumerable<GetAttendanceDTO>>> GetAllAsync()
@@ -165,6 +167,62 @@ namespace Backend.Backend.Service
 
             await _attendanceRepository.DeleteAsync(existing);
             return true;
+        }
+
+        public async Task<ResponseDTO<IEnumerable<GetTeacherScheduleDTO>>> GetTeacherSchedulesAsync(string currentUserId)
+        {
+            var teacher = await _teacherRepository.GetTeacherByUserUUIDAsync(currentUserId);
+            if (teacher == null)
+                throw new Exception("No Teacher Has Been Found");
+
+            var today = DateOnly.FromDateTime(TimeHelper.Now());
+            var dayOfWeek = today.DayOfWeek;
+            var now = TimeOnly.FromDateTime(TimeHelper.Now());
+
+            var schedules = await _scheduleRepository.GetTeacherSchedulesForDayAsync(teacher.Teacher_ID, dayOfWeek);
+            var data = schedules.Select(s => new GetTeacherScheduleDTO
+            {
+                Schedule_Id = s.Schedule_Id,
+                Course_ID = s.Course_ID,
+                Course_Code = s.Course.Code,
+                Course_Title = s.Course.Title,
+                Section_ID = s.Section_ID,
+                Section_Code = s.Section.Section_Code,
+                DayOfWeek = s.DayOfWeek,
+                StartTime = s.StartTime,
+                EndTime = s.EndTime,
+                IsActiveNow = s.StartTime.AddMinutes(-30) <= now && s.EndTime >= now
+            });
+
+            return new ResponseDTO<IEnumerable<GetTeacherScheduleDTO>> { Status_code = 200, Data = data };
+        }
+
+        public async Task<ResponseDTO<IEnumerable<GetSessionStudentDTO>>> GetSessionStudentsAsync(string currentUserId)
+        {
+            var teacher = await _teacherRepository.GetTeacherByUserUUIDAsync(currentUserId);
+            if (teacher == null)
+                throw new Exception("No Teacher Has Been Found");
+
+            var today = DateOnly.FromDateTime(TimeHelper.Now());
+            var now = TimeOnly.FromDateTime(TimeHelper.Now());
+            var schedule = await _scheduleRepository.GetScheduleIfExist(teacher.Teacher_ID, today.DayOfWeek, now);
+            if (schedule == null)
+                return new ResponseDTO<IEnumerable<GetSessionStudentDTO>> { Status_code = 200, Data = [] };
+
+            var attendance = await _attendanceRepository.GetTodayByScheduleAsync(schedule.Schedule_Id, today);
+            var students = await _studentRepository.GetBySectionIdAsync(schedule.Section_ID);
+
+            var marked = attendance?.AttendanceStudents?.ToDictionary(a => a.Student_Id, a => a.StudentAttendance.ToString()) ?? new Dictionary<string, string>();
+
+            var data = students.Select(s => new GetSessionStudentDTO
+            {
+                Student_Id = s.Student_ID,
+                Student_Name = s.User.Full_Name,
+                DocumentSeries = s.DocumentSeries,
+                AttendanceStatus = marked.TryGetValue(s.Student_ID, out var st) ? st : null
+            });
+
+            return new ResponseDTO<IEnumerable<GetSessionStudentDTO>> { Status_code = 200, Data = data };
         }
     }
 }

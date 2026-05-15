@@ -40,6 +40,8 @@ namespace Frontend.Controllers
         {
             if (!ok && status == 401)
                 return Unauthorized(new { message = "Session expired", redirect = "/Login/Index" });
+            if (!ok && status == 429)
+                return StatusCode(429, new { message = "Too many requests. Please wait and try again." });
             Response.ContentType = "application/json";
             return StatusCode(status, body);
         }
@@ -217,8 +219,60 @@ namespace Frontend.Controllers
         {
             var a = AuthRequired(); if (a != null) return a;
             var j = await Body();
-            var (ok, b, s) = await _api.PostAsync("/AttendanceManagement/Attendance", JsonSerializer.Deserialize<JsonElement>(j));
+            var payload = string.IsNullOrWhiteSpace(j) ? JsonSerializer.Deserialize<JsonElement>("{}") : JsonSerializer.Deserialize<JsonElement>(j);
+            var (ok, b, s) = await _api.PostAsync("/AttendanceManagement/Attendance", payload!);
             return Fwd(ok, b, s);
+        }
+
+        [HttpGet("AttendanceManagement/Attendance/teacher/schedules")]
+        public async Task<IActionResult> GetTeacherSchedules()
+        {
+            var a = AuthRequired(); if (a != null) return a;
+            var (ok, b, s) = await _api.GetAsync("/AttendanceManagement/Attendance/teacher/schedules");
+            return Fwd(ok, b, s);
+        }
+
+        [HttpGet("AttendanceManagement/Attendance/session/students")]
+        public async Task<IActionResult> GetSessionStudents()
+        {
+            var a = AuthRequired(); if (a != null) return a;
+            var (ok, b, s) = await _api.GetAsync("/AttendanceManagement/Attendance/session/students");
+            return Fwd(ok, b, s);
+        }
+
+        [HttpPost("AttendanceStudentManagement/AttendanceStudent")]
+        public async Task<IActionResult> PostAttendanceStudent()
+        {
+            var a = AuthRequired(); if (a != null) return a;
+            var j = await Body();
+            var (ok, b, s) = await _api.PostAsync("/AttendanceStudentManagement/AttendanceStudent", JsonSerializer.Deserialize<JsonElement>(j)!);
+            return Fwd(ok, b, s);
+        }
+
+        [HttpGet("AttendanceManagement/Section")]
+        public async Task<IActionResult> GetSections()
+        {
+            var a = AuthRequired(); if (a != null) return a;
+            var (ok, b, s) = await _api.GetAsync("/AttendanceManagement/Section");
+            if (!ok) return Fwd(ok, b, s);
+            return Content(UnwrapArray(b), "application/json");
+        }
+
+        [HttpGet("api/Dashboard/stats")]
+        public async Task<IActionResult> GetDashboardStats()
+        {
+            var a = AuthRequired(); if (a != null) return a;
+            var (ok, b, s) = await _api.GetAsync("/api/Dashboard/stats");
+            return Fwd(ok, b, s);
+        }
+
+        [HttpGet("api/AccountHistory")]
+        public async Task<IActionResult> GetAccountHistory()
+        {
+            var a = AuthRequired(); if (a != null) return a;
+            var (ok, b, s) = await _api.GetAsync("/api/AccountHistory");
+            if (!ok) return Fwd(ok, b, s);
+            return Content(UnwrapArray(b), "application/json");
         }
 
         [HttpPut("AttendanceManagement/Attendance/{id:int}")]
@@ -380,76 +434,54 @@ namespace Frontend.Controllers
             catch { return Ok(new List<object>()); }
         }
 
-        private static readonly List<MsgItem> _msgs = new();
-        private static int _seq = 1;
-        private static readonly object _lock = new();
-
         [HttpGet("api/Notifications")]
-        public IActionResult GetNotifications()
+        public async Task<IActionResult> GetNotifications()
         {
             var auth = AuthRequired(); if (auth != null) return auth;
-            var role = SessionRole; var userId = SessionUserId;
-            List<MsgItem> result;
-            lock (_lock)
-            {
-                if (role == "admin")
-                    result = _msgs.Where(m => m.RecipientId == "admin" || m.RecipientId == "all" || m.RecipientId == userId).ToList();
-                else if (role == "teacher")
-                    result = _msgs.Where(m => m.RecipientId == userId || m.RecipientId == "teacher" || m.RecipientId == "all").ToList();
-                else
-                    result = _msgs.Where(m => m.RecipientId == userId || m.RecipientId == "all").ToList();
-            }
-            return Ok(result.OrderByDescending(m => m.CreatedAt).Take(50));
+            var (ok, b, s) = await _api.GetAsync("/api/Mail/Notifications");
+            if (!ok) return Fwd(ok, b, s);
+            return Content(UnwrapArray(b), "application/json");
         }
 
         [HttpPost("api/Notifications")]
-        public IActionResult PostNotification([FromBody] MsgItem dto)
+        public async Task<IActionResult> PostNotification()
         {
             var auth = AuthRequired(); if (auth != null) return auth;
-            if (string.IsNullOrWhiteSpace(dto.Title)) return BadRequest(new { message = "Subject is required." });
-            if (string.IsNullOrWhiteSpace(dto.Message)) return BadRequest(new { message = "Message body is required." });
-            dto.SenderName = SessionName; dto.SenderRole = SessionRole; dto.SenderUserId = SessionUserId;
-            lock (_lock) { dto.Id = _seq++; dto.CreatedAt = DateTime.UtcNow; dto.IsRead = false; _msgs.Add(dto); }
-            return Ok(dto);
+            var j = await Body();
+            var dto = JsonSerializer.Deserialize<JsonElement>(j);
+            var mapped = new
+            {
+                RecipientId = dto.TryGetProperty("recipientId", out var r) ? r.GetString() : "all",
+                Title = dto.TryGetProperty("title", out var t) ? t.GetString() : "",
+                Message = dto.TryGetProperty("message", out var m) ? m.GetString() : "",
+                Type = dto.TryGetProperty("type", out var ty) ? ty.GetString() : "message"
+            };
+            var (ok, b, s) = await _api.PostAsync("/api/Mail/Notifications", mapped);
+            return Fwd(ok, b, s);
         }
 
         [HttpPut("api/Notifications/{id:int}/read")]
-        public IActionResult MarkRead(int id)
+        public async Task<IActionResult> MarkRead(int id)
         {
             var auth = AuthRequired(); if (auth != null) return auth;
-            lock (_lock) { var m = _msgs.FirstOrDefault(x => x.Id == id); if (m != null) m.IsRead = true; }
-            return Ok();
+            var (ok, b, s) = await _api.PutAsync($"/api/Mail/Notifications/{id}/read", new { });
+            return Fwd(ok, b, s);
         }
 
         [HttpDelete("api/Notifications")]
-        public IActionResult ClearNotifications()
+        public async Task<IActionResult> ClearNotifications()
         {
             var auth = AuthRequired(); if (auth != null) return auth;
-            var userId = SessionUserId;
-            lock (_lock) { _msgs.RemoveAll(m => m.RecipientId == userId || m.RecipientId == "all"); }
-            return Ok();
+            var (ok, b, s) = await _api.DeleteAsync("/api/Mail/Notifications");
+            return Fwd(ok, b, s);
         }
 
         [HttpDelete("api/Notifications/{id:int}")]
-        public IActionResult DeleteNotification(int id)
+        public async Task<IActionResult> DeleteNotification(int id)
         {
             var auth = AuthRequired(); if (auth != null) return auth;
-            lock (_lock) { _msgs.RemoveAll(m => m.Id == id); }
-            return Ok();
+            var (ok, b, s) = await _api.DeleteAsync($"/api/Mail/Notifications/{id}");
+            return Fwd(ok, b, s);
         }
-    }
-
-    public class MsgItem
-    {
-        [JsonPropertyName("id")] public int Id { get; set; }
-        [JsonPropertyName("recipientId")] public string RecipientId { get; set; } = "admin";
-        [JsonPropertyName("senderUserId")] public string SenderUserId { get; set; } = "";
-        [JsonPropertyName("senderName")] public string SenderName { get; set; } = "";
-        [JsonPropertyName("senderRole")] public string SenderRole { get; set; } = "";
-        [JsonPropertyName("title")] public string Title { get; set; } = "";
-        [JsonPropertyName("message")] public string Message { get; set; } = "";
-        [JsonPropertyName("type")] public string Type { get; set; } = "message";
-        [JsonPropertyName("isRead")] public bool IsRead { get; set; }
-        [JsonPropertyName("createdAt")] public DateTime CreatedAt { get; set; }
     }
 }

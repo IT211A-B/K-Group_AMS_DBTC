@@ -20,6 +20,9 @@ namespace Backend.Backend.Model
         public required int Section_ID {  get; set; }
         public Section Section { get; set; } = null!;
 
+        [Required]
+        public required string Teacher_ID { get; set; }
+        public Teacher Teacher { get; set; } = null!;
 
         public ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
         [Required]

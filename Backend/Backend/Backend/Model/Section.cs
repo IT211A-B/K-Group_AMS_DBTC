@@ -13,6 +13,10 @@ namespace Backend.Backend.Model
         [Required]
         public required string Section_Code { get; set; }
 
+        [Required]
+        public int Course_ID { get; set; }
+        public Course Course { get; set; } = null!;
+
         public ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
         public ICollection<Student> Students { get; set; } = new List<Student>();
     }

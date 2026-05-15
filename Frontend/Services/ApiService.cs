@@ -7,11 +7,13 @@ namespace Frontend.Services
     public class ApiService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private const string BackendBase = "https://k-group-ams-dbtc-11f4.onrender.com";
+        private readonly string _backendBase;
 
-        public ApiService(IHttpContextAccessor httpContextAccessor)
+        public ApiService(IHttpContextAccessor httpContextAccessor, IConfiguration configuration)
         {
             _httpContextAccessor = httpContextAccessor;
+            _backendBase = configuration["BackendBase"]
+                ?? "https://k-group-ams-dbtc-11f4.onrender.com";
         }
 
         private string? GetToken()
@@ -21,11 +23,11 @@ namespace Frontend.Services
         {
             var handler = new HttpClientHandler();
             var client = new HttpClient(handler);
-            client.BaseAddress = new Uri(BackendBase);
+            client.BaseAddress = new Uri(_backendBase);
             client.Timeout = TimeSpan.FromSeconds(60);
 
-            client.DefaultRequestHeaders.Add("Origin", BackendBase);
-            client.DefaultRequestHeaders.Add("Referer", BackendBase + "/");
+            client.DefaultRequestHeaders.Add("Origin", _backendBase);
+            client.DefaultRequestHeaders.Add("Referer", _backendBase + "/");
             client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
 
             var token = GetToken();
@@ -36,6 +38,20 @@ namespace Frontend.Services
             return client;
         }
 
+        private static (bool Ok, string Body, int Status) MapResponse(
+            HttpResponseMessage res, string body, string emptyFallback)
+        {
+            var status = (int)res.StatusCode;
+            if (status == StatusCodes.Status429TooManyRequests)
+            {
+                return (false,
+                    "{\"message\":\"Too many requests. Please wait and try again.\"}",
+                    status);
+            }
+
+            return (res.IsSuccessStatusCode, body.Length > 0 ? body : emptyFallback, status);
+        }
+
         public async Task<(bool Ok, string Body, int Status)> GetAsync(string path)
         {
             try
@@ -43,7 +59,7 @@ namespace Frontend.Services
                 using var client = CreateClient();
                 var res = await client.GetAsync(path);
                 var body = await res.Content.ReadAsStringAsync();
-                return (res.IsSuccessStatusCode, body.Length > 0 ? body : "[]", (int)res.StatusCode);
+                return MapResponse(res, body, "[]");
             }
             catch (Exception ex)
             {
@@ -61,7 +77,7 @@ namespace Frontend.Services
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var res = await client.PostAsync(path, content);
                 var body = await res.Content.ReadAsStringAsync();
-                return (res.IsSuccessStatusCode, body.Length > 0 ? body : "{}", (int)res.StatusCode);
+                return MapResponse(res, body, "{}");
             }
             catch (Exception ex)
             {
@@ -79,7 +95,7 @@ namespace Frontend.Services
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var res = await client.PutAsync(path, content);
                 var body = await res.Content.ReadAsStringAsync();
-                return (res.IsSuccessStatusCode, body.Length > 0 ? body : "{}", (int)res.StatusCode);
+                return MapResponse(res, body, "{}");
             }
             catch (Exception ex)
             {
@@ -94,7 +110,7 @@ namespace Frontend.Services
                 using var client = CreateClient();
                 var res = await client.DeleteAsync(path);
                 var body = await res.Content.ReadAsStringAsync();
-                return (res.IsSuccessStatusCode, body.Length > 0 ? body : "{}", (int)res.StatusCode);
+                return MapResponse(res, body, "{}");
             }
             catch (Exception ex)
             {

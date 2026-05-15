@@ -20,6 +20,7 @@ namespace Backend.Backend.DTOs
     {
         public required int Course_ID { get; set; }
         public required int Section_ID { get; set; }
+        public required string Teacher_ID { get; set; }
         public required DayOfWeek DayOfWeek { get; set; }
         public required int Semester { get; set; }
         public required string AcademicYear { get; set; }

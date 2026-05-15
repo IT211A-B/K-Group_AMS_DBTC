@@ -1,9 +1,9 @@
-﻿using Backend.Backend.DTOs;
+﻿using Backend.Backend.Configuration;
+using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
 using Backend.Backend.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 namespace Backend.Controllers
 {
     /// <summary>

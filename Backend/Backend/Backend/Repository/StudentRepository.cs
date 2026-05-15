@@ -127,5 +127,12 @@ namespace Backend.Backend.Repository
             return await _db.Students.AnyAsync(s => s.User_ID == uId);
         }
 
+        public async Task<IEnumerable<Student>> GetBySectionIdAsync(int sectionId)
+        {
+            return await _db.Students
+                .Include(s => s.User)
+                .Where(s => s.SectionID == sectionId)
+                .ToListAsync();
+        }
     }
 }
