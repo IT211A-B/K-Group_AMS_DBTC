@@ -83,10 +83,25 @@ namespace Backend.Backend.Controller
             }
         }
 
-        [HttpGet("{id}/qr")]
+        [HttpGet("{id}/Qr_By_Id")]
         public async Task<IActionResult> GetQr(int id)
         {
             var student = await _studentService.getQrById(id); 
+
+            if (student == null)
+                return NotFound();
+
+            return File(student, "image/png");
+        }
+
+        [HttpGet("Qr_In_Student_By_Login")]
+        public async Task<IActionResult> GetQrByStudentLogin()
+        {
+            string? uuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(uuid))
+                throw new Exception("No Operator has been found");
+
+            var student = await _studentService.getQrByCurrentStudent(uuid);
 
             if (student == null)
                 return NotFound();

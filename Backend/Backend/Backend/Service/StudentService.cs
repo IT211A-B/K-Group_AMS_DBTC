@@ -101,6 +101,20 @@ namespace Backend.Backend.Service
             return qrBytes;
         }
 
+        public async Task<byte[]?> getQrByCurrentStudent(string uuid)
+        {
+            var student = await _studentRepository.GetByUserUUIDAsync(uuid);
+            if (student == null)
+                return null;
+
+            // content inside QR
+            var qrContent = student.QrToken;
+
+            var qrBytes = _qrService.GenerateQr(qrContent);
+
+            return qrBytes;
+        }
+
         public async Task<ResponseDTO<IEnumerable<GetRecordAttendanceOfCertainStudentServiceDTO>>> GetRecordAttendanceOfOneStudent(string uuid)
         {
             var getStudent = await _studentRepository.GetByUserUUIDAsync(uuid);
