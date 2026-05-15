@@ -26,4 +26,11 @@ namespace Backend.Backend.DTOs
         public required TimeOnly StartTime { get; set; }
         public required TimeOnly EndTime { get; set; }
     }
+
+    public class GetStudentSchedule
+    {
+        public required string Title { get; set; }
+        public required TimeOnly StartTime { get; set; }
+        public required TimeOnly EndTime { get; set; }
+    }
 }
