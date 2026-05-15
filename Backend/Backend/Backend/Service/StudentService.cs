@@ -56,9 +56,9 @@ namespace Backend.Backend.Service
             };
         }
 
-        public async Task<ResponseDTO<GetStudentDTO>> GetByIdAsync(int id)
+        public async Task<ResponseDTO<GetStudentDTO>> GetByCurrentStudentAsync(string uuid)
         {
-            var s = await _studentRepository.GetByIdAsync(id);
+            var s = await _studentRepository.GetByUserUUIDAsync(uuid);
             if (s == null)
                 return new ResponseDTO<GetStudentDTO>
                 {

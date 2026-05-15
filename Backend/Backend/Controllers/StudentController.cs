@@ -65,12 +65,16 @@ namespace Backend.Backend.Controller
             }
         }
 
-        [HttpGet("{id:int}")]
-        [Authorize(Roles = "Admin,Teacher")]
-        public async Task<IActionResult> GetById(int id)
+        [HttpGet("Get_By_Current_Id")]
+        [Authorize(Roles = "Admin,Teacher,Student")]
+        public async Task<IActionResult> GetByCurrentStudent(int id)
         {
-            try { 
-                var student = await _studentService.GetByIdAsync(id);
+            try {
+                string? uuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(uuid))
+                    throw new Exception("No Operator has been found");
+
+                var student = await _studentService.GetByCurrentStudentAsync(uuid);
                 if (student == null)
                     return NotFound($"Student with ID {id} not found.");
 
