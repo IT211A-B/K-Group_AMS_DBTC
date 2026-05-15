@@ -37,8 +37,36 @@ namespace Backend.Backend.Controller
             }
         }
 
+
+        [HttpGet("/Get_Student_History_Record")]
+        [Authorize(Roles = "Admin,Teacher,Student")]
+        public async Task<IActionResult> GetStudentsHistoryRecord()
+        {
+            try
+            {
+                string? uuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(uuid))
+                    throw new Exception("No Operator has been found");
+
+                var student = await _studentService.GetRecordAttendanceOfOneStudent(uuid);
+
+                if (student == null)
+                    return NotFound($"Student not found.");
+
+                if (student.Status_code == 404)
+                    return NotFound($"{student.Data}");
+
+                return Ok(student);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
+        }
+
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Teacher")]
         public async Task<IActionResult> GetById(int id)
         {
             try { 
