@@ -37,9 +37,10 @@ namespace Backend.Backend.Repository
                     JOIN ""Students"" st ON sc.""Section_ID"" = st.""SectionID""
                     WHERE st.""Student_ID"" = {0}
                     AND a.""Date"" = {1}
-                    AND sc.""StartTime"" <= {2}
-                    AND sc.""EndTime"" >= {2}", id, today, now)
-                .Include(a=>a.Schedule)
+                    AND sc.""StartTime"" - INTERVAL '30 minutes' <= {2}
+                    AND sc.""EndTime"" >= {2}",
+                    id, today, now)
+                .Include(a => a.Schedule)
                 .FirstOrDefaultAsync();
         }
 

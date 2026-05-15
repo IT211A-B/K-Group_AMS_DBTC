@@ -37,12 +37,44 @@ namespace Backend.Backend.Controller
             }
         }
 
-        [HttpGet("{id:int}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetById(int id)
+
+        [HttpGet("/Get_Student_History_Record")]
+        [Authorize(Roles = "Admin,Teacher,Student")]
+        public async Task<IActionResult> GetStudentsHistoryRecord()
         {
-            try { 
-                var student = await _studentService.GetByIdAsync(id);
+            try
+            {
+                string? uuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(uuid))
+                    throw new Exception("No Operator has been found");
+
+                var student = await _studentService.GetRecordAttendanceOfOneStudent(uuid);
+
+                if (student == null)
+                    return NotFound($"Student not found.");
+
+                if (student.Status_code == 404)
+                    return NotFound($"{student.Data}");
+
+                return Ok(student);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
+        }
+
+        [HttpGet("Get_By_Current_Id")]
+        [Authorize(Roles = "Admin,Teacher,Student")]
+        public async Task<IActionResult> GetByCurrentStudent(int id)
+        {
+            try {
+                string? uuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(uuid))
+                    throw new Exception("No Operator has been found");
+
+                var student = await _studentService.GetByCurrentStudentAsync(uuid);
                 if (student == null)
                     return NotFound($"Student with ID {id} not found.");
 
@@ -55,10 +87,25 @@ namespace Backend.Backend.Controller
             }
         }
 
-        [HttpGet("{id}/qr")]
+        [HttpGet("{id}/Qr_By_Id")]
         public async Task<IActionResult> GetQr(int id)
         {
             var student = await _studentService.getQrById(id); 
+
+            if (student == null)
+                return NotFound();
+
+            return File(student, "image/png");
+        }
+
+        [HttpGet("Qr_In_Student_By_Login")]
+        public async Task<IActionResult> GetQrByStudentLogin()
+        {
+            string? uuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(uuid))
+                throw new Exception("No Operator has been found");
+
+            var student = await _studentService.getQrByCurrentStudent(uuid);
 
             if (student == null)
                 return NotFound();

@@ -1,4 +1,5 @@
 ﻿using Backend.Backend.DTOs;
+using Backend.Backend.Helper;
 using Backend.Backend.Interface.RepositoryInterface;
 using Backend.Backend.Interface.ServiceInterface;
 using Backend.Backend.Model;
@@ -67,20 +68,17 @@ namespace Backend.Backend.Service
 
         public async Task<ResponseDTO<GetAttendanceStudentDTO>> AddAsync(ScanRequest request)
         {
-            // Get Manila's Id
-            TimeZoneInfo manilaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
-
             // get student
             var getStudent = await _studentRepository.GetByQrToken(request.QrToken);
             if (getStudent is null)
                 throw new Exception($"Student Does Not Exist");
 
             // get day of the week
-            DateOnly thisday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone));
+            DateOnly thisday = DateOnly.FromDateTime(TimeHelper.Now());
             DayOfWeek dayOfThisWeek = thisday.DayOfWeek;
 
             // get current time for validations
-            TimeOnly now = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone)); 
+            TimeOnly now = TimeOnly.FromDateTime(TimeHelper.Now()); 
 
             var getAttendance = await _attendanceRepository.GetAttendanceIfExist(getStudent.Student_ID,thisday,now);
             if (getAttendance is null)

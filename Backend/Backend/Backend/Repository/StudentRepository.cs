@@ -1,4 +1,5 @@
-﻿using Backend.Backend.Interface.RepositoryInterface;
+﻿using Backend.Backend.DTOs;
+using Backend.Backend.Interface.RepositoryInterface;
 using Backend.Backend.Model;
 using Backend.Backend.Repository;
 using Microsoft.EntityFrameworkCore;
@@ -66,6 +67,52 @@ namespace Backend.Backend.Repository
         public async Task<Program_?> GetProgramByIdAsync(int id)
         {
             return await _db.Programs.FindAsync(id);
+        }
+
+        /// <summary>
+        /// Gets attendance records of a student.
+        /// </summary>
+        /// <param name="studentId">Student ULID/UUID.</param>
+        /// <returns>List of attendance details.</returns>
+        public async Task<List<GetRecordAttendanceOfCertainStudent>> GetStudentAttendanceAsync(string studentId)
+        {
+            return await _db.AttendanceStudents
+                .Join(
+                    _db.Students,
+                    sa => sa.Student_Id,         
+                    st => st.Student_ID,         
+                    (sa, st) => new { sa, st }   
+                )
+                .Join(
+                    _db.Attendances,
+                    x => x.sa.Attendance_Id,
+                    a => a.Attendance_ID,
+                    (x, a) => new { x.sa, x.st, a }
+                )
+                .Join(
+                    _db.Schedules,
+                    x => x.a.Schedule_ID,
+                    s => s.Schedule_Id,
+                    (x, s) => new { x.sa, x.st, x.a, s }
+                )
+                .Join(
+                    _db.Courses,
+                    x => x.s.Course_ID,
+                    c => c.Course_ID,
+                    (x, c) => new { x.sa,x.st,x.a,x.s,c }
+                )
+                .Where(x => x.st.Student_ID == studentId)
+                .OrderByDescending(x => x.a.Attendance_ID)
+                .Select(x => new GetRecordAttendanceOfCertainStudent
+                {
+                    Attendance_ID = x.a.Attendance_ID,
+                    Course_Title = x.c.Title,
+                    Course_Code = x.c.Code,
+                    Date = x.a.Date,
+                    AttendanceStatus = x.sa.StudentAttendance,
+                    DayOfWeek = x.s.DayOfWeek
+                })
+                .ToListAsync<GetRecordAttendanceOfCertainStudent>();
         }
 
         public async Task<long> GetNextStudentNumber()

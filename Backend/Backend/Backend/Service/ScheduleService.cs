@@ -2,6 +2,7 @@
 using Backend.Backend.Interface.RepositoryInterface;
 using Backend.Backend.Interface.ServiceInterface;
 using Backend.Backend.Model;
+using Backend.Backend.Helper;
 
 namespace Backend.Backend.Service
 {
@@ -9,11 +10,13 @@ namespace Backend.Backend.Service
     {
         private readonly IScheduleRepository _scheduleRepository;
         private readonly ICourseRepository _courseRepository;
+        private readonly IStudentRepository _studentRepository;
 
-        public ScheduleService(IScheduleRepository scheduleRepository, ICourseRepository courseRepository)
+        public ScheduleService(IScheduleRepository scheduleRepository, ICourseRepository courseRepository, IStudentRepository studentRepository)
         {
             _scheduleRepository = scheduleRepository;
             _courseRepository = courseRepository;
+            _studentRepository = studentRepository;
         }
 
         public async Task<ResponseDTO<IEnumerable<GetScheduleDTO>>> GetAllAsync()
@@ -70,6 +73,49 @@ namespace Backend.Backend.Service
             {
                 Status_code = 200,
                 Data = data
+            };
+        }
+
+        public async Task<ResponseDTO<IEnumerable<GetStudentSchedule>>> GetCurrentStudentAttendance(string uuid, string dayOfWeek)
+        {
+            var getStudent = await _studentRepository.GetByUserUUIDAsync(uuid);
+            Console.WriteLine("1");
+            if (getStudent is null)
+                return new ResponseDTO<IEnumerable<GetStudentSchedule>>
+                {
+                    Data = null,
+                    Detail = $"No Student Found",
+                    Status_code = 404,
+                };
+
+            DayOfWeek dayofweek_ = StringToDayOfWeek.ConvertFromStringToDayOfWeek(dayOfWeek);
+            Console.WriteLine("2");
+
+            var getSched = await _scheduleRepository.GetStudentSchedulesAsync(getStudent.Student_ID, dayofweek_);
+            Console.WriteLine("3");
+            if (getSched is null)
+                return new ResponseDTO<IEnumerable<GetStudentSchedule>>
+                {
+                    Data = null,
+                    Detail = $"No Schedule of Student {getStudent.DocumentSeries} Has Been Found",
+                    Status_code = 404,
+                };
+            Console.WriteLine("4");
+
+
+            var data = getSched.Select(s => new GetStudentSchedule
+            {
+                Title = s.Title,
+                StartTime = s.StartTime,
+                EndTime = s.EndTime,
+            });
+            Console.WriteLine("5");
+            Console.WriteLine(data);
+
+            return new ResponseDTO<IEnumerable<GetStudentSchedule>>
+            {
+                Status_code=200,
+                Data = data,
             };
         }
 

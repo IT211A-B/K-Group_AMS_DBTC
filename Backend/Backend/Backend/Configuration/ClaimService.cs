@@ -81,6 +81,9 @@ namespace Backend.Backend.Configuration
             // ClaimTypes.Name represents the user's identity name.
             claims.Add(new Claim(ClaimTypes.Name, user.UserName));
 
+            // Added Doc Ser in the Claiims
+            claims.Add(new Claim("Document Series", user.DocumentSeries));
+
             // Retrieves all roles assigned to the user.
             var roles = await _userManager.GetRolesAsync(user);
 

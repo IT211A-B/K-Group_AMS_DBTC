@@ -30,7 +30,10 @@ namespace Backend.Backend.Repository
                 .FirstOrDefaultAsync();
         }
 
-
+        public async Task<Teacher?> GetTeacherByUserUUIDAsync(string uId)
+        {
+            return await _db.Teachers.FirstOrDefaultAsync(t => t.User_ID == uId);;
+        }
         public async Task<Teacher?> GetByUUIDAsync(string id)
         {
             return await _db.Teachers

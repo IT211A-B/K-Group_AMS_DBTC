@@ -1,10 +1,14 @@
 ﻿using Backend.Backend.DTOs;
+using Backend.Backend.Helper;
 using Backend.Backend.Interface.RepositoryInterface;
 using Backend.Backend.Interface.ServiceInterface;
 using Backend.Backend.Model;
-using QRCoder;
 using Microsoft.AspNetCore.Mvc;
+using QRCoder;
 using System.ComponentModel;
+using posStat = Backend.Backend.Helper.Enum.PosEnum.PosStatus;
+
+using static Backend.Backend.Helper.Enum.PosEnum;
 
 namespace Backend.Backend.Service
 {
@@ -52,9 +56,9 @@ namespace Backend.Backend.Service
             };
         }
 
-        public async Task<ResponseDTO<GetStudentDTO>> GetByIdAsync(int id)
+        public async Task<ResponseDTO<GetStudentDTO>> GetByCurrentStudentAsync(string uuid)
         {
-            var s = await _studentRepository.GetByIdAsync(id);
+            var s = await _studentRepository.GetByUserUUIDAsync(uuid);
             if (s == null)
                 return new ResponseDTO<GetStudentDTO>
                 {
@@ -97,11 +101,60 @@ namespace Backend.Backend.Service
             return qrBytes;
         }
 
+        public async Task<byte[]?> getQrByCurrentStudent(string uuid)
+        {
+            var student = await _studentRepository.GetByUserUUIDAsync(uuid);
+            if (student == null)
+                return null;
+
+            // content inside QR
+            var qrContent = student.QrToken;
+
+            var qrBytes = _qrService.GenerateQr(qrContent);
+
+            return qrBytes;
+        }
+
+        public async Task<ResponseDTO<IEnumerable<GetRecordAttendanceOfCertainStudentServiceDTO>>> GetRecordAttendanceOfOneStudent(string uuid)
+        {
+            var getStudent = await _studentRepository.GetByUserUUIDAsync(uuid);
+            if (getStudent == null)
+                return new ResponseDTO<IEnumerable<GetRecordAttendanceOfCertainStudentServiceDTO>>
+                {
+                    Status_code = 404,
+                    Data = null,
+                    Detail = $"No Student Has Been Found"
+                };
+
+            var returnData = await _studentRepository.GetStudentAttendanceAsync(getStudent.Student_ID);
+            if (returnData == null)
+                return new ResponseDTO<IEnumerable<GetRecordAttendanceOfCertainStudentServiceDTO>>
+                {
+                    Status_code = 404,
+                    Data = null,
+                    Detail = $"No Student Has Been Found"
+                };
+
+            var data = returnData.Select(s => new GetRecordAttendanceOfCertainStudentServiceDTO
+            {
+                Attendance_ID = s.Attendance_ID,
+                Course_Title = s.Course_Title,
+                Course_Code = s.Course_Code,
+                Date = s.Date,
+                DayOfWeek = s.DayOfWeek,
+                AttendanceStatus = AttendanceEnumToRole.ConvertEnumAttendancetoStringAttendance(s.AttendanceStatus),
+            });
+
+            return new ResponseDTO<IEnumerable<GetRecordAttendanceOfCertainStudentServiceDTO>>
+            {
+                Data = data,
+                Status_code =200,
+                Detail = ""
+            };
+        }
 
         public async Task<ResponseDTO<GetStudentDTO>> AddAsync(AddStudentDTO dto, string uuid)
         {
-            TimeZoneInfo manilaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
-
             // Get User Doc Series not UUID
             var getUser = await _userRepository.GetByIdAsync(dto.User_ID);
             if (getUser is null)
@@ -139,6 +192,15 @@ namespace Backend.Backend.Service
             //Get Operator
             var getOperator = await _userRepository.GetByUUIDAsync(uuid);
 
+            var position = ExtractDocuSer.ExtractDataFromDocumentSeries(getUser.DocumentSeries);
+            if (position.ExtractedPosition != posStat.TEA)
+                return new ResponseDTO<GetStudentDTO>
+                {
+                    Status_code = 404,
+                    Data =null,
+                    Detail = $"User Is Not a Student"
+                };
+
             var student = new Student
             {
                 SectionID = dto.SectionID,
@@ -148,9 +210,9 @@ namespace Backend.Backend.Service
                 Program_ID = dto.Program_ID,
                 Department_ID = dto.Department_ID,
                 Year_Level = dto.Year_Level,
-                CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone),
+                CreatedAt = DateTime.UtcNow,
                 CreatedBy = getOperator?.Full_Name ?? "Admin",
-                LastUpdatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone),
+                LastUpdatedAt = DateTime.UtcNow,
                 LastUpdatedBy = getOperator?.Full_Name ?? "Admin",
             };
 
@@ -179,7 +241,6 @@ namespace Backend.Backend.Service
 
         public async Task<ResponseDTO<GetStudentDTO>> UpdateAsync(int id, AddStudentDTO dto, string uuid)
         {
-            TimeZoneInfo manilaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
             var existing = await _studentRepository.GetByIdAsync(id);
             if (existing == null)
                 return new ResponseDTO<GetStudentDTO>
@@ -200,7 +261,7 @@ namespace Backend.Backend.Service
             existing.User_ID = userStudent.DocumentSeries;
             existing.Department_ID = dto.Department_ID;
             existing.Year_Level = dto.Year_Level;
-            existing.LastUpdatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone);
+            existing.LastUpdatedAt = TimeHelper.Now();
             existing.LastUpdatedBy = userOperator?.Full_Name ?? "Admin";
 
             await _studentRepository.UpdateAsync(existing);

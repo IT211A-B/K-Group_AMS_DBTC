@@ -3,6 +3,7 @@ using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
 using Backend.Backend.Interface.RepositoryInterface;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Backend.Backend.Helper;
 
 namespace Backend.Backend.Service
 {
@@ -67,7 +68,6 @@ namespace Backend.Backend.Service
 
         public async Task<ResponseDTO<GetCourseDTO>> AddAsync(AddCourseDTO dto)
         {
-            TimeZoneInfo manilaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
             //get Teacher
             var getTeacher = await _teacherRepository.GetByIdAsync(dto.Teacher_ID);
             if (getTeacher == null)
@@ -78,8 +78,8 @@ namespace Backend.Backend.Service
                 Code = dto.Code,
                 Description = dto.Description,
                 Teacher_ID = getTeacher.Teacher_ID,
-                CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone),
-                LastUpdatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone),
+                CreatedAt = DateTime.UtcNow,
+                LastUpdatedAt = DateTime.UtcNow,
             };
 
             await _courseRepository.AddAsync(course);
@@ -102,7 +102,6 @@ namespace Backend.Backend.Service
 
         public async Task<ResponseDTO<GetCourseDTO>> UpdateAsync(int id, AddCourseDTO dto)
         {
-            TimeZoneInfo manilaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
             var existing = await _courseRepository.GetByIdAsync(id);
             if (existing == null) return new ResponseDTO<GetCourseDTO>() { Status_code = 404, Data = null };
 
@@ -115,7 +114,7 @@ namespace Backend.Backend.Service
             existing.Code = dto.Code;
             existing.Description = dto.Description;
             existing.Teacher_ID = getTeacher.Teacher_ID;
-            existing.LastUpdatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone);
+            existing.LastUpdatedAt = TimeHelper.Now();
 
             await _courseRepository.UpdateAsync(existing);
 

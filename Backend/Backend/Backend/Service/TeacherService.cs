@@ -1,7 +1,10 @@
-﻿using Backend.Backend.Model;
-using Backend.Backend.DTOs;
-using Backend.Backend.Interface.ServiceInterface;
+﻿using Backend.Backend.DTOs;
+using Backend.Backend.Helper;
 using Backend.Backend.Interface.RepositoryInterface;
+using Backend.Backend.Interface.ServiceInterface;
+using Backend.Backend.Model;
+using posStat = Backend.Backend.Helper.Enum.PosEnum.PosStatus;
+using System;
 
 namespace Backend.Backend.Service
 {
@@ -74,8 +77,6 @@ namespace Backend.Backend.Service
 
         public async Task<ResponseDTO<GetTeacherDTO>> AddAsync(AddTeacherDTO dto, string uuid)
         {
-            TimeZoneInfo manilaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
-
             // Get Department
             var getDepartment = await _teacherRepository.GetDepartmentById(dto.DepartmentId);
             // Get Acronym
@@ -96,15 +97,25 @@ namespace Backend.Backend.Service
             if (getUser == null)
                 throw new Exception($"User No.{dto.User_ID} Does Not Exist");
 
+            var position = ExtractDocuSer.ExtractDataFromDocumentSeries(getUser.DocumentSeries);
+            if (position.ExtractedPosition != posStat.TEA)
+                return new ResponseDTO<GetTeacherDTO>
+                {
+                    Status_code = 404,
+                    Data =null,
+                    Detail = $"User Is Not a Teacher"
+                };
+
+
             var teacher = new Teacher
             {
                 User_ID = getUser.Id,
                 DocumentSeries = docSer,
                 DepartmentId = dto.DepartmentId,
-                CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone),
+                CreatedAt = DateTime.UtcNow,
                 QrToken = _qrService.GenerateToken(),
                 CreatedBy = getOperator?.Full_Name ?? "Admin",
-                LastUpdatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone),
+                LastUpdatedAt = DateTime.UtcNow,
                 LastUpdatedBy = getOperator?.Full_Name ?? "Admin",
             };
 
@@ -130,7 +141,6 @@ namespace Backend.Backend.Service
 
         public async Task<ResponseDTO<GetTeacherDTO>> UpdateAsync(int id, AddTeacherDTO dto, string uuid)
         {
-            TimeZoneInfo manilaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
 
             var existing = await _teacherRepository.GetByIdAsync(id);
             if (existing == null)
@@ -149,7 +159,7 @@ namespace Backend.Backend.Service
                 throw new Exception($"User Id {dto.User_ID} Does not Exist");
 
             existing.DepartmentId = dto.DepartmentId;
-            existing.LastUpdatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, manilaTimeZone);
+            existing.LastUpdatedAt = TimeHelper.Now();
             existing.LastUpdatedBy = getOperator?.Full_Name ?? "Admin";
 
             await _teacherRepository.UpdateAsync(existing);
