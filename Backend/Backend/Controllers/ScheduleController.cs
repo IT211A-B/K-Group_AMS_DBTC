@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Backend.Backend.DTOs;
+﻿using Backend.Backend.DTOs;
 using Backend.Backend.Interface.ServiceInterface;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Backend.Backend.Controllers
 {
-    [Authorize(Roles = "Admin")]
     [Route("AttendanceManagement/[controller]")]
     [ApiController]
     public class ScheduleController : ControllerBase
@@ -35,6 +35,33 @@ namespace Backend.Backend.Controllers
             }
         }
 
+        [HttpGet("{DayOfWeek}/Get_Students_CurrentDay_Schedule")]
+        [Authorize(Roles = "Admin,Student,Teacher")]
+        public async Task<IActionResult> GetScheduleFromAStudent(string DayOfWeek)
+        {
+            try
+            {
+                string? uuid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(uuid))
+                    throw new Exception("No Operator has been found");
+
+                var schedules = await _scheduleService.GetCurrentStudentAttendance(uuid, DayOfWeek);
+                Console.WriteLine("6");
+
+                if (schedules is null)
+                    return NotFound("No schedules found");
+                Console.WriteLine("7");
+
+                return Ok(schedules);
+            }
+            catch (Exception x)
+            {
+                // Internal Error
+                return BadRequest($"An Error \"{x}\" Occured");
+            }
+        }
+
+        [Authorize(Roles = "Admin,Student,Teacher")]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -52,6 +79,7 @@ namespace Backend.Backend.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Add(AddScheduleDTO schedule)
         {
@@ -68,6 +96,7 @@ namespace Backend.Backend.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, AddScheduleDTO schedule)
         {
@@ -85,6 +114,7 @@ namespace Backend.Backend.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
