@@ -9,6 +9,7 @@ namespace Backend.Backend.Interface.ServiceInterface
         Task<ResponseDTO<GetStudentDTO>> GetByIdAsync(int id);
         Task<ResponseDTO<GetStudentDTO>> AddAsync(AddStudentDTO dto, string uuid);
         Task<ResponseDTO<GetStudentDTO>> UpdateAsync(int id, AddStudentDTO dto, string uuid);
+        Task<ResponseDTO<IEnumerable<GetRecordAttendanceOfCertainStudentServiceDTO>>> GetRecordAttendanceOfOneStudent(string uuid);
         Task<byte[]?> getQrById(int id);
         Task<bool> DeleteAsync(int id);
     }
