@@ -133,8 +133,8 @@ namespace Backend.Backend.Service
                 Sex = userDto.Sex,
                 Birth_Date = userDto.Birth_Date,
                 Address = userDto.Address,
-                CreatedAt = TimeHelper.Now(),
-                LastUpdatedAt = TimeHelper.Now(),
+                CreatedAt = DateTime.UtcNow,
+                LastUpdatedAt = DateTime.UtcNow,
                 CreatedBy = "Admin",
                 LastUpdatedBy = "Admin"
             };
