@@ -101,6 +101,43 @@ namespace Backend.Backend.Service
             return qrBytes;
         }
 
+        public async Task<ResponseDTO<IEnumerable<GetRecordAttendanceOfCertainStudentServiceDTO>>> GetRecordAttendanceOfOneStudent(string uuid)
+        {
+            var getStudent = await _studentRepository.GetByUserUUIDAsync(uuid);
+            if (getStudent == null)
+                return new ResponseDTO<IEnumerable<GetRecordAttendanceOfCertainStudentServiceDTO>>
+                {
+                    Status_code = 404,
+                    Data = null,
+                    Detail = $"No Student Has Been Found"
+                };
+
+            var returnData = await _studentRepository.GetStudentAttendanceAsync(getStudent.Student_ID);
+            if (returnData == null)
+                return new ResponseDTO<IEnumerable<GetRecordAttendanceOfCertainStudentServiceDTO>>
+                {
+                    Status_code = 404,
+                    Data = null,
+                    Detail = $"No Student Has Been Found"
+                };
+
+            var data = returnData.Select(s => new GetRecordAttendanceOfCertainStudentServiceDTO
+            {
+                Attendance_ID = s.Attendance_ID,
+                Course_Title = s.Course_Title,
+                Course_Code = s.Course_Code,
+                Date = s.Date,
+                DayOfWeek = s.DayOfWeek,
+                AttendanceStatus = AttendanceEnumToRole.ConvertEnumAttendancetoStringAttendance(s.AttendanceStatus),
+            });
+
+            return new ResponseDTO<IEnumerable<GetRecordAttendanceOfCertainStudentServiceDTO>>
+            {
+                Data = data,
+                Status_code =200,
+                Detail = ""
+            };
+        }
 
         public async Task<ResponseDTO<GetStudentDTO>> AddAsync(AddStudentDTO dto, string uuid)
         {
