@@ -1,4 +1,5 @@
-﻿using Backend.Backend.Model;
+﻿using Backend.Backend.DTOs;
+using Backend.Backend.Model;
 
 namespace Backend.Backend.Interface.RepositoryInterface
 {
@@ -10,6 +11,7 @@ namespace Backend.Backend.Interface.RepositoryInterface
         Task UpdateAsync(Student student);
         Task<Student?> GetByUserUUIDAsync(string id);
         Task DeleteAsync(Student student);
+        Task<List<GetRecordAttendanceOfCertainStudent>> GetStudentAttendanceAsync(string studentId);
         Task<Student?> GetByQrToken(string qrToken);
         Task<Program_?> GetProgramByIdAsync(int Id);
         Task<Student?> GetByUUIDAsync(string id);
