@@ -1,4 +1,4 @@
-#**ATTENDANCE MANAGEMENT SYSTEM**
+#ATTENDANCE MANAGEMENT SYSTEM
 
 **Task Description:**
 
@@ -10,8 +10,10 @@ To create a web-based Attendance Management Website that enables school faculty 
 **Architecture & Layered Structure:**
 
 **Features:**
--Dashboard
--Attendance monitoring
--User profiles
--Notifications
--QR codes
+Dashboard Line 1
+
+Attendance monitoring Line2
+
+User profiles 3
+Notifications
+QR codes
