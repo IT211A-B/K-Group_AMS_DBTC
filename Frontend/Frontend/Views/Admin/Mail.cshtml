@@ -111,7 +111,7 @@
             selectedUserId=''; selectedUserName=''; $('#selectedRecipient').text('');
             if(q.length<2){ $('#recipientDropdown').hide(); return; }
             searchTimer=setTimeout(function(){
-                $.ajax({ url:'/api/UserSearch?q='+encodeURIComponent(q), dataType:'json',
+                $.ajax({ url:'/api/proxy/api/UserSearch?q='+encodeURIComponent(q), dataType:'json',
                     success:function(users){
                         if(!users.length){ $('#recipientDropdown').html('<div class="p-2 text-muted" style="font-size:12px;">No users found</div>').show(); return; }
                         var html='';

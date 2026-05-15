@@ -1,8 +1,8 @@
-﻿@{
-    Layout = "_Layout";
-    ViewData["Title"] = "My Courses";
-    var userId = Context.Session.GetString("UserId") ?? "";
-    var userName = Context.Session.GetString("UserName") ?? "Student";
+﻿﻿@{
+Layout = "_Layout";
+ViewData["Title"] = "My Courses";
+var userId = Context.Session.GetString("UserId") ?? "";
+var userName = Context.Session.GetString("UserName") ?? "Student";
 }
 <div class="page-header">
     <div>

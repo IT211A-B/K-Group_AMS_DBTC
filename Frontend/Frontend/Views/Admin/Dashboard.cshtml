@@ -62,7 +62,7 @@
     <div class="table-wrapper">
         <table class="table table-striped">
             <thead>
-                <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Gender</th><th>Program / Dept</th><th>Courses</th><th>Actions</th></tr>
+                <tr><th>#</th><th>Name</th><th>Account No</th><th>Email</th><th>Role</th><th>Gender</th><th>Program / Dept</th><th>Courses</th><th>Actions</th></tr>
             </thead>
             <tbody id="studentTableBody"></tbody>
         </table>
@@ -104,20 +104,19 @@
                     <div class="col-md-4"><label class="form-label">Address</label><input type="text" class="form-control" id="addAddress"></div>
                 </div>
                 <hr>
-                <div id="studentFields">
-                    <h6 class="text-muted mb-3"><i class="bi bi-mortarboard"></i> Student Info</h6>
-                    <div class="row g-2">
-                        <div class="col-md-4"><label class="form-label">Program</label><select class="form-select" id="addProgramId"></select></div>
-                        <div class="col-md-4"><label class="form-label">Department</label><select class="form-select" id="addDeptId"></select></div>
-                        <div class="col-md-4"><label class="form-label">Year Level</label><select class="form-select" id="addYearLevel"><option value="1st Year">1st Year</option><option value="2nd Year">2nd Year</option><option value="3rd Year">3rd Year</option><option value="4th Year">4th Year</option></select></div>
-                        <div class="col-md-12"><label class="form-label">Enroll in Course(s)</label><div id="addStudentCourses" style="max-height:120px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;padding:8px;"></div></div>
+                    <div id="studentFields">
+                        <h6 class="text-muted mb-3"><i class="bi bi-mortarboard"></i> Student Info</h6>
+                        <div class="row g-2">
+                            <div class="col-md-4"><label class="form-label">Program</label><select class="form-select" id="addProgramId"></select></div>
+                            <div class="col-md-4"><label class="form-label">Department</label><select class="form-select" id="addDeptId"></select></div>
+                            <div class="col-md-4"><label class="form-label">Year Level</label><select class="form-select" id="addYearLevel"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+                            <div class="col-md-12"><label class="form-label">Course <span class="text-danger">*</span></label><select class="form-select" id="addCourseId"><option value="">Select Course</option></select></div>
+                        </div>
                     </div>
-                </div>
                 <div id="teacherFields" style="display:none;">
                     <h6 class="text-muted mb-3"><i class="bi bi-briefcase"></i> Teacher Info</h6>
                     <div class="row g-2">
-                        <div class="col-md-12"><label class="form-label">Department</label><input type="text" class="form-control" id="addTeacherDept"></div>
-                        <div class="col-md-12"><label class="form-label">Assign Course(s)</label><div id="addTeacherCourses" style="max-height:120px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;padding:8px;"></div></div>
+                        <div class="col-md-12"><label class="form-label">Department ID</label><input type="number" class="form-control" id="addTeacherDept" placeholder="1" min="1"></div>
                     </div>
                 </div>
             </div>
@@ -163,10 +162,13 @@
                 <div id="editTeacherSection" style="display:none;">
                     <h6 class="text-muted mb-3">Teacher Info</h6>
                     <div class="row g-2">
-                        <div class="col-md-12"><label class="form-label">Department</label><input type="text" class="form-control" id="editTeacherDept"></div>
+                        <div class="col-md-12"><label class="form-label">Department</label><select class="form-select" id="editTeacherDept"></select></div>
+                        <div class="col-md-12">
+                            <label class="form-label">Assign Course <span class="text-muted" style="font-size:11px;">(all enrolled students will be assigned to this teacher)</span></label>
+                            <select class="form-select" id="editTeacherCourse"><option value="">None / Keep existing</option></select>
+                        </div>
                     </div>
                 </div>
-            </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button class="btn btn-primary" id="updateStudentBtn">Update</button>
@@ -176,12 +178,8 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/Ajax/students.js"></script>
+    <script src="~/js/Ajax/teachers.js"></script>
     <script src="~/js/Ajax/dashboard.js"></script>
     <script src="~/js/admin-dashboard.js"></script>
-    <script>
-        $(function() {
-            getDashboardStats();
-            loadAll();
-        });
-    </script>
 }

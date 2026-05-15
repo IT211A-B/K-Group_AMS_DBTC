@@ -41,11 +41,11 @@
 
         function getMyTeacherId(){
             var t=allTeachers.find(function(x){ return String(x.user_ID||x.userId)===String(currentUserId); });
-            return t?(t.teacher_ID||t.id):null;
+            return t?(t.teacher_ID||t.id):currentUserId;
         }
 
-        function getMyCourses(tid){
-            return allCourses.filter(function(c){ return String(c.teacher_ID)===String(tid); });
+        function getMyCourses(){
+            return allCourses;
         }
 
         function buildStudentList(courseId){
@@ -53,8 +53,7 @@
             if(courseId){
                 relevantEnrollments=allEnrollments.filter(function(e){ return String(e.course_ID)===String(courseId); });
             } else {
-                var tid=getMyTeacherId();
-                var myCourseIds=getMyCourses(tid).map(function(c){ return String(c.course_ID||c.id); });
+                var myCourseIds=getMyCourses().map(function(c){ return String(c.course_ID||c.id); });
                 relevantEnrollments=allEnrollments.filter(function(e){ return myCourseIds.includes(String(e.course_ID)); });
             }
             var seenSids={};
@@ -62,10 +61,14 @@
             relevantEnrollments.forEach(function(enr){
                 if(seenSids[enr.student_ID]) return;
                 seenSids[enr.student_ID]=true;
-                var s=allStudents.find(function(x){ return String(x.student_ID||x.id)===String(enr.student_ID); });
-                var u=s?allUsers.find(function(x){ return String(x.user_ID)===String(s.user_ID||s.userId); }):null;
+                var s=allStudents.find(function(x){
+                    var docId=(x.documentSeries||x.DocumentSeries||'').split('-').pop();
+                    return String(x.student_ID||x.Student_ID)===String(enr.student_Guid||'') ||
+                        String(docId)===String(enr.student_ID);
+                });
                 var c=allCourses.find(function(x){ return String(x.course_ID||x.id)===String(enr.course_ID); });
-                rows.push({_name:u?u.full_Name:'—',_email:u?u.email:'—',_gender:u?u.gender:'',_year:s?s.year_Level:'—',_course:c?(c.title||c.code||''):'—'});
+                var label=s?(s.documentSeries||s.student_ID||s.Student_ID||('Student '+enr.student_ID)):'—';
+                rows.push({_name:label,_email:'—',_gender:'',_year:s?(s.year_Level||s.Year_Level||'—'):'—',_course:c?(c.title||c.code||''):'—'});
             });
             return rows;
         }
@@ -90,22 +93,24 @@
         $(function(){
             $('#page-loader').fadeIn(150);
             $.when(
-                $.ajax({url:'/api/Student',dataType:'json'}),
-                $.ajax({url:'/api/User',dataType:'json'}),
-                $.ajax({url:'/api/Teacher',dataType:'json'}),
-                $.ajax({url:'/AttendanceManagement/Course',dataType:'json'}),
-                $.ajax({url:'/AttendanceManagement/Enrollment',dataType:'json'}),
-                $.ajax({url:'/AttendanceManagement/Attendance',dataType:'json'})
-            ).done(function(sR,uR,tR,cR,eR,aR){
+                $.ajax({url:'/api/proxy/api/Student',dataType:'json'}),
+                $.ajax({url:'/api/proxy/api/Teacher',dataType:'json'}),
+                $.ajax({url:'/api/proxy/api/teacher/my-courses',dataType:'json'}),
+                $.ajax({url:'/api/proxy/AttendanceManagement/Enrollment',dataType:'json'}),
+                $.ajax({url:'/api/proxy/AttendanceManagement/Attendance',dataType:'json'}),
+                $.ajax({url:'/api/proxy/AttendanceManagement/Schedule',dataType:'json'}),
+                $.ajax({url:'/api/proxy/AttendanceStudentManagement/AttendanceStudent',dataType:'json'})
+            ).done(function(sR,tR,cR,eR,aR,schR,asR){
                 allStudents=Array.isArray(sR[0])?sR[0]:[];
-                allUsers=Array.isArray(uR[0])?uR[0]:[];
+                allUsers=[];
                 allTeachers=Array.isArray(tR[0])?tR[0]:[];
                 allCourses=Array.isArray(cR[0])?cR[0]:[];
                 allEnrollments=Array.isArray(eR[0])?eR[0]:[];
                 var allAtt=Array.isArray(aR[0])?aR[0]:[];
+                var allSchedules=Array.isArray(schR[0])?schR[0]:[];
+                var allAttStudents=Array.isArray(asR[0])?asR[0]:[];
 
-                var tid=getMyTeacherId();
-                var myCourses=getMyCourses(tid);
+                var myCourses=getMyCourses();
                 $('#statCourses').text(myCourses.length);
 
                 var o='<option value="">All My Courses</option>';
@@ -116,10 +121,24 @@
 
                 var today=new Date().toISOString().slice(0,10);
                 var myCourseIds=myCourses.map(function(c){ return String(c.course_ID||c.id); });
-                var myEnrollIds=allEnrollments.filter(function(e){ return myCourseIds.includes(String(e.course_ID)); }).map(function(e){ return String(e.enrollment_ID||e.id); });
-                var todayAtt=allAtt.filter(function(a){ return (a.date||a.attendanceDate||'').substring(0,10)===today && myEnrollIds.includes(String(a.enrollment_ID)); });
-                $('#statPresent').text(todayAtt.filter(function(a){ return (a.status||'').toLowerCase()==='present'; }).length);
-                $('#statAbsent').text(todayAtt.filter(function(a){ return (a.status||'').toLowerCase()==='absent'; }).length);
+                var myScheduleIds=allSchedules.filter(function(s){
+                    return myCourseIds.includes(String(s.course_ID||s.Course_ID));
+                }).map(function(s){ return String(s.schedule_Id||s.schedule_ID||s.Schedule_Id); });
+                var todaySessionIds=allAtt.filter(function(a){
+                    var d=(a.date||a.Date||a.attendanceDate||'').toString().substring(0,10);
+                    return d===today && myScheduleIds.includes(String(a.schedule_ID||a.Schedule_ID));
+                }).map(function(a){ return String(a.attendance_ID||a.Attendance_ID); });
+                function normSt(x){
+                    if(x===0||x==='0') return 'present';
+                    if(x===1||x==='1') return 'absent';
+                    if(x===2||x==='2') return 'late';
+                    return String(x||'').toLowerCase();
+                }
+                var todayRows=allAttStudents.filter(function(r){
+                    return todaySessionIds.includes(String(r.attendance_Id||r.Attendance_Id));
+                });
+                $('#statPresent').text(todayRows.filter(function(r){ return normSt(r.studentAttendanceStatus??r.StudentAttendanceStatus)==='present'; }).length);
+                $('#statAbsent').text(todayRows.filter(function(r){ return normSt(r.studentAttendanceStatus??r.StudentAttendanceStatus)==='absent'; }).length);
 
                 $('#page-loader').fadeOut(200);
             }).fail(function(){ $('#page-loader').fadeOut(200); showToast('Failed to load data.','error'); });

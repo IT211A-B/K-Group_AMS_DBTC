@@ -46,6 +46,9 @@
                     <a class="sidebar-link @(currentController == "Admin" && currentAction == "Courses" ? "active" : "")" href="/Admin/Courses">
                         <i class="bi bi-journal-bookmark-fill"></i> Courses
                     </a>
+                    <a class="sidebar-link @(currentController == "Admin" && currentAction == "Schedules" ? "active" : "")" href="/Admin/Schedules">
+                        <i class="bi bi-calendar-week"></i> Schedules
+                    </a>
                     <a class="sidebar-link @(currentController == "Admin" && currentAction == "Attendance" ? "active" : "")" href="/Admin/Attendance">
                         <i class="bi bi-calendar-check"></i> Attendance
                     </a>
@@ -272,6 +275,11 @@
             };
 
             $.extend($.ajax, _ajax);
+
+            $.ajaxSetup({
+                xhrFields: { withCredentials: true },
+                crossDomain: false
+            });
         }(jQuery));
     </script>
 
@@ -283,11 +291,13 @@
     <script src="~/js/JQuery/export.js"></script>
     <script src="~/js/JQuery/notifications.js"></script>
     <script src="~/js/JQuery/calendar.js"></script>
+    <script src="~/js/Ajax/api-helpers.js"></script>
     <script src="~/js/Ajax/students.js"></script>
     <script src="~/js/Ajax/teachers.js"></script>
     <script src="~/js/Ajax/attendance.js"></script>
     <script src="~/js/Ajax/courses.js"></script>
     <script src="~/js/Ajax/dashboard.js"></script>
+    <script src="~/js/Ajax/mail.js"></script>
     <script src="~/js/Ajax/auth.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)

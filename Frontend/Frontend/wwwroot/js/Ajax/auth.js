@@ -16,14 +16,18 @@ function redirectToLogin() {
 }
 
 $(document).ajaxError(function (event, xhr, settings) {
-    if (xhr.status === 401) {
+    if (xhr.status === 401 || xhr.status === 403) {
         var url = settings.url || '';
-        var bgEndpoints = ['/api/Notifications', '/api/SessionInfo'];
+        var bgEndpoints = ['/api/Notifications', '/api/SessionInfo', '/api/proxy/api/Notifications'];
         var isBg = bgEndpoints.some(function (ep) { return url.indexOf(ep) !== -1; });
         if (isBg) return;
 
         var path = window.location.pathname.toLowerCase();
-        if (path.indexOf('/login') === 0) return; 
+        if (path.indexOf('/login') === 0) return;
+        if (xhr.status === 403 && typeof showToast === 'function') {
+            showToast('You do not have permission for this action.', 'warning');
+            return;
+        }
         redirectToLogin();
     }
 });

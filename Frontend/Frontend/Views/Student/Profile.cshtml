@@ -67,42 +67,33 @@
 
         function loadStudentProfile() {
             if (!userId) return;
-            $.when(
-                $.ajax({ url: '/api/User/' + userId, dataType: 'json' }),
-                $.ajax({ url: '/api/Student', dataType: 'json' }),
-                $.ajax({ url: '/AttendanceManagement/Program', dataType: 'json' }),
-                $.ajax({ url: '/AttendanceManagement/Department', dataType: 'json' })
-            ).done(function(uRes, sRes, pRes, dRes) {
-                var user = uRes[0] || {};
-                var students = Array.isArray(sRes[0]) ? sRes[0] : [];
-                var programs = Array.isArray(pRes[0]) ? pRes[0] : [];
-                var depts = Array.isArray(dRes[0]) ? dRes[0] : [];
-                var student = students.find(s => String(s.user_ID) === String(userId)) || {};
+            $.ajax({ url: '/api/proxy/api/Me', dataType: 'json' })
+            .done(function(me) {
+                var user = me.user || me.User || me;
+                var student = me.student || me.Student || {};
+                var g = user.gender || user.sex || user.Sex || '';
 
-                $('#profileName').text(user.full_Name || '—');
-                $('#profileInitial').text((user.full_Name || 'S')[0].toUpperCase());
-                $('#profileEmail').text(user.email || '—');
-                $('#profilePhone').text(user.phone_Number || '—');
-                $('#profileAddress').text(user.address || '—');
-                $('#profileGender').text(user.gender === 'M' ? 'Male' : user.gender === 'F' ? 'Female' : (user.gender || '—'));
-                $('#profileBirth').text(user.birth_Date ? new Date(user.birth_Date).toLocaleDateString() : '—');
-                $('#profileStudentId').text(student.student_ID || student.id || '—');
+                $('#profileName').text(user.full_Name || user.Full_Name || '—');
+                $('#profileInitial').text((user.full_Name || user.Full_Name || 'S')[0].toUpperCase());
+                $('#profileEmail').text(user.email || user.Email || '—');
+                $('#profilePhone').text(user.phone_Number || user.Phone_Number || '—');
+                $('#profileAddress').text(user.address || user.Address || '—');
+                $('#profileGender').text(g === 'M' || g === 'm' ? 'Male' : g === 'F' || g === 'f' ? 'Female' : (g || '—'));
+                $('#profileBirth').text(user.birth_Date || user.Birth_Date ? new Date(user.birth_Date || user.Birth_Date).toLocaleDateString() : '—');
+                $('#profileStudentId').text(student.student_ID || student.Student_ID || student.id || user.documentSeries || '—');
                 $('#profileJoined').text(user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—');
-                $('#profileYear').text(student.year_Level || '—');
-
-                var prog = programs.find(p => String(p.program_Id) === String(student.program_ID));
-                $('#profileProgram').text(prog ? (prog.name || '—') : (student.program_ID ? 'Program #' + student.program_ID : '—'));
-
-                var dept = depts.find(d => String(d.department_Id) === String(student.department_ID));
-                $('#profileDept').text(dept ? (dept.name || '—') : (student.department_ID ? 'Dept #' + student.department_ID : '—'));
-            });
+                $('#profileYear').text(student.year_Level || student.Year_Level || '—');
+                $('#profileProgram').text(me.programName || student.programName || (student.program_ID ? 'Program #' + student.program_ID : '—'));
+                $('#profileDept').text(me.departmentName || student.departmentName || (student.department_ID ? 'Dept #' + student.department_ID : '—'));
+            })
+            .fail(function() { showToast('Could not load profile. Please log in again.', 'error'); });
         }
 
         function loadQrCode(userId) {
             $('#qrLoader').show();
             $('#userQrCode').hide();
             $.ajax({
-                url: '/api/User/' + userId + '/qrcode',
+                url: '/api/proxy/api/Student/Qr_In_Student_By_Login',
                 method: 'GET',
                 xhrFields: { responseType: 'blob' },
                 success: function(blob) {
@@ -118,31 +109,20 @@
         }
 
         function loadAttendance() {
-            $.ajax({ url: '/AttendanceManagement/Enrollment', dataType: 'json',
-                success: function(enrollments) {
-                    var allEnr = Array.isArray(enrollments) ? enrollments : [];
-                    $.ajax({ url: '/api/Student', dataType: 'json',
-                        success: function(students) {
-                            var allStudents = Array.isArray(students) ? students : [];
-                            var student = allStudents.find(s => String(s.user_ID) === String(userId));
-                            if (!student) return;
-                            var myEnrollments = allEnr.filter(e => String(e.student_ID) === String(student.student_ID));
-                            var eids = myEnrollments.map(e => e.enrollment_ID);
-                            $.ajax({ url: '/AttendanceManagement/Attendance', dataType: 'json',
-                                success: function(attData) {
-                                    var allAtt = Array.isArray(attData) ? attData : [];
-                                    var myAtt = allAtt.filter(a => eids.includes(a.enrollment_ID));
-                                    $('#sumPresent').text(myAtt.filter(a => (a.status||'').toLowerCase() === 'present').length);
-                                    $('#sumAbsent').text(myAtt.filter(a => (a.status||'').toLowerCase() === 'absent').length);
-                                    $('#sumLate').text(myAtt.filter(a => (a.status||'').toLowerCase() === 'late').length);
-                                    var records = {};
-                                    myAtt.forEach(a => { var d = (a.date || '').substring(0,10); if (d) records[d] = (a.status || '').toLowerCase(); });
-                                    if (typeof renderMiniCalendar === 'function')
-                                        renderMiniCalendar('miniCalendar', new Date().getFullYear(), new Date().getMonth(), records);
-                                }
-                            });
-                        }
+            $.ajax({ url: '/api/proxy/Get_Student_History_Record', dataType: 'json',
+                success: function(data) {
+                    var list = Array.isArray(data) ? data : (data && data.attendance ? data.attendance : []);
+                    if (!Array.isArray(list) && data && data.$values) list = data.$values;
+                    $('#sumPresent').text(list.filter(function(a) { return (a.status || '').toLowerCase() === 'present'; }).length);
+                    $('#sumAbsent').text(list.filter(function(a) { return (a.status || '').toLowerCase() === 'absent'; }).length);
+                    $('#sumLate').text(list.filter(function(a) { return (a.status || '').toLowerCase() === 'late'; }).length);
+                    var records = {};
+                    list.forEach(function(a) {
+                        var d = (a.date || a.attendanceDate || '').toString().substring(0, 10);
+                        if (d) records[d] = (a.status || '').toLowerCase();
                     });
+                    if (typeof renderMiniCalendar === 'function')
+                        renderMiniCalendar('miniCalendar', new Date().getFullYear(), new Date().getMonth(), records);
                 }
             });
         }

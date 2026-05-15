@@ -79,18 +79,14 @@ function deleteAttendance(id, cb) {
     });
 }
 
-/* Compute attendance status based on schedule time:
-   - Present:  scanned <= 30 mins before class OR within 0-15 mins after start
-   - Late:     scanned 16-30 mins after class start
-   - Absent:   > 30 mins after class start or no scan
-*/
+
 function computeStatus(scanTime, classStartTime) {
     if (!scanTime || !classStartTime) return 'Absent';
     var scan = new Date(scanTime);
     var start = new Date(classStartTime);
-    var diffMins = (scan - start) / 60000; // positive = after start
-    if (diffMins < -30) return 'Absent';   // too early (not valid)
-    if (diffMins <= 15) return 'Present';  // on time
-    if (diffMins <= 30) return 'Late';     // 16-30 mins after start
-    return 'Absent';                        // > 30 mins
+    var diffMins = (scan - start) / 60000;
+    if (diffMins < -30) return 'Absent';
+    if (diffMins >= -30 && diffMins < 0) return 'Present';
+    if (diffMins >= 0 && diffMins <= 15) return 'Late';
+    return 'Absent';
 }

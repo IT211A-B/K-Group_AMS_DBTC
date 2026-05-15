@@ -7,10 +7,12 @@ namespace Frontend.Controllers
     public class LoginController : Controller
     {
         private readonly AuthService _authService;
+        private readonly SecureTokenStorage _tokenStorage;
 
-        public LoginController(AuthService authService)
+        public LoginController(AuthService authService, SecureTokenStorage tokenStorage)
         {
             _authService = authService;
+            _tokenStorage = tokenStorage;
         }
 
         public IActionResult Index()
@@ -41,11 +43,13 @@ namespace Frontend.Controllers
 
             if (success)
             {
+                await HttpContext.Session.LoadAsync();
                 HttpContext.Session.SetString("UserRole", role);
                 HttpContext.Session.SetString("UserName", name);
                 HttpContext.Session.SetString("UserId", userId);
                 HttpContext.Session.SetString("UserEmail", model.Email);
-                HttpContext.Session.SetString("JwtToken", token);
+                await _tokenStorage.SaveAsync(token);
+                await HttpContext.Session.CommitAsync();
 
                 return Ok(new { role, name, userId });
             }
@@ -59,9 +63,11 @@ namespace Frontend.Controllers
             }
         }
 
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
+            await HttpContext.Session.LoadAsync();
             HttpContext.Session.Clear();
+            await _tokenStorage.ClearAsync();
             Response.Cookies.Delete(".DBTC.Session");
             return RedirectToAction("Index");
         }

@@ -1,6 +1,6 @@
 ﻿var STUDENT_GID = 3, TEACHER_GID = 2, ADMIN_GID = 1;
 var allAccounts = [], allStudents = [], allTeachers = [], allUsers = [];
-var allPrograms = [], allDepts = [], allCourses = [], allEnrollments = [];
+var allPrograms = [], allDepts = [], allCourses = [], allEnrollments = [], allSections = [];
 var pg;
 
 function safeArr(r) {
@@ -81,32 +81,77 @@ function applyFilter() {
     if (pg) pg.refresh(result);
 }
 
+function inferUserGroup(u) {
+    if (u.userGroup_ID == TEACHER_GID || u.userGroup_ID == STUDENT_GID || u.userGroup_ID == ADMIN_GID) return u.userGroup_ID;
+    var doc = u.documentSeries || u.DocumentSeries || '';
+    var email = (u.email || '').toLowerCase();
+    if (allStudents.some(function (s) { return String(s.userDocumentSeries || s.UserDocumentSeries) === String(doc); })) return STUDENT_GID;
+    if (allTeachers.some(function (t) { return String(t.userDocumentSeries || t.UserDocumentSeries) === String(doc); })) return TEACHER_GID;
+    if (email.indexOf('@dbtc-cebu') >= 0) return STUDENT_GID;
+    if (email.indexOf('@local') >= 0) return TEACHER_GID;
+    if (email.indexOf('@admin') >= 0) return ADMIN_GID;
+    return STUDENT_GID;
+}
+
 function buildAccounts() {
     allAccounts = allUsers.map(function (u) {
-        var uid = u.user_ID;
-        var gid = u.userGroup_ID;
-        var student = gid == STUDENT_GID ? allStudents.find(function (s) { return String(s.user_ID) === String(uid); }) : null;
-        var teacher = gid == TEACHER_GID ? allTeachers.find(function (t) { return String(t.user_ID) === String(uid); }) : null;
+        var doc = u.documentSeries || u.DocumentSeries || '';
+        var uid = u.user_ID || doc || u.email;
+        var gid = inferUserGroup(u);
+        var student = allStudents.find(function (s) { return String(s.userDocumentSeries || s.UserDocumentSeries) === String(doc); });
+        var teacher = allTeachers.find(function (t) { return String(t.userDocumentSeries || t.UserDocumentSeries) === String(doc); });
         var prog = student ? allPrograms.find(function (p) { return String(p.program_Id) === String(student.program_ID); }) : null;
         var dept = student
             ? (prog ? prog.name : (student.program_ID ? 'Program #' + student.program_ID : '—'))
-            : teacher
-                ? (teacher.department || '—')
-                : '—';
-        var sid = student ? (student.student_ID || student.id || '') : '';
-        var tid = teacher ? (teacher.teacher_ID || teacher.id || '') : '';
-        var courseCount = allEnrollments.filter(function (e) { return String(e.student_ID) === String(sid); }).length;
+            : teacher ? (teacher.department || '—') : '—';
+        var sid = student ? (student.documentSeries || student.DocumentSeries || student.student_ID || '') : '';
+        var tid = teacher ? (teacher.documentSeries || teacher.DocumentSeries || '') : '';
+        var studentDocNum = student ? String(sid).split('-').pop() : '';
+        var courseCount = allEnrollments.length
+            ? allEnrollments.filter(function (e) { return String(e.student_ID) === String(studentDocNum); }).length
+            : 0;
         return {
             _uid: uid, _ugid: gid,
             _name: u.full_Name || u.email || '?',
             _email: u.email || '—',
-            _gender: u.gender || '',
+            _gender: u.gender || u.sex || '',
             _dept: dept,
             _sid: sid, _tid: tid,
             _courses: courseCount,
             _created: u.createdAt || ''
         };
     });
+}
+
+// FIX: centralized dropdown population used on load and when edit modal opens
+function populateDropdowns() {
+    var progHtml = '<option value="">Select Program</option>';
+    allPrograms.forEach(function (p) {
+        progHtml += '<option value="' + p.program_Id + '">' + (p.name || p.programName || 'Program ' + p.program_Id) + '</option>';
+    });
+    $('#addProgramId, #editProgramId').html(progHtml);
+
+    var deptHtml = '<option value="">Select Department</option>';
+    allDepts.forEach(function (d) {
+        deptHtml += '<option value="' + d.department_Id + '">' + (d.name || d.departmentName || 'Dept ' + d.department_Id) + '</option>';
+    });
+    // FIX: teacher dept is now a <select>, populated here
+    $('#addDeptId, #editDeptId, #addTeacherDept, #editTeacherDept').html(deptHtml);
+
+    var courseHtml = '<option value="">Select Course</option>';
+    allCourses.forEach(function (c) {
+        var cid = c.course_ID || c.course_Id || c.id;
+        courseHtml += '<option value="' + cid + '">' + (c.course_Name || c.courseName || c.name || 'Course ' + cid) + '</option>';
+    });
+    // FIX: student enrollment uses Course not Section
+    $('#addCourseId').html(courseHtml);
+    // Course picker for assigning students to teacher
+    var teacherCourseHtml = '<option value="">None / Keep existing</option>';
+    allCourses.forEach(function (c) {
+        var cid = c.course_ID || c.course_Id || c.id;
+        teacherCourseHtml += '<option value="' + cid + '">' + (c.course_Name || c.courseName || c.name || 'Course ' + cid) + '</option>';
+    });
+    $('#editTeacherCourse').html(teacherCourseHtml);
 }
 
 function loadAll() {
@@ -117,48 +162,27 @@ function loadAll() {
         ajaxSafe('/api/proxy/api/Teacher'),
         ajaxSafe('/api/proxy/AttendanceManagement/Program'),
         ajaxSafe('/api/proxy/AttendanceManagement/Department'),
+        ajaxSafe('/api/proxy/AttendanceManagement/Section'),
         ajaxSafe('/api/proxy/AttendanceManagement/Course'),
         ajaxSafe('/api/proxy/AttendanceManagement/Enrollment')
-    ).done(function (users, students, teachers, programs, depts, courses, enrollments) {
+    ).done(function (users, students, teachers, programs, depts, sections, courses, enrollments) {
         allUsers = users;
         allStudents = students;
         allTeachers = teachers;
         allPrograms = programs;
         allDepts = depts;
+        allSections = sections;
         allCourses = courses;
         allEnrollments = enrollments;
 
         buildAccounts();
 
-        $('#statStudents').text(allStudents.length);
-        $('#statTeachers').text(allTeachers.length);
+        $('#statStudents').text(allStudents.length || users.filter(function (u) { return u.userGroup_ID == 3; }).length);
+        $('#statTeachers').text(allTeachers.length || users.filter(function (u) { return u.userGroup_ID == 2; }).length);
         $('#statCourses').text(allCourses.length);
+        if (typeof getDashboardStats === 'function') getDashboardStats();
 
-        var progHtml = '<option value="">Select Program</option>';
-        allPrograms.forEach(function (p) {
-            progHtml += '<option value="' + p.program_Id + '">' + (p.name || p.programName || 'Program ' + p.program_Id) + '</option>';
-        });
-        $('#addProgramId, #editProgramId').html(progHtml);
-
-        var deptHtml = '<option value="">Select Department</option>';
-        allDepts.forEach(function (d) {
-            deptHtml += '<option value="' + d.department_Id + '">' + (d.name || d.departmentName || 'Dept ' + d.department_Id) + '</option>';
-        });
-        $('#addDeptId, #editDeptId').html(deptHtml);
-
-        var courseCheckHtml = '';
-        allCourses.forEach(function (c) {
-            var cid = c.course_ID || c.id;
-            courseCheckHtml += '<div class="form-check"><input class="form-check-input course-check" type="checkbox" value="' + cid + '" id="cc' + cid + '"><label class="form-check-label" for="cc' + cid + '">' + (c.code || '') + ' — ' + (c.title || c.courseName || '') + '</label></div>';
-        });
-        $('#addStudentCourses').html(courseCheckHtml || '<span class="text-muted small">No courses available</span>');
-
-        var tcHtml = '';
-        allCourses.forEach(function (c) {
-            var cid = c.course_ID || c.id;
-            tcHtml += '<div class="form-check"><input class="form-check-input teacher-course-check" type="checkbox" value="' + cid + '" id="tc' + cid + '"><label class="form-check-label" for="tc' + cid + '">' + (c.code || '') + ' — ' + (c.title || c.courseName || '') + '</label></div>';
-        });
-        $('#addTeacherCourses').html(tcHtml || '<span class="text-muted small">No courses available</span>');
+        populateDropdowns();
 
         if (pg) {
             pg.refresh(allAccounts);
@@ -208,7 +232,6 @@ $(function () {
         }
 
         var ugid = type === 'teacher' ? TEACHER_GID : STUDENT_GID;
-        var emailDomain = type === 'teacher' ? '@local' : '@dbtc-cebu';
         if (type === 'student' && !email.includes('@dbtc-cebu')) {
             showToast('Student email must include @dbtc-cebu', 'error'); return;
         }
@@ -216,37 +239,93 @@ $(function () {
             showToast('Teacher email must include @local', 'error'); return;
         }
 
+        // FIX: send birth_Date as UTC ISO to avoid PostgreSQL DateTime Kind=Unspecified error
+        var birthDateUtc = birthDate ? birthDate + 'T00:00:00Z' : null;
+
         var userData = {
             full_Name: fullName, email: email, password: password,
-            phone_Number: phone, gender: gender, birth_Date: birthDate || null,
-            address: address, userGroup_ID: ugid, lastUpdatedBy: 'admin'
+            phone_Number: phone, sex: gender || 'M',
+            birth_Date: birthDateUtc,
+            address: address,
+            userGroup_ID: ugid
         };
 
         if (type === 'student') {
             var progId = $('#addProgramId').val();
             var deptId = $('#addDeptId').val();
             var yearLevel = $('#addYearLevel').val();
+            // FIX: use Course instead of Section
+            var courseId = $('#addCourseId').val();
+            var yearNum = parseInt(yearLevel, 10) || 1;
+
+            // Use first available section as default sectionID (required by backend)
+            var sectionId = 1;
+            if (allSections.length > 0) {
+                sectionId = allSections[0].section_ID || allSections[0].Section_ID || allSections[0].id || 1;
+            }
+
+            if (!courseId) { showToast('Course is required for students.', 'error'); return; }
+
             var studentData = {
-                program_ID: progId ? parseInt(progId) : null,
-                department_ID: deptId ? parseInt(deptId) : null,
-                year_Level: yearLevel ? parseInt(yearLevel) : 1,
-                lastUpdatedBy: 'admin'
+                program_ID: progId ? parseInt(progId, 10) : 1,
+                department_ID: deptId ? parseInt(deptId, 10) : 1,
+                sectionID: sectionId,
+                year_Level: yearNum
             };
-            addStudent(userData, studentData, function () {
+
+            addStudent(userData, studentData, function (result) {
                 $('#addAccountModal').modal('hide');
+                // FIX: auto-enroll new student in the selected course
+                var newStudentId = null;
+                if (result) {
+                    newStudentId = result.student_ID || result.id ||
+                        (result.documentSeries ? String(result.documentSeries).split('-').pop() : null);
+                }
+                if (newStudentId && courseId) {
+                    $.ajax({
+                        type: 'POST', url: '/api/proxy/AttendanceManagement/Enrollment',
+                        contentType: 'application/json', dataType: 'json',
+                        data: JSON.stringify({ student_ID: parseInt(newStudentId), course_ID: parseInt(courseId) }),
+                        global: false
+                    });
+                }
+                // FIX: notify admin board that a new student was enrolled
+                $.ajax({
+                    type: 'POST', url: '/api/proxy/api/Notifications',
+                    contentType: 'application/json', dataType: 'json',
+                    data: JSON.stringify({
+                        recipientId: 'admin',
+                        title: 'New Student Enrolled',
+                        message: 'A new student was enrolled: ' + fullName + ' (' + email + ').',
+                        type: 'announcement'
+                    }),
+                    global: false
+                });
                 loadAll();
             });
         } else {
-            var dept = $('#addTeacherDept').val().trim();
-            var teacherData = { department: dept, lastUpdatedBy: 'admin' };
+            // FIX: teacher dept is now a select — use its value
+            var deptVal = $('#addTeacherDept').val();
+            var teacherData = { departmentId: deptVal ? parseInt(deptVal, 10) || 1 : 1 };
             addTeacher(userData, teacherData, function () {
                 $('#addAccountModal').modal('hide');
+                // FIX: notify admin board that a new teacher was added
+                $.ajax({
+                    type: 'POST', url: '/api/proxy/api/Notifications',
+                    contentType: 'application/json', dataType: 'json',
+                    data: JSON.stringify({
+                        recipientId: 'admin',
+                        title: 'New Teacher Added',
+                        message: 'A new teacher was added: ' + fullName + ' (' + email + ').',
+                        type: 'announcement'
+                    }),
+                    global: false
+                });
                 loadAll();
             });
         }
     });
 
-    // Edit button
     $(document).on('click', '.edit-btn', function () {
         var uid = $(this).data('uid');
         var ugid = parseInt($(this).data('ugid'));
@@ -256,7 +335,7 @@ $(function () {
         if (!user) { showToast('User not found.', 'error'); return; }
 
         $('#editUserId').val(uid);
-        $('#editUgid').val(ugid);
+        $('#editUserGroupId').val(ugid);
         $('#editStudentId').val(sid || '');
         $('#editTeacherId').val(tid || '');
         $('#editFullName').val(user.full_Name || '');
@@ -266,8 +345,11 @@ $(function () {
         $('#editBirthDate').val(user.birth_Date ? user.birth_Date.substring(0, 10) : '');
         $('#editAddress').val(user.address || '');
 
+        // FIX: populate dropdowns before setting values so <option> elements exist
+        populateDropdowns();
+
         if (ugid === STUDENT_GID) {
-            $('#editStudentRow').show(); $('#editTeacherRow').hide();
+            $('#editStudentSection').show(); $('#editTeacherSection').hide();
             var student = allStudents.find(function (s) { return String(s.user_ID) === String(uid); });
             if (student) {
                 $('#editProgramId').val(student.program_ID || '');
@@ -275,16 +357,21 @@ $(function () {
                 $('#editYearLevel').val(student.year_Level || '');
             }
         } else {
-            $('#editStudentRow').hide(); $('#editTeacherRow').show();
+            $('#editStudentSection').hide(); $('#editTeacherSection').show();
             var teacher = allTeachers.find(function (t) { return String(t.user_ID) === String(uid); });
-            if (teacher) $('#editTeacherDept').val(teacher.department || '');
+            if (teacher) {
+                // FIX: editTeacherDept is a <select> now — match by dept ID
+                var deptId = teacher.department_ID || teacher.departmentId || '';
+                $('#editTeacherDept').val(deptId);
+            }
+            $('#editTeacherCourse').val('');
         }
-        $('#editAccountModal').modal('show');
+        $('#editStudentModal').modal('show');
     });
 
-    $('#updateAccountBtn').on('click', function () {
+    $('#updateStudentBtn').on('click', function () {
         var uid = $('#editUserId').val();
-        var ugid = parseInt($('#editUgid').val());
+        var ugid = parseInt($('#editUserGroupId').val());
         var sid = $('#editStudentId').val();
         var tid = $('#editTeacherId').val();
         var fullName = $('#editFullName').val().trim();
@@ -296,9 +383,12 @@ $(function () {
 
         if (!fullName || !email) { showToast('Name and email are required.', 'error'); return; }
 
+        // FIX: send birth_Date as UTC
+        var birthDateUtc = birthDate ? birthDate + 'T00:00:00Z' : null;
+
         var userData = {
             full_Name: fullName, email: email, phone_Number: phone,
-            gender: gender, birth_Date: birthDate || null, address: address,
+            gender: gender, birth_Date: birthDateUtc, address: address,
             userGroup_ID: ugid, lastUpdatedBy: 'admin'
         };
 
@@ -310,17 +400,52 @@ $(function () {
                 lastUpdatedBy: 'admin'
             };
             updateStudent(uid, userData, sid, studentData, function () {
-                $('#editAccountModal').modal('hide'); loadAll();
+                $('#editStudentModal').modal('hide'); loadAll();
             });
         } else {
-            var teacherData = { department: $('#editTeacherDept').val().trim(), lastUpdatedBy: 'admin' };
+            // FIX: teacher dept is now a select
+            var deptVal = $('#editTeacherDept').val();
+            var teacherData = {
+                department: deptVal || '',
+                departmentId: deptVal ? parseInt(deptVal, 10) : null,
+                lastUpdatedBy: 'admin'
+            };
             updateTeacher(uid, userData, tid, teacherData, function () {
-                $('#editAccountModal').modal('hide'); loadAll();
+                // FIX: if admin picked a course, bulk-assign all enrolled students to this teacher
+                var selectedCourseId = $('#editTeacherCourse').val();
+                if (selectedCourseId) {
+                    var enrolledStudentIds = allEnrollments
+                        .filter(function (e) { return String(e.course_ID) === String(selectedCourseId); })
+                        .map(function (e) { return e.student_ID; });
+                    if (enrolledStudentIds.length > 0) {
+                        var assignDefs = enrolledStudentIds.map(function (studentId) {
+                            return $.ajax({
+                                type: 'POST', url: '/api/proxy/AttendanceManagement/Enrollment',
+                                contentType: 'application/json', dataType: 'json',
+                                data: JSON.stringify({
+                                    student_ID: parseInt(studentId),
+                                    course_ID: parseInt(selectedCourseId),
+                                    teacher_ID: tid ? parseInt(tid) : null
+                                }),
+                                global: false
+                            });
+                        });
+                        $.when.apply($, assignDefs).always(function () {
+                            showToast(enrolledStudentIds.length + ' student(s) assigned to teacher for this course.', 'success');
+                            loadAll();
+                        });
+                    } else {
+                        showToast('No enrolled students found for that course.', 'info');
+                        loadAll();
+                    }
+                } else {
+                    loadAll();
+                }
+                $('#editStudentModal').modal('hide');
             });
         }
     });
 
-    // Delete button
     $(document).on('click', '.delete-btn', function () {
         var uid = $(this).data('uid');
         var ugid = parseInt($(this).data('ugid'));
@@ -338,5 +463,4 @@ $(function () {
     $('#searchStudent, #filterRole, #sortBy').on('input change', applyFilter);
 
     loadAll();
-    getDashboardStats();
 });

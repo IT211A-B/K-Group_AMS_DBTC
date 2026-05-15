@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Frontend.Services;
 using Frontend.Models;
+using Frontend.Filters;
 
 namespace Frontend.Controllers
 {
+    [RequireTeacher]
     public class TeacherController : Controller
     {
         private readonly TeacherService _teacherService;

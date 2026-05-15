@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Frontend.Services;
 using Frontend.Models;
+using Frontend.Filters;
 
 namespace Frontend.Controllers
 {
+    [RequireAdmin]
     public class AdminController : Controller
     {
         private readonly AdminService _adminService;
@@ -46,6 +48,13 @@ namespace Frontend.Controllers
         {
             var check = CheckSession(); if (check != null) return check;
             var vm = new AdminViewModel { CurrentPage = "Courses" };
+            return View(vm);
+        }
+
+        public IActionResult Schedules()
+        {
+            var check = CheckSession(); if (check != null) return check;
+            var vm = new AdminViewModel { CurrentPage = "Schedules" };
             return View(vm);
         }
 

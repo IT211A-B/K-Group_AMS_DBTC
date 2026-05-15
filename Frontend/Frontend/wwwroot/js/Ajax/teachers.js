@@ -21,29 +21,66 @@ function safeArrT(r) {
 }
 
 function getTeachers(cb) {
-    $.ajax({
-        type: 'GET', url: '/api/proxy/api/Teacher', dataType: 'json',
-        beforeSend: function () { $('#page-loader').fadeIn(150); },
-        success: function (r) { $('#page-loader').fadeOut(200); if (typeof cb === 'function') cb(safeArrT(r)); },
-        error: function (x) { $('#page-loader').fadeOut(200); if (typeof cb === 'function') cb([]); }
+    $.when(
+        $.ajax({ type: 'GET', url: '/api/proxy/api/User', dataType: 'json', global: false })
+            .then(function (r) { return safeArrT(r); }, function () { return []; }),
+        $.ajax({ type: 'GET', url: '/api/proxy/api/Teacher', dataType: 'json', global: false })
+            .then(function (r) { return safeArrT(r); }, function () { return []; })
+    ).done(function (users, teachers) {
+        $('#page-loader').fadeOut(200);
+        var merged;
+        if (teachers.length) {
+            merged = teachers.map(function (t) {
+                var u = users.find(function (x) { return String(x.user_ID) === String(t.user_ID); }) || {};
+                return Object.assign({}, u, t);
+            });
+        } else {
+            merged = users.filter(function (u) { return u.userGroup_ID == 2; });
+        }
+        if (typeof cb === 'function') cb(merged);
+    }).fail(function () {
+        $('#page-loader').fadeOut(200);
+        if (typeof cb === 'function') cb([]);
     });
 }
 
+function parseDocSeriesIdT(series) {
+    if (!series) return null;
+    var p = String(series).split('-');
+    var n = parseInt(p[p.length - 1], 10);
+    return isNaN(n) ? null : n;
+}
+
+function parseUserIdFromRegisterT(user) {
+    if (!user) return null;
+    var data = user.data || user.Data || user;
+    var series = data.documentSeries || data.DocumentSeries || user.documentSeries || user.DocumentSeries;
+    return parseDocSeriesIdT(series);
+}
+
 function addTeacher(userData, teacherData, cb) {
+    if (userData.gender && !userData.sex) userData.sex = userData.gender;
+    delete userData.gender;
+    delete userData.userGroup_ID;
     $.ajax({
-        type: 'POST', url: '/api/proxy/api/User', contentType: 'application/json', dataType: 'json',
+        type: 'POST', url: '/api/proxy/api/User',
+        contentType: 'application/json', dataType: 'json',
         data: JSON.stringify(userData),
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (user) {
-            var newUserId = user.user_ID || user.id || null;
+            var newUserId = parseUserIdFromRegisterT(user);
             if (!newUserId) {
                 $('#page-loader').fadeOut(200);
                 showToast('Failed to obtain user ID from backend.', 'error');
                 return;
             }
             teacherData.user_ID = newUserId;
+            if (!teacherData.departmentId && teacherData.department) {
+                teacherData.departmentId = parseInt(teacherData.department, 10) || 1;
+            }
             $.ajax({
-                type: 'POST', url: '/api/proxy/api/Teacher', contentType: 'application/json', dataType: 'json',
+                type: 'POST', url: '/api/proxy/api/Teacher',
+                contentType: 'application/json', dataType: 'json',
                 data: JSON.stringify(teacherData),
                 success: function (r) {
                     $('#page-loader').fadeOut(200);
@@ -66,25 +103,27 @@ function updateTeacher(userId, userData, teacherId, teacherData, cb) {
                 user_ID: userId,
                 full_Name: userData.full_Name,
                 email: userData.email,
-                password: currentUser.passHash || currentUser.PassHash || 'unchanged',
+                password: currentUser.passHash || currentUser.PassHash || currentUser.password || 'unchanged',
                 phone_Number: userData.phone_Number,
                 gender: userData.gender,
-                birth_Date: userData.birth_Date,
+                birth_Date: userData.birth_Date || null,
                 address: userData.address,
                 userGroup_ID: userData.userGroup_ID || 2,
                 lastUpdatedBy: userData.lastUpdatedBy || 'admin'
             };
             $.ajax({
-                type: 'PUT', url: '/api/proxy/api/User/' + encodeURIComponent(userId), contentType: 'application/json', dataType: 'json',
+                type: 'PUT', url: '/api/proxy/api/User/' + encodeURIComponent(userId),
+                contentType: 'application/json', dataType: 'json',
                 data: JSON.stringify(updateUserData),
                 success: function () {
                     if (teacherId) {
                         $.ajax({
-                            type: 'PUT', url: '/api/proxy/api/Teacher/' + encodeURIComponent(teacherId), contentType: 'application/json', dataType: 'json',
+                            type: 'PUT', url: '/api/proxy/api/Teacher/' + encodeURIComponent(teacherId),
+                            contentType: 'application/json', dataType: 'json',
                             data: JSON.stringify({
-                                teacher_ID: teacherId,
+                                teacher_ID: parseInt(teacherId),
                                 user_ID: userId,
-                                department: teacherData.department,
+                                department: teacherData.department || '',
                                 lastUpdatedBy: teacherData.lastUpdatedBy || 'admin'
                             }),
                             success: function (r) {
@@ -96,7 +135,7 @@ function updateTeacher(userId, userData, teacherId, teacherData, cb) {
                         });
                     } else {
                         $('#page-loader').fadeOut(200);
-                        showToast('Teacher updated successfully.', 'success');
+                        showToast('User updated successfully.', 'success');
                         if (typeof cb === 'function') cb();
                     }
                 },
@@ -109,19 +148,24 @@ function updateTeacher(userId, userData, teacherId, teacherData, cb) {
 
 function deleteTeacher(userId, teacherId, cb) {
     $('#page-loader').fadeIn(150);
-    $.ajax({
-        type: 'DELETE', url: '/api/proxy/api/Teacher/' + encodeURIComponent(teacherId), dataType: 'json',
-        success: function () {
-            $.ajax({
-                type: 'DELETE', url: '/api/proxy/api/User/' + encodeURIComponent(userId), dataType: 'json',
-                success: function () {
-                    $('#page-loader').fadeOut(200);
-                    showToast('Teacher deleted successfully.', 'success');
-                    if (typeof cb === 'function') cb();
-                },
-                error: function (x) { $('#page-loader').fadeOut(200); _eT(x); }
-            });
-        },
-        error: function (x) { $('#page-loader').fadeOut(200); _eT(x); }
-    });
+    var deleteUser = function () {
+        $.ajax({
+            type: 'DELETE', url: '/api/proxy/api/User/' + encodeURIComponent(userId), dataType: 'json',
+            success: function () {
+                $('#page-loader').fadeOut(200);
+                showToast('Account deleted successfully.', 'success');
+                if (typeof cb === 'function') cb();
+            },
+            error: function (x) { $('#page-loader').fadeOut(200); _eT(x); }
+        });
+    };
+    if (teacherId) {
+        $.ajax({
+            type: 'DELETE', url: '/api/proxy/api/Teacher/' + encodeURIComponent(teacherId), dataType: 'json',
+            success: deleteUser,
+            error: function () { deleteUser(); }
+        });
+    } else {
+        deleteUser();
+    }
 }

@@ -1,8 +1,15 @@
 ﻿function _eC(xhr) {
     var m = 'Something went wrong.';
     try {
-        if (xhr.responseJSON && xhr.responseJSON.message) m = xhr.responseJSON.message;
-        else if (xhr.responseText) m = xhr.responseText;
+        if (xhr.responseJSON) {
+            if (xhr.responseJSON.message) m = xhr.responseJSON.message;
+            else if (xhr.responseJSON.title) m = xhr.responseJSON.title;
+            else if (xhr.responseJSON.errors) {
+                var errs = xhr.responseJSON.errors, msgs = [];
+                Object.keys(errs).forEach(function (k) { if (Array.isArray(errs[k])) msgs = msgs.concat(errs[k]); });
+                if (msgs.length) m = msgs.join(' ');
+            }
+        } else if (xhr.responseText) m = xhr.responseText;
     } catch (e) { }
     if (typeof showToast === 'function') showToast(m, 'error');
 }
@@ -18,13 +25,17 @@ function getCourses(cb) {
         type: 'GET', url: '/api/proxy/AttendanceManagement/Course', dataType: 'json',
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (r) { $('#page-loader').fadeOut(200); if (typeof cb === 'function') cb(safeArrC(r)); },
-        error: function (x) { $('#page-loader').fadeOut(200); if (typeof cb === 'function') cb([]); }
+        error: function () { $('#page-loader').fadeOut(200); if (typeof cb === 'function') cb([]); }
     });
 }
 
 function addCourse(data, cb) {
+    if (data.teacher_ID === undefined || data.teacher_ID === null || data.teacher_ID === '') {
+        data.teacher_ID = 0;
+    }
     $.ajax({
-        type: 'POST', url: '/api/proxy/AttendanceManagement/Course', contentType: 'application/json', dataType: 'json',
+        type: 'POST', url: '/api/proxy/AttendanceManagement/Course',
+        contentType: 'application/json', dataType: 'json',
         data: JSON.stringify(data),
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (r) { $('#page-loader').fadeOut(200); showToast('Course added successfully.', 'success'); if (typeof cb === 'function') cb(r); },
@@ -33,8 +44,12 @@ function addCourse(data, cb) {
 }
 
 function updateCourse(id, data, cb) {
+    if (data.teacher_ID === undefined || data.teacher_ID === null || data.teacher_ID === '') {
+        data.teacher_ID = 0;
+    }
     $.ajax({
-        type: 'PUT', url: '/api/proxy/AttendanceManagement/Course/' + id, contentType: 'application/json', dataType: 'json',
+        type: 'PUT', url: '/api/proxy/AttendanceManagement/Course/' + id,
+        contentType: 'application/json', dataType: 'json',
         data: JSON.stringify(data),
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (r) { $('#page-loader').fadeOut(200); showToast('Course updated successfully.', 'success'); if (typeof cb === 'function') cb(r); },
@@ -77,17 +92,19 @@ function getSchedules(cb) {
 
 function addSchedule(data, cb) {
     $.ajax({
-        type: 'POST', url: '/api/proxy/AttendanceManagement/Schedule', contentType: 'application/json', dataType: 'json',
+        type: 'POST', url: '/api/proxy/AttendanceManagement/Schedule',
+        contentType: 'application/json', dataType: 'json',
         data: JSON.stringify(data),
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (r) { $('#page-loader').fadeOut(200); showToast('Schedule added successfully.', 'success'); if (typeof cb === 'function') cb(r); },
         error: function (x) { $('#page-loader').fadeOut(200); _eC(x); }
     });
-}   
+}
 
 function updateSchedule(id, data, cb) {
     $.ajax({
-        type: 'PUT', url: '/api/proxy/AttendanceManagement/Schedule/' + id, contentType: 'application/json', dataType: 'json',
+        type: 'PUT', url: '/api/proxy/AttendanceManagement/Schedule/' + id,
+        contentType: 'application/json', dataType: 'json',
         data: JSON.stringify(data),
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (r) { $('#page-loader').fadeOut(200); showToast('Schedule updated successfully.', 'success'); if (typeof cb === 'function') cb(r); },
@@ -114,11 +131,16 @@ function getEnrollments(cb) {
 
 function addEnrollment(data, cb) {
     $.ajax({
-        type: 'POST', url: '/api/proxy/AttendanceManagement/Enrollment', contentType: 'application/json', dataType: 'json',
+        type: 'POST', url: '/api/proxy/AttendanceManagement/Enrollment',
+        contentType: 'application/json', dataType: 'json',
         data: JSON.stringify(data),
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function (r) { $('#page-loader').fadeOut(200); showToast('Enrollment added.', 'success'); if (typeof cb === 'function') cb(r); },
-        error: function (x) { $('#page-loader').fadeOut(200); _eC(x); }
+        error: function (x) {
+            $('#page-loader').fadeOut(200);
+            if (x.status === 404) showToast('Enrollment endpoint not yet available on backend.', 'warning');
+            else _eC(x);
+        }
     });
 }
 
@@ -127,7 +149,11 @@ function deleteEnrollment(id, cb) {
         type: 'DELETE', url: '/api/proxy/AttendanceManagement/Enrollment/' + id, dataType: 'json',
         beforeSend: function () { $('#page-loader').fadeIn(150); },
         success: function () { $('#page-loader').fadeOut(200); showToast('Enrollment removed.', 'success'); if (typeof cb === 'function') cb(); },
-        error: function (x) { $('#page-loader').fadeOut(200); _eC(x); }
+        error: function (x) {
+            $('#page-loader').fadeOut(200);
+            if (x.status === 404) showToast('Enrollment endpoint not yet available on backend.', 'warning');
+            else _eC(x);
+        }
     });
 }
 

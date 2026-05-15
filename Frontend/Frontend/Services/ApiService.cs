@@ -5,28 +5,23 @@ namespace Frontend.Services
 {
     public class ApiService
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private const string BackendBase = "https://k-group-ams-dbtc-11f4.onrender.com";
+        private readonly SecureTokenStorage _tokenStorage;
+        private readonly string _backendBase;
 
-        public ApiService(IHttpContextAccessor httpContextAccessor)
+        public ApiService(SecureTokenStorage tokenStorage, IConfiguration config)
         {
-            _httpContextAccessor = httpContextAccessor;
+            _tokenStorage = tokenStorage;
+            _backendBase = config["BackendBase"]?.TrimEnd('/')
+                ?? "https://k-group-ams-dbtc-11f4.onrender.com";
         }
 
-        private string? GetToken()
-            => _httpContextAccessor.HttpContext?.Session.GetString("JwtToken");
-
-        private HttpClient CreateClient()
+        private async Task<HttpClient> CreateClientAsync()
         {
-            var client = new HttpClient();
-            client.BaseAddress = new Uri(BackendBase);
-            client.Timeout = TimeSpan.FromSeconds(60);
-
-            var token = GetToken();
-            if (!string.IsNullOrEmpty(token))
+            var client = new HttpClient { BaseAddress = new Uri(_backendBase), Timeout = TimeSpan.FromSeconds(60) };
+            var token = await _tokenStorage.GetAsync();
+            if (!string.IsNullOrWhiteSpace(token))
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);
-
             return client;
         }
 
@@ -34,7 +29,7 @@ namespace Frontend.Services
         {
             try
             {
-                using var client = CreateClient();
+                using var client = await CreateClientAsync();
                 var res = await client.GetAsync(path);
                 var body = await res.Content.ReadAsStringAsync();
                 return (res.IsSuccessStatusCode, body.Length > 0 ? body : "[]", (int)res.StatusCode);
@@ -49,7 +44,7 @@ namespace Frontend.Services
         {
             try
             {
-                using var client = CreateClient();
+                using var client = await CreateClientAsync();
                 var content = new StringContent(rawJson, Encoding.UTF8, "application/json");
                 var res = await client.PostAsync(path, content);
                 var body = await res.Content.ReadAsStringAsync();
@@ -65,7 +60,7 @@ namespace Frontend.Services
         {
             try
             {
-                using var client = CreateClient();
+                using var client = await CreateClientAsync();
                 var content = new StringContent(rawJson, Encoding.UTF8, "application/json");
                 var res = await client.PutAsync(path, content);
                 var body = await res.Content.ReadAsStringAsync();
@@ -81,7 +76,7 @@ namespace Frontend.Services
         {
             try
             {
-                using var client = CreateClient();
+                using var client = await CreateClientAsync();
                 var res = await client.DeleteAsync(path);
                 var body = await res.Content.ReadAsStringAsync();
                 return (res.IsSuccessStatusCode, body.Length > 0 ? body : "{}", (int)res.StatusCode);
@@ -96,7 +91,7 @@ namespace Frontend.Services
         {
             try
             {
-                using var client = CreateClient();
+                using var client = await CreateClientAsync();
                 var res = await client.GetAsync(path);
                 if (res.IsSuccessStatusCode)
                 {
