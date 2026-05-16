@@ -19,7 +19,6 @@ namespace Backend.Backend.DTOs
 
     public class AddStudentDTO
     {
-        public required int User_ID { get; set; }
         public int Program_ID { get; set; }
         public required int SectionID { get; set; }
         public required int Department_ID { get; set; }

@@ -191,9 +191,9 @@ namespace Backend.Backend.Service
         public async Task<ResponseDTO<GetStudentDTO>> AddAsync(AddStudentDTO dto, string uuid)
         {
             // Get User Doc Series not UUID
-            var getUser = await _userRepository.GetByIdAsync(dto.User_ID);
+            var getUser = await _userRepository.GetByUUIDAsync(uuid);
             if (getUser is null)
-                throw new Exception($"Id {dto.User_ID} Does not exist");
+                throw new Exception($"User Does not exist");
 
             // Get Program
             var get_program = await _studentRepository.GetProgramByIdAsync(dto.Program_ID);
@@ -288,9 +288,9 @@ namespace Backend.Backend.Service
             var userOperator = await _userRepository.GetByUUIDAsync(uuid);
 
             // Get User
-            var userStudent = await _userRepository.GetByIdAsync(dto.User_ID);
+            var userStudent = await _userRepository.GetByIdAsync(id);
             if (userStudent == null)
-                throw new Exception($"Id {dto.User_ID} does not Exist");
+                throw new Exception($"Id {id} does not Exist");
 
             existing.Program_ID = dto.Program_ID;
             existing.User_ID = userStudent.DocumentSeries;
