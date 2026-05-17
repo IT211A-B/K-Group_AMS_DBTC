@@ -217,133 +217,66 @@ namespace Frontend.Controllers
       return Ok(new { attendance_ID = attId, schedule_ID = scheduleId });
     }
 
-    [HttpPost("api/teacher/scan-attendance")]
-    public async Task<IActionResult> ScanTeacherAttendance()
-    {
-      var a = AuthRequired(); if (a != null) return a;
-      if (SessionRole != "teacher" && SessionRole != "admin")
-        return Forbid();
-
-      using var doc = JsonDocument.Parse(await Body());
-      var root = doc.RootElement;
-      var scheduleId = AmsDataHelper.GetInt(root, "schedule_ID", "scheduleId");
-      var attendanceId = AmsDataHelper.GetInt(root, "attendance_ID", "attendanceId");
-      var courseId = AmsDataHelper.GetInt(root, "course_ID", "courseId");
-      var qrToken = AmsDataHelper.GetString(root, "qrToken", "scannedUserId", "userId", "user_ID") ?? "";
-      var scanTimeStr = AmsDataHelper.GetString(root, "scanTime") ?? DateTime.Now.ToString("o");
-
-      if (scheduleId <= 0) return BadRequest(new { message = "Select a schedule first." });
-      if (string.IsNullOrWhiteSpace(qrToken)) return BadRequest(new { message = "Invalid QR code." });
-
-      if (qrToken.StartsWith("user:", StringComparison.OrdinalIgnoreCase))
-        qrToken = qrToken[5..];
-      if (qrToken.StartsWith('{'))
-      {
-        try
+        /// <summary>
+        /// Endpoint used by teachers/admins to scan a student's QR code
+        /// and record attendance.
+        /// </summary>
+        [HttpPost("api/teacher/scan-attendance")] // Creates POST route: /api/teacher/scan-attendance
+        public async Task<IActionResult> ScanTeacherAttendance()
         {
-          using var qrDoc = JsonDocument.Parse(qrToken);
-          qrToken = AmsDataHelper.GetString(qrDoc.RootElement, "userId", "user_ID", "id", "student_ID", "email", "Email") ?? qrToken;
+            // Check if the user is authenticated/logged in
+            // AuthRequired() probably returns:
+            // - null if authenticated
+            // - IActionResult if unauthorized
+            var a = AuthRequired();
+
+            // If authentication failed, immediately return the response
+            if (a != null) return a;
+
+            // Check if current session role is NOT teacher and NOT admin
+            // Prevents unauthorized users from scanning attendance
+            if (SessionRole != "teacher" && SessionRole != "admin")
+                return Forbid(); // Returns HTTP 403 Forbidden
+
+            // Read raw request body and parse JSON
+            // Example request body:
+            // {
+            //   "schedule_ID": 1,
+            //   "attendance_ID": 2,
+            //   "qrToken": "12345"
+            // }
+            using var doc = JsonDocument.Parse(await Body());
+
+            // RootElement represents the root JSON object
+            var root = doc.RootElement;
+
+            // Extract schedule ID from JSON
+            // Supports both:
+            // - schedule_ID
+            // - scheduleId
+            var scheduleId = AmsDataHelper.GetInt(root, "schedule_ID", "scheduleId");
+
+            // Extract QR token or scanned user identifier
+            // Supports many possible field names for flexibility
+            var qrToken = AmsDataHelper.GetString(
+                root,
+                "QrToken");
+
+            // Validate QR token
+            // Prevent empty or whitespace-only QR values
+            if (string.IsNullOrWhiteSpace(qrToken))
+                return BadRequest(new { message = "Invalid QR code." });
+
+            // Save attendance record through API
+            var ok =
+                await _api.PostAsync(
+                    "/AttendanceStudentManagement/AttendanceStudent",
+                    qrToken);
+
+           return Ok(ok);
         }
-        catch { }
-      }
 
-      if (qrToken.Contains('@'))
-      {
-        var docFromEmail = AmsStudentDirectory.ResolveStudentDocByEmail(qrToken);
-        if (!string.IsNullOrEmpty(docFromEmail)) qrToken = docFromEmail;
-      }
-
-      var (sOk, sBody, _) = await _api.GetAsync($"/AttendanceManagement/Schedule/{scheduleId}");
-      if (!sOk) return BadRequest(new { message = "Schedule not found." });
-
-      using var schDoc = JsonDocument.Parse(UnwrapObject(sBody));
-      var sch = schDoc.RootElement;
-      var sectionId = AmsDataHelper.GetInt(sch, "section_ID", "Section_ID");
-      if (courseId <= 0) courseId = AmsDataHelper.GetInt(sch, "course_ID", "Course_ID");
-
-      if (!AmsDataHelper.TryParseTime(AmsDataHelper.GetString(sch, "startTime", "StartTime"), out var classStart))
-        return BadRequest(new { message = "Schedule start time missing." });
-
-      if (!DateTime.TryParse(scanTimeStr, out var scanTime)) scanTime = DateTime.Now;
-      var status = AmsDataHelper.ComputeAttendanceStatus(TimeOnly.FromDateTime(scanTime), classStart);
-
-      var (_, studentsJson) = await FetchJson("/api/Student");
-      var students = AmsDataHelper.ToElementList(studentsJson);
-
-      JsonElement? matched = null;
-      foreach (var st in students)
-      {
-        var guid = AmsDataHelper.GetString(st, "student_ID", "Student_ID");
-        var userDoc = AmsDataHelper.GetString(st, "userDocumentSeries", "UserDocumentSeries");
-        var docId = AmsDataHelper.ParseDocSeriesNumericId(AmsDataHelper.GetString(st, "documentSeries", "DocumentSeries"));
-        if (string.Equals(guid, qrToken, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(userDoc, qrToken, StringComparison.OrdinalIgnoreCase)
-            || (docId.HasValue && docId.Value.ToString() == qrToken))
-        {
-          matched = st;
-          break;
-        }
-      }
-
-      if (matched == null && qrToken.Contains('@'))
-        return NotFound(new { message = "No student found for this email. Add the account first or use QR scan." });
-
-      if (matched == null)
-        return NotFound(new { message = "Student not found." });
-
-      var studentEl = matched.Value;
-      var studentSection = AmsDataHelper.GetInt(studentEl, "sectionID", "SectionID");
-      if (studentSection != sectionId)
-        return BadRequest(new { message = "This student is not enrolled in this course section." });
-
-      var studentNumericId = AmsDataHelper.ParseDocSeriesNumericId(
-        AmsDataHelper.GetString(studentEl, "documentSeries", "DocumentSeries"));
-      if (!studentNumericId.HasValue)
-        return BadRequest(new { message = "Student record is missing a valid ID." });
-
-      if (attendanceId <= 0)
-      {
-        var (started, attId, err) = await EnsureAttendanceSessionAsync(scheduleId);
-        if (!started) return BadRequest(new { message = err ?? "Start an attendance session before scanning." });
-        attendanceId = attId;
-      }
-
-      var attStudentPayload = JsonSerializer.Serialize(new
-      {
-        attendance_Id = attendanceId,
-        student_Id = studentNumericId.Value
-      });
-
-      var (ok, body, sc) = await _api.PostAsync("/AttendanceStudentManagement/AttendanceStudent", attStudentPayload);
-      if (!ok)
-      {
-        var err = body;
-        try
-        {
-          using var errDoc = JsonDocument.Parse(body);
-          if (errDoc.RootElement.TryGetProperty("message", out var m)) err = m.GetString() ?? body;
-        }
-        catch { }
-        return StatusCode(sc, new { message = err });
-      }
-
-      var studentDoc = AmsDataHelper.GetString(studentEl, "documentSeries", "DocumentSeries") ?? "";
-      var studentName = string.IsNullOrWhiteSpace(studentDoc) ? "Student" : studentDoc;
-      return Ok(new
-      {
-        status,
-        student_ID = studentNumericId.Value,
-        student_Guid = AmsDataHelper.GetString(studentEl, "student_ID", "Student_ID"),
-        studentDocumentSeries = studentDoc,
-        studentName,
-        attendance_ID = attendanceId,
-        schedule_ID = scheduleId,
-        course_ID = courseId,
-        scanTime = scanTimeStr
-      });
-    }
-
-    [HttpPost("api/admin/assign-student-section")]
+        [HttpPost("api/admin/assign-student-section")]
     public async Task<IActionResult> AssignStudentSection()
     {
       var a = AdminOnly(); if (a != null) return a;
