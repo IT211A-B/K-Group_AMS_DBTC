@@ -6,9 +6,10 @@ using Backend.Backend.Model;
 using Microsoft.AspNetCore.Mvc;
 using QRCoder;
 using System.ComponentModel;
-using posStat = Backend.Backend.Helper.Enum.PosEnum.PosStatus;
-
+using System.Text.Json;
+using System.Xml.Linq;
 using static Backend.Backend.Helper.Enum.PosEnum;
+using posStat = Backend.Backend.Helper.Enum.PosEnum.PosStatus;
 
 namespace Backend.Backend.Service
 {
@@ -128,8 +129,11 @@ namespace Backend.Backend.Service
             if (student == null)
                 return null;
 
+            var qrData = new ScanRequest
+            { QrToken = student.QrToken };
+
             // content inside QR
-            var qrContent = student.QrToken;
+            var qrContent = JsonSerializer.Serialize(qrData);
 
             var qrBytes = _qrService.GenerateQr(qrContent);
 
@@ -143,7 +147,12 @@ namespace Backend.Backend.Service
                 return null;
 
             // content inside QR
-            var qrContent = student.QrToken;
+            var qrData = new ScanRequest
+            {
+                QrToken = student.QrToken
+            };
+
+            string qrContent = JsonSerializer.Serialize(qrData);
 
             var qrBytes = _qrService.GenerateQr(qrContent);
 
